@@ -1,0 +1,15 @@
+{
+  "name": "atc-github",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GitHub-native coordination for independent coding agents: claim issues, spot overlapping work and agree how to share it, with typed commands only",
+  "type": "module",
+  "engines": { "node": ">=22.16.0" },
+  "bin": { "atc-gh": "./src/cli/main.js" },
+  "scripts": {
+    "test": "node --test --test-concurrency=1 tests/*.test.js",
+    "test:coverage": "node --experimental-test-coverage --test --test-concurrency=1 tests/*.test.js",
+    "check": "node scripts/checkStyle.js && npm test"
+  },
+  "license": "Apache-2.0"
+}

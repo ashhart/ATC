@@ -6,7 +6,8 @@ const limits = {
   maxClaimsPerUser: [3, 1, 20],
   maxPendingProposalsPerUser: [5, 1, 20],
   idleDays: [7, 1, 90],
-  proposalDays: [7, 1, 30]
+  proposalDays: [7, 1, 30],
+  windowDays: [30, 7, 90]
 };
 
 export function readConfig(value) {

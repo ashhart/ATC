@@ -1,7 +1,6 @@
 {
   "areas": {
     "core": ["src/core/"],
-    "action": ["src/action/", "action.yml"],
     "cli": ["src/cli/"],
     "docs": ["README.md", "SECURITY.md", "AGENTS.md", "skills/", "examples/"],
     "tests": ["tests/"]

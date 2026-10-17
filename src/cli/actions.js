@@ -1,78 +1,105 @@
-import { boardLabel, pickBoard, readBoard } from '../core/board.js';
-import { commandText } from '../core/commands.js';
 import { ensure } from '../core/failure.js';
-import { isBotLogin, isId, isLogin, isRepository } from '../core/values.js';
+import { isLogin, isRepository } from '../core/values.js';
+import { checkView, overlapView, statusView } from '../core/view.js';
 import { areaArgs, issueArg, kindArg, proposalArg } from './args.js';
-import { checkView, statusView } from './view.js';
+import { createReader } from './reader.js';
+import { commentBody, postAndConfirm, takeSnapshot } from './snapshot.js';
 
-export const helpText = `atc-gh: coordinate work on a GitHub repository with other people's agents.
+export const helpText = `atc: coordinate work on a GitHub repository with other people's agents.
 
-  atc-gh status                          board summary, your claims, proposals for you
-  atc-gh check <issue> [areas...]        is the issue free, and does other work cover these areas?
-  atc-gh claim <issue> [areas...]        claim an issue, optionally only some areas
-  atc-gh release <issue>                 give up your claim
-  atc-gh propose <issue> <kind> [areas]  kind is split (with areas), pair, takeover or review
-  atc-gh accept <proposal>               accept a proposal on an issue you claimed
-  atc-gh decline <proposal>              decline one
-  atc-gh withdraw <proposal>             take back your own proposal
+  atc status                          claims, proposals for you, claims to refresh
+  atc check <issue> [areas...]        is the issue free, and does other work cover these areas?
+  atc claim <issue> [areas...]        claim an issue, optionally only some areas
+  atc release <issue>                 give up your claim
+  atc propose <issue> <kind> [areas]  kind is split (with areas), pair, takeover or review
+  atc accept <id>                     accept a proposal on an issue you claimed
+  atc decline <id>                    decline one
+  atc withdraw <id>                   take back your own proposal
+  atc overlap [--base <ref>]          do your changes or pull requests touch files in other open pull requests?
 
-Options: --wait waits for the bot's answer, --repo owner/name, --bot login.
+Options: --repo owner/name. Set ATC_SIGNATURE to add one line to the end of the comments it posts.
 Output is JSON made of numbers and fixed words only.
 `;
 
-const arity = {
-  status: count => count === 0,
-  check: count => count >= 1,
-  claim: count => count >= 1,
-  release: count => count === 1,
-  propose: count => count >= 2,
-  accept: count => count === 1,
-  decline: count => count === 1,
-  withdraw: count => count === 1
-};
+const arity = { status: count => count === 0, check: count => count >= 1, claim: count => count >= 1, release: count => count === 1,
+  propose: count => count >= 2, accept: count => count === 1, decline: count => count === 1, withdraw: count => count === 1,
+  overlap: count => count === 0 };
 
-export async function runCli({ command, rest, flags }, { gh, sleep, env = {} }) {
-  ensure(Object.hasOwn(arity, command) && arity[command](rest.length), 'Unknown command or wrong number of arguments. Run atc-gh help.');
-  const botLogin = flags.bot || env.ATC_BOT || 'github-actions[bot]';
-  ensure(isBotLogin(botLogin), 'ATC_BOT must be a bot login such as github-actions[bot]');
-  const context = { gh, sleep, wait: flags.wait, botLogin, repository: resolveRepository(gh, flags, env) };
+export async function runCli({ command, rest, flags }, { gh, git, sleep, now = Date.now, env = {} }) {
+  ensure(Object.hasOwn(arity, command) && arity[command](rest.length), 'Unknown command or wrong number of arguments. Run atc help.');
+  const repository = resolveRepository(gh, flags, env);
+  const context = { gh, git, sleep, now, repository, signature: env.ATC_SIGNATURE, reader: createReader(gh, repository) };
+  if (context.signature) commentBody({ verb: 'release' }, [], context.signature);
   context.me = currentUser(gh);
-  context.read = () => loadBoard(context);
-  const { state } = context.read();
-  if (command === 'status') return statusView(state, context.me, context.repository);
-  if (command === 'check') return checkView(state, context.me, issueArg(rest[0]), areaArgs(rest.slice(1), state.areas));
-  if (command === 'claim') return send(context, issueArg(rest[0]), { verb: 'claim', areas: areaArgs(rest.slice(1), state.areas) });
-  if (command === 'release') return send(context, issueArg(rest[0]), { verb: 'release' });
-  if (command === 'propose') {
-    const kind = kindArg(rest[1]);
-    const areas = areaArgs(rest.slice(2), state.areas);
-    ensure((kind === 'split') === (areas.length > 0), 'A split needs areas; the other kinds take none');
-    return send(context, issueArg(rest[0]), { verb: 'propose', kind, areas });
+  const snapshot = takeSnapshot(context);
+  const known = Object.keys(snapshot.config.areas);
+  if (command === 'status') return statusView(snapshot, { me: context.me, repository, now: now() });
+  if (command === 'overlap') return overlap(context, snapshot, flags);
+  if (command === 'release') return release(context, snapshot, issueArg(rest[0]));
+  if (command === 'propose') return propose(context, snapshot, { issue: issueArg(rest[0]), kind: kindArg(rest[1]), areas: areaArgs(rest.slice(2), known) });
+  if (command === 'check' || command === 'claim') {
+    const issue = issueArg(rest[0]);
+    const areas = areaArgs(rest.slice(1), known);
+    const view = checkView(snapshot, { me: context.me, issue, areas, details: context.reader.issue(issue) });
+    return command === 'check' ? view : claim(context, snapshot, view, areas);
   }
-  const id = proposalArg(rest[0]);
-  const proposal = state.proposals.find(entry => entry.id === id);
-  ensure(proposal, 'No pending proposal with that number');
-  return send(context, proposal.issue, { verb: command, proposal: id });
+  return decide(context, snapshot, command, proposalArg(rest[0]));
 }
 
-async function send(context, issue, command) {
-  const created = context.gh.post(`repos/${context.repository}/issues/${issue}/comments`, { body: commandText(command) });
-  ensure(isId(created?.id), 'GitHub did not return the new comment');
-  const reply = { issue, command: command.verb, posted: true, outcome: 'pending' };
-  if (!context.wait) return reply;
-  for (let attempt = 0; attempt < 18; attempt += 1) {
-    await context.sleep(10000);
-    const entry = context.read().state.recent.find(item => item.comment === created.id);
-    if (entry) return { ...reply, outcome: entry.outcome };
-  }
-  return reply;
+function skipped(issue, verb, outcome) {
+  return { issue, command: verb, posted: false, outcome };
 }
 
-function loadBoard({ gh, repository, botLogin }) {
-  const issues = gh.get(`repos/${repository}/issues?labels=${boardLabel}&state=open&per_page=20`);
-  const board = pickBoard(Array.isArray(issues) ? issues : [], botLogin);
-  ensure(board, 'No ATC board on this repository. Ask a maintainer to install the ATC workflow.');
-  return { number: board.number, state: readBoard(board.body) };
+function claim(context, snapshot, view, areas) {
+  const refusal = { proposeInstead: 'claimTaken', takenOutside: 'takenOutside', notOpen: 'notClaimable' }[view.advice];
+  if (refusal) return skipped(view.issue, 'claim', refusal);
+  const held = snapshot.state.claims.filter(entry => entry.login === context.me && entry.role === 'work' && entry.issue !== view.issue).length;
+  if (view.advice === 'free' && held >= snapshot.config.maxClaimsPerUser) return skipped(view.issue, 'claim', 'claimLimit');
+  return postAndConfirm(context, view.issue, { verb: 'claim', areas });
+}
+
+function release(context, snapshot, issue) {
+  if (!snapshot.state.claims.some(entry => entry.issue === issue && entry.login === context.me)) return skipped(issue, 'release', 'nothingToRelease');
+  return postAndConfirm(context, issue, { verb: 'release' });
+}
+
+function propose(context, snapshot, { issue, kind, areas }) {
+  ensure((kind === 'split') === (areas.length > 0), 'A split needs areas; the other kinds take none');
+  const here = snapshot.state.claims.filter(entry => entry.issue === issue);
+  const claimants = here.filter(entry => entry.role === 'work').map(entry => entry.login);
+  if (claimants.length === 0) return skipped(issue, 'propose', 'notClaimed');
+  if (here.some(entry => entry.login === context.me)) return skipped(issue, 'propose', 'alreadyInvolved');
+  return postAndConfirm(context, issue, { verb: 'propose', kind, areas }, claimants);
+}
+
+function decide(context, snapshot, verb, id) {
+  const proposal = snapshot.state.proposals.find(entry => entry.id === id);
+  if (!proposal) return skipped(null, verb, 'proposalNotFound');
+  const deciding = verb !== 'withdraw';
+  const allowed = deciding
+    ? snapshot.state.claims.some(entry => entry.issue === proposal.issue && entry.role === 'work' && entry.login === context.me)
+    : proposal.from === context.me;
+  if (!allowed) return skipped(proposal.issue, verb, 'notAuthorized');
+  return postAndConfirm(context, proposal.issue, { verb, proposal: id }, deciding ? [proposal.from] : []);
+}
+
+function overlap(context, snapshot, flags) {
+  let workingTree = null;
+  try {
+    workingTree = context.git.changedFiles(context.git.mergeBase(flags.base || defaultBase(context)));
+  } catch (error) {
+    if (flags.base) throw error;
+  }
+  const withFiles = pulls => pulls.map(pull => ({ number: pull.number, files: new Set(context.reader.pullFiles(pull.number)) }));
+  const myPulls = withFiles(snapshot.pulls.filter(pull => pull.author === context.me).slice(0, 10));
+  const otherPulls = withFiles(snapshot.pulls.filter(pull => pull.author !== context.me).slice(0, 30));
+  return overlapView({ workingTree, myPulls, otherPulls }, snapshot.config);
+}
+
+function defaultBase(context) {
+  const remote = context.git.remoteFor(context.repository);
+  ensure(remote, 'No git remote points at the repository. Pass --base.');
+  return `${remote}/${context.reader.defaultBranch()}`;
 }
 
 function resolveRepository(gh, flags, env) {
@@ -88,7 +115,7 @@ function resolveRepository(gh, flags, env) {
 }
 
 function currentUser(gh) {
-  const user = gh.get('user');
-  ensure(isLogin(user?.login), 'Could not read your GitHub login. Check `gh auth status`.');
-  return user.login;
+  const login = gh.get('user')?.login;
+  ensure(isLogin(login), 'Could not read your GitHub login. Check `gh auth status`.');
+  return login;
 }

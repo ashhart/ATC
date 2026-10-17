@@ -1,7 +1,7 @@
 import { isArea } from './values.js';
 
 export const proposalKinds = ['split', 'pair', 'takeover', 'review'];
-const numberPattern = /^[1-9][0-9]{0,8}$/;
+const idPattern = /^[1-9][0-9]{0,15}$/;
 
 export function parseCommand(body) {
   if (typeof body !== 'string') return null;
@@ -32,7 +32,8 @@ function readWords([verb, ...rest]) {
     return { verb, kind, areas };
   }
   if (['accept', 'decline', 'withdraw'].includes(verb)) {
-    return rest.length === 1 && numberPattern.test(rest[0]) ? { verb, proposal: Number(rest[0]) } : null;
+    if (rest.length !== 1 || !idPattern.test(rest[0]) || !Number.isSafeInteger(Number(rest[0]))) return null;
+    return { verb, proposal: Number(rest[0]) };
   }
   return null;
 }

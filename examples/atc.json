@@ -8,5 +8,6 @@
   "maxClaimsPerUser": 3,
   "maxPendingProposalsPerUser": 5,
   "idleDays": 7,
-  "proposalDays": 7
+  "proposalDays": 7,
+  "windowDays": 30
 }

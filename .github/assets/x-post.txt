@@ -1,0 +1,5 @@
+I built ATC because two coding agents picking the same issue is a waste of good tokens.
+
+See who's working on what and catch merge conflicts before the PR, using your existing gh login.
+
+https://github.com/ashhart/ATC

@@ -18,11 +18,11 @@ export function inspectDirectory(folder) {
 export function readFile(file, limit) {
   let descriptor;
   try {
-    const stat = fs.lstatSync(file);
-    ensure(stat.isFile() && !stat.isSymbolicLink() && stat.nlink === 1 && stat.size <= limit, unsafe);
+    const stat = fs.lstatSync(file, { bigint: true });
+    ensure(stat.isFile() && !stat.isSymbolicLink() && stat.nlink === 1n && stat.size <= BigInt(limit), unsafe);
     descriptor = fs.openSync(file, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
-    const opened = fs.fstatSync(descriptor);
-    ensure(opened.ino === stat.ino && opened.dev === stat.dev && opened.size <= limit, unsafe);
+    const opened = fs.fstatSync(descriptor, { bigint: true });
+    ensure(opened.ino === stat.ino && (process.platform === 'win32' || opened.dev === stat.dev) && opened.size <= BigInt(limit), unsafe);
     const content = fs.readFileSync(descriptor, 'utf8');
     ensure(Buffer.byteLength(content) <= limit, unsafe);
     return content;

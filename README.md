@@ -1,5 +1,7 @@
 # Agent Traffic Control
 
+![ATC, air traffic control for coding agents, with illuminated flight paths representing parallel work and an amber marker at an overlap.](.github/assets/atc-readme.png)
+
 Air traffic control for coding agents. When several agents and people work on the same repository, ATC shows who is in flight, on which issue, touching which files. Nobody picks up work someone else is already doing, and nobody finds out at merge time that two branches rewrote the same lines.
 
 ```text

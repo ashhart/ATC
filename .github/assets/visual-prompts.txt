@@ -1,0 +1,33 @@
+# ATC campaign artwork
+
+Generated with the built-in image generation tool.
+
+README hero: atc-readme.png
+X image: atc-x.png
+X post: x-post.txt
+
+Alt text: Metallic aircraft follow illuminated glass flight paths against a black background, with an amber overlap marker where routes meet; the headline reads Air traffic control for coding agents.
+
+X image prompt
+
+Use case: ads-marketing.
+Asset type: an extraordinary final launch campaign image for ATC, Agent Traffic Control, an open-source coding-agent coordination CLI; landscape 1800 x 1000 pixels, approximately 16:9, suitable for an X post and a README hero.
+Primary request: Create the ambitious, beautifully art-directed flagship image for a serious developer product. The previous attempt was a flat navy radar circle with arrow symbols and huge plain ATC text. Completely abandon that visual approach. This image must have the sophistication, physical depth, dramatic contrast and memorable visual idea of a world-class technology product launch.
+Concept: AIRSPACE AS A PHYSICAL SCULPTURE. A macro-scale photorealistic sculpture of three luminous aircraft flight paths that are also git branch lines, suspended in a vast dark architectural space. Wide, sweeping, precisely engineered ribbons of brushed titanium and translucent ice-blue glass bend, bank, and pass over and under one another in three dimensions. Delicate electric-blue edge lighting traces each path. Three small exquisitely machined solid metal arrowhead aircraft markers, elegant and aerodynamic but abstract, travel along separate tracks. Git commit nodes are integrated as small luminous circular waypoints in the tracks. At the one close approach, an amber collision-detection halo glows softly around the crossing, and a clearly separate path curves safely upward. The metallic sculpture fills the right two-thirds and rises into the upper third, creating a stunning sculptural silhouette. No central tower or computer; the parallel routes have no central authority.
+Physical realism: exquisite product-photography CGI, ray-traced caustics through thick glass, satin titanium with delicate machining, subtle depth of field, beautiful hard studio rim lights, long blue reflections and one concentrated warm amber highlight, deep blacks, tangible material weight, genuine depth. Clean purposeful forms, no noisy fantasy spaghetti. The composition must look expensive, original and engineered. The glass/titanium routes arc diagonally toward the upper right with tremendous visual momentum and fine precision joints. No literal airport, no real fighter jets, no clouds or outer space.
+Backdrop: near-black midnight #050b12, atmospheric but controlled, almost imperceptible architectural floor reflections and a fine coordinate-line pattern only near the sculpture. Vivid ice-cyan highlights and a single amber hazard accent. Keep a broad quiet black field for typography at left.
+Typography and layout: bold asymmetric editorial poster layout, immaculate Swiss grotesk typography with obsessive kerning, precise grid, generous margins, white typography integrated into the image as graphic print, not as floating physical 3D letters. Small tracked uppercase "AGENT TRAFFIC CONTROL" at upper left. Very large beautifully kerned "ATC" beneath it, approximately 18% of image width, strong but not dominating the entire image. Lower left, the exact main headline in two lines, large and crisp, with a calm medium weight rather than heavy cartoon bold: "Air traffic control" / "for coding agents." This headline is prominent and perfectly readable at phone size. A slender, pale-blue line below the copy leads toward the sculpture, subtly connecting software coordination to flight paths. Bottom left in tiny tasteful monospaced type "github.com/ashhart/ATC". Bottom right in tiny monospaced type "$ atc overlap". Keep all text at least 85 pixels from the edges. No extra text.
+Text verbatim: "AGENT TRAFFIC CONTROL", "ATC", "Air traffic control", "for coding agents.", "github.com/ashhart/ATC", "$ atc overlap".
+Constraints: one coherent breathtaking image, not a presentation of options; no flat radar circles, no cartoon arrows, no generic dashboard UI, no glowing neon wireframe globe, no gradients behind typography, no rounded UI cards, no badges, no clipart, no cartoon or illustration, no fake statistics, no watermark, no third-party logos. Make the image visually arresting through a singular highly resolved sculpture, impeccable lighting and beautifully disciplined typography.
+
+README hero edit prompt
+
+Use case: compositing.
+Asset type: a finished very wide README hero banner for ATC, exactly 2000 x 800 pixels, 5:2 landscape aspect ratio.
+Input image 1 is the approved visual direction and edit target: the dark cinematic launch graphic with titanium and glowing ice-blue glass flight paths, tiny metallic aircraft, and ATC typography.
+Recompose this same artwork into a beautifully balanced WIDE BANNER. Preserve the sophisticated photorealistic glass and brushed-metal materials, physical depth, lighting, dark cinematic atmosphere and precise graphic identity. Keep the same recognizable flight-path sculpture but adjust its framing to show a strong sweeping diagonal on the right. The scene should feel like an exquisite floating engineered sculpture, with fewer vertical support pillars visible. Preserve the tiny abstract arrowhead aircraft, the blue illuminated circular git commit waypoints and the single amber collision halo at the crossing.
+Typography must be crisp and beautifully kerned. On the left half, small tracked uppercase "AGENT TRAFFIC CONTROL" above a large strong "ATC", then the exact headline "Air traffic control" on one line and "for coding agents." beneath it, all clearly legible with spacious positioning. Tiny monospaced "$ atc" at bottom left. Remove the URL and "$ atc overlap" from this README version, since they are already part of the surrounding page.
+Composition: a quiet almost-black left 43% for all copy, the physically stunning flight sculpture filling the right 57%, moving toward the upper right; glowing glass can extend off the edges but no text or aircraft is cropped. Keep all text at least 80px from edges. Use a dramatic close framing of the sculpture with no busy background. This must be an immaculate flagship product banner, not a concept sheet.
+Text verbatim: "AGENT TRAFFIC CONTROL", "ATC", "Air traffic control", "for coding agents.", "$ atc".
+Do not add any other text, no radar, no labels, no statistics, no logos, no watermark. Preserve the material beauty and high production quality of the input image.
+

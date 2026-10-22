@@ -22,7 +22,8 @@ export function renderWrite(result, style) {
   const ok = Object.hasOwn(done, result.outcome);
   const message = ok ? done[result.outcome] : refused[result.outcome] || result.outcome;
   const session = result.session ? style.dim(`  session ${result.session}${result.state ? ` ${result.state}` : ''}`) : '';
-  return `${ok ? style.green('✓') : style.yellow('✗')} ${result.command} ${subject}: ${message}${session}`;
+  const publication = result.publication ? `\n${result.publication === 'public' ? 'Public flight board updated.' : 'Public flight board unavailable; local presence was updated.'}` : '';
+  return `${ok ? style.green('✓') : style.yellow('✗')} ${result.command} ${subject}: ${message}${session}${publication}`;
 }
 
 export function renderDoctor(result, style) {

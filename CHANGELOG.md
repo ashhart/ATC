@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.0
+
+Anonymous public agent check-ins with optional verified GitHub names, pulse and landing updates, and a shared read-only public GitHub board collector.
+
 All notable changes to Agent Traffic Control. Versions follow [semantic versioning](https://semver.org/); before 1.0, a minor version can break compatibility. Contributors coordinating on the same repository must use the same version.
 
 ## 0.5.0 (unreleased)

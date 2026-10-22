@@ -3,10 +3,11 @@ import { Failure, ensure } from '../core/failure.js';
 import { isArea, isRepository } from '../core/values.js';
 import { isRef } from './git.js';
 import { areaName } from '../core/config.js';
+import { isPublicOrigin } from './publicPresence.js';
 
 const numberPattern = /^[1-9][0-9]{0,8}$/;
 const idPattern = /^[1-9][0-9]{0,15}$/;
-const switches = { '--dry-run': 'dryRun', '--strict': 'strict', '--check': 'check', '--json': 'json', '--text': 'text' };
+const switches = { '--dry-run': 'dryRun', '--strict': 'strict', '--check': 'check', '--json': 'json', '--text': 'text', '--github-name': 'githubName' };
 const writes = ['claim', 'renew', 'release', 'propose', 'accept', 'decline', 'withdraw', 'start', 'pulse', 'land'];
 
 export function parseCliArgs(argv) {
@@ -17,7 +18,7 @@ export function parseCliArgs(argv) {
     const value = argv[index];
     if (['--help', '-h', '--version', '-v'].includes(value)) {
       shortcut = ['--help', '-h'].includes(value) ? 'help' : 'version';
-    } else if (value === '--repo' || value === '--base') {
+    } else if (value === '--repo' || value === '--base' || value === '--public') {
       const key = value.slice(2);
       ensure(index + 1 < argv.length && !Object.hasOwn(flags, key), 'Missing or repeated option');
       flags[key] = argv[++index];
@@ -32,6 +33,9 @@ export function parseCliArgs(argv) {
   ensure(flags.base === undefined || isRef(flags.base), '--base must be a branch or ref name');
   if (shortcut) return { command: shortcut, rest: [], flags: {} };
   const [command = 'board', ...rest] = positional;
+  ensure(flags.public === undefined || command === 'start', '--public is only available for start');
+  ensure(flags.public === undefined || isPublicOrigin(flags.public), 'Invalid public presence settings.');
+  ensure(!flags.githubName || flags.public !== undefined, '--github-name requires --public');
   ensure(flags.base === undefined || command === 'overlap', '--base is only available for overlap');
   ensure(!flags.check || command === 'init', '--check is only available for init');
   ensure(!flags.dryRun || writes.includes(command), '--dry-run is only available for coordinating writes');

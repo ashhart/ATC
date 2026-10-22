@@ -1,13 +1,13 @@
 # Working on ATC for GitHub
 
 - No runtime dependencies. Node built-ins only.
-- No coordination server, bot or GitHub Action. All coordination is the CLI replaying `/atc` comments, and the replay must stay deterministic: same comments, same rules, same answer on every machine. The local website is a read-only viewer of sanitized snapshots and never arbitrates claims or writes to GitHub. The MCP server and the Claude Code hooks are local adapters that call the same CLI code and add no authority of their own. The only workflow in `.github/workflows/` is CI that runs `npm run check`; it takes no part in coordination.
+- No coordination server, bot or GitHub Action. All coordination is the CLI replaying `/atc` comments, and the replay must stay deterministic: same comments, same rules, same answer on every machine. Optional public presence adapters store expiring, explicitly shared sessions without arbitrating claims; anonymity is the default, and a verified GitHub name requires opt-in. The local website is a read-only viewer of sanitized snapshots and never arbitrates claims or writes to GitHub. The MCP server and the Claude Code hooks are local adapters that call the same CLI code and add no authority of their own. The only workflow in `.github/workflows/` is CI that runs `npm run check`; it takes no part in coordination.
 - ATC never posts to a repository that has no `.github/atc.json`.
 - camelCase names, one responsibility per file, JavaScript files of at most 220 lines, no multiline comments. `npm run check` enforces the last three.
 - Every value read from GitHub or git is untrusted. Validate it against a pattern, an enum or a number range before it is used, printed or posted.
 - Never add free text to commands, replay state, JSON output or anything posted. A new field needs a pattern, a size limit and a test that hostile text is rejected.
 - The readable terminal view (a TTY or `--text`) may show titles, logins and file paths to the person running the command. Pass every such value through `safeText` in `src/cli/terminalText.js`, which strips control characters, escape sequences and bidi marks, and never route it into JSON, comments or errors.
-- Local state lives in the clone's `.git/atc/` folder (agent presence, the open PR file list for `who`) and in `~/.cache/atc-github/` (PR file lists keyed by update time). Validate it on every read as if it came from GitHub, and never post it.
+- Local state lives in the clone's `.git/atc/` folder (agent presence, per-session public check-in secrets, the open PR file list for `who`) and in `~/.cache/atc-github/` (PR file lists keyed by update time). Validate it on every read as if it came from GitHub, and never post its contents; public check-ins send only the documented bounded protocol fields, never a GitHub token.
 - Never echo untrusted text in errors. Error messages are fixed strings.
 - Run `gh` and `git` without a shell, and validate refs and repository names first.
 - Agents working on this repository follow `skills/atc/SKILL.md` like any other contributor.

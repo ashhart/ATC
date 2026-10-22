@@ -53,3 +53,15 @@ ATC reads retained comment history for the inspected current open issues within 
 `npm run check` covers the grammar, replay decisions, simulated GitHub calls, real local git overlap checks, and hostile data in GitHub and git inputs. Tests check the command and output boundary; passing them is not a guarantee of zero privacy risk in an agent's wider workflow. Live GitHub behavior still needs a reviewed pilot.
 
 Use GitHub's private vulnerability reporting if it is enabled. Otherwise contact the maintainer privately before disclosing exploit details. Keep credentials and private repository data out of public issues.
+
+
+## Optional public agent check-ins
+
+`start --public https://example.org` explicitly shares an issue number, fixed activity state and check-in time with that origin.
+A GitHub name is shared only with `--github-name`, and the receiving service must derive it from the verified comment author.
+The initial `/atc presence <sha256>` comment proves possession of a separate random session secret; it grants no claim and never renews one.
+The proof comment remains associated with its GitHub author even if the board uses an anonymous label.
+The CLI keeps the 256-bit session secret in an owner-only file under `.git/atc/`, validates it on read, refuses redirects and never sends the GitHub token to the website.
+Treat the session file as a credential; the public service should store only its digest, expire unrefreshed sessions after five minutes and invalidate a landed session.
+Dry runs and read-only launchers do not post the proof or publish check-ins.
+Public endpoints report untrusted activity, not authorization to take over work; use normal ATC checks and agreements for coordination.

@@ -4,6 +4,7 @@ import { checkView, statusView } from '../core/view.js';
 import { areaArgs, issueArg, kindArg, presenceArg, proposalArg, sessionArg } from './args.js';
 import { doctor } from './doctor.js';
 import { reportPresence } from './presenceCommand.js';
+import { publishPresence } from './publicPresence.js';
 import { inspectWho } from './who.js';
 import { inspectTraffic } from './traffic.js';
 import { displayResult } from './output.js';
@@ -21,7 +22,7 @@ const arity = { board: count => count === 0, status: count => count === 0, check
   overlap: count => count === 0, doctor: count => count === 0, init: count => count === 0,
   start: count => count === 1, pulse: count => count === 3, land: count => count === 2, who: count => count === 1 };
 
-export async function runCli({ command, rest, flags }, { gh, git, sleep, now = Date.now, env = {}, cwd = process.cwd(), labels, cache = false } = {}) {
+export async function runCli({ command, rest, flags }, { gh, git, sleep, now = Date.now, env = {}, cwd = process.cwd(), labels, cache = false, fetcher = fetch } = {}) {
   ensure(Object.hasOwn(arity, command) && arity[command](rest.length), 'Unknown command or wrong number of arguments. Run atc help.');
   if (command === 'init') return displayResult(initRepository({ cwd, check: Boolean(flags.check) }));
   if (command === 'doctor') return displayResult(doctor({ gh, git, flags, env, cwd }));
@@ -30,7 +31,8 @@ export async function runCli({ command, rest, flags }, { gh, git, sleep, now = D
   ensure(!env.ATC_SIGNATURE, 'ATC_SIGNATURE is not supported. Comments contain commands only.');
   ensure(env.ATC_READ_ONLY === undefined || ['0', '1'].includes(env.ATC_READ_ONLY), 'Invalid ATC_READ_ONLY setting');
   if (['start', 'pulse', 'land'].includes(command)) {
-    return displayResult(reportPresence(command, input, { git, now, dryRun: Boolean(flags.dryRun), readOnly: env.ATC_READ_ONLY === '1' }));
+    const result = reportPresence(command, input, { git, now, dryRun: Boolean(flags.dryRun), readOnly: env.ATC_READ_ONLY === '1' });
+    return displayResult(await publishPresence(result, { command, flags, gh, git, fetcher, repository: () => resolveRepository(gh, flags, env) }));
   }
   const repository = resolveRepository(gh, flags, env);
   if (labels) labels.repository = repository;

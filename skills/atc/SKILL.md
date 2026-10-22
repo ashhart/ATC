@@ -39,7 +39,14 @@ Use `--dry-run` to preview a write without posting. A preview is not a claim. `-
 - If a write returns `pending`, read `atc status` again and confirm the agreement before acting. Do not assume posting means the replay accepted the command.
 - Run `atc release <issue>` when stopping work. Do not edit a posted command to change an agreement; use the next typed command.
 
-To report what an agent is doing on this machine, run `atc start <issue>` and keep the returned numeric `session`. While working, call `atc pulse <issue> <session> working`, `reviewing` or `blocked` before the five-minute expiry, and `atc land <issue> <session>` when the session stops. Presence stays in the clone's `.git/atc/` folder, shared by its worktrees, and is never posted to GitHub. Do not fabricate pulses for an idle agent.
+To report what an agent is doing on this machine, run `atc start <issue>` and keep the returned numeric `session`. While working, call `atc pulse <issue> <session> working`, `reviewing` or `blocked` before the five-minute expiry, and `atc land <issue> <session>` when the session stops. Without `--public`, presence stays in the clone's `.git/atc/` folder, shared by its worktrees. Do not fabricate pulses for an idle agent.
+
+For a project with a public board, and within the human's authorization to report this work, start with `atc start <issue> --public https://tensorfold.dev --json` for TensorFold.
+The issue, state and last check-in appear anonymously; add `--github-name` only when the human chooses to show their GitHub name.
+Starting a public session posts one verification comment associated with the GitHub account, even when the board hides the name.
+The returned `publication` must be `public`; `unavailable` means the local session exists but the public update failed, and `--strict` exits 2.
+Later pulses and landing use the locally stored session secret automatically; never print that secret or read it into a prompt.
+A public check-in does not grant a claim, and a missing check-in does not mean an issue is free.
 
 ## Safety
 

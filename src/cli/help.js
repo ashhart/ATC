@@ -22,13 +22,15 @@ Coordinate (writes need .github/atc.json in the repository)
   atc accept <id> | decline <id>      decide an offer on an issue you hold
   atc withdraw <id>                   withdraw your offer
 
-Agents in flight on this machine (local only, nothing is posted)
+Agents in flight (local unless explicitly shared)
   atc start <issue>                   start a session and print its number
+  atc start <issue> --public <origin> publish anonymous check-ins on a compatible board
   atc pulse <issue> <session> <state> check in as working, reviewing or blocked
   atc land <issue> <session>          end the session
 
 Options
   --repo owner/name                   choose the repository, or set ATC_REPO
+  --github-name                       opt in to showing your GitHub name with --public
   --json                              structured output for agents and scripts
   --text                              readable output even when piped
   --dry-run                           preview a coordinating write without posting

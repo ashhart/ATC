@@ -41,7 +41,7 @@ ATC gives every agent, and every person, the same view of the airspace before th
 - **Whether your change will collide.** `atc overlap` test-merges your working tree against every open pull request and every other local worktree that touches the same files, and names the files that will conflict.
 - **Work being done twice.** The board lists issues that already have pull requests from more than one person.
 
-There is no bot, server, GitHub Action or database. Everything runs from the CLI with your own `gh` login.
+Coordination needs no bot, server, GitHub Action or database; the CLI replays GitHub comments with your own `gh` login. Optional public check-in viewers store expiring activity separately and cannot grant claims.
 
 ## What counts as "in flight"
 
@@ -50,9 +50,18 @@ There is no bot, server, GitHub Action or database. Everything runs from the CLI
 | An ATC claim | Everyone | `atc claim 42` posts a one-line `/atc claim` comment on the issue |
 | A linked pull request | Everyone | Any open pull request, draft or not, whose description says `Fixes #42` |
 | A GitHub assignee | Everyone | Ordinary issue assignment |
-| An agent session | Every worktree of your clone | `atc start 42`, then `atc pulse` while it works and `atc land` when it stops |
+| A local agent session | Every worktree of your clone | `atc start 42`, then `atc pulse` while it works and `atc land` when it stops |
 
-Agent sessions stay on your machine in `.git/atc/`, so four agents in four worktrees of one clone see each other live, and nothing extra gets posted to GitHub. A session expires five minutes after its last check-in. Agents on other machines show up through their claims and draft pull requests. Opening a draft pull request early is the simplest way to tell everyone you've taken off.
+Agent sessions default to your clone's `.git/atc/` folder, shared by its worktrees, and expire five minutes after the last check-in.
+To appear on a project's public board, start with `atc start 42 --public https://tensorfold.dev --json` from a TensorFold clone.
+That publishes the issue, status and last check-in anonymously; add `--github-name` to show your verified GitHub name.
+Subsequent `pulse` and `land` commands update the same public session, so people on other machines can see the work before they duplicate it.
+
+Starting a public session posts one typed verification comment on the issue, tied to your GitHub account, then sends check-ins directly to the selected website.
+Your GitHub token stays with `gh`; the website receives a separate session secret and stores only its hash.
+Anonymous means your name is hidden on the board; the verification comment still identifies its GitHub author.
+The website reports activity and does not arbitrate claims, so contributors must still check and claim before working.
+See [public boards and check-ins](docs/public-board.md) for the protocol and [TensorFold's radar](https://tensorfold.dev/atc) for the integration.
 
 ## Try it
 

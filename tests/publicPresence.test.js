@@ -36,7 +36,7 @@ test('public sessions are anonymous by default, keep the secret local, and publi
   assert.equal(JSON.stringify(result).includes(input.token), false);
   assert.equal(JSON.stringify(f.posts).includes(input.token), false);
   const file = path.join(f.git.folder, 'atc', `public-${result.session}.json`);
-  assert.equal(fs.statSync(file).mode & 0o777, 0o600);
+  if (process.platform !== 'win32') assert.equal(fs.statSync(file).mode & 0o777, 0o600);
   const pulse = { ...f.start, state: 'reviewing' };
   assert.equal((await publishPresence(pulse, { ...f.options, command: 'pulse', flags: {} })).publication, 'public');
   assert.equal(JSON.parse(f.calls[1].body).state, 'reviewing');

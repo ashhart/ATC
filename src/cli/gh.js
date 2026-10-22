@@ -4,7 +4,7 @@ import { commandText, isAreaReference, parseCommand } from '../core/commands.js'
 import { isCursor, isNumber, isRecord, isRepository } from '../core/values.js';
 import { createTransport, rateLimited, readHttpResponse, requestFailed, UncertainWrite } from './ghTransport.js';
 
-export { UncertainWrite } from './ghTransport.js';
+export { TimeLimit, UncertainWrite } from './ghTransport.js';
 
 export function createGh(run = runGh, options = {}) {
   const transport = createTransport(run, options);
@@ -51,7 +51,8 @@ export function createGh(run = runGh, options = {}) {
       const body = validatePost(path, fields);
       return call(['api', '--method', 'POST', path, '-f', `body=${body}`], true);
     },
-    repoView: () => call(['repo', 'view', '--json', 'nameWithOwner,isFork,parent'])
+    repoView: () => call(['repo', 'view', '--json', 'nameWithOwner,isFork,parent']),
+    timeLeft: () => transport.timeLeft()
   };
 }
 

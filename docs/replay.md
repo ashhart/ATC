@@ -40,7 +40,7 @@ A complete read covers the retained history returned by GitHub. It cannot recove
 
 `complete: false` means a required read stopped short or an overlap source could not be inspected. Check results return `advice: "incomplete"`; write commands return `outcome: "incomplete"` without posting. After posting, ATC confirms by rereading only the target issue and replaying its fresh events alongside the other issues' events from the snapshot taken before the post. A confirmed post remains `pending` if those reads fail or are incomplete, or if the issue is no longer open. Success requires two matching complete observations of the target issue events. This improves detection of inconsistent reads but is not an atomic reservation: matching stale responses can still miss an earlier comment, so contributors must recheck before consequential work and coordinate any later disagreement. A failed POST with an unknown outcome returns `posted: null` and `outcome: "uncertain"`; inspect GitHub before retrying, because ATC does not automatically repeat an ambiguous write. Do not interpret empty claims or overlaps as a clear result when coverage is incomplete.
 
-The GitHub transport also caps a run at 500 requests and 30 seconds. The viewer gives its collector 20 seconds; a slow or failed collection becomes an explicit stale or disconnected state. Busy repositories may exceed these budgets, so incomplete coverage must remain visible.
+The GitHub transport also caps a run at 500 requests and 30 seconds. Readers stop starting new pages when too little of that time is left, and a request cut off by the cap ends the read early instead of failing the command. Either way the result reports `timeLimit`, is incomplete, and blocks writes. The viewer gives its collector 20 seconds; a slow or failed collection becomes an explicit stale or disconnected state. Busy repositories may exceed these budgets, so incomplete coverage must remain visible.
 
 The `limitations` list contains fixed reason enums:
 
@@ -60,6 +60,7 @@ The `limitations` list contains fixed reason enums:
 | `contributorReferencesUnavailable` | A board record has no safe snapshot-local contributor reference |
 | `pullFilesUnavailable` | A board pull request has no inspected file set |
 | `configurationUnpinned` | Configured areas have no explicit stable numeric IDs |
+| `timeLimit` | GitHub reads stopped at the 30 second cap; run again, and the changed-file cache makes the next run faster |
 
 ## Troubleshooting
 

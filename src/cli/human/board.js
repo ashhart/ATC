@@ -11,7 +11,11 @@ export function renderBoard(result, labels, style, now) {
   lines.push(style.dim([plural(summary.contributors, 'contributor'), plural(summary.openIssues, 'open issue'), plural(summary.openPullRequests, 'open PR'),
     ...(summary.activeAgents ? [`${plural(summary.activeAgents, 'agent')} active here`] : []),
     ...(summary.duplicateAttempts ? [plural(summary.duplicateAttempts, 'duplicate attempt')] : [])].join(' · ')));
-  if (!result.complete) lines.push(style.yellow(`Partial view: ${result.limitations.join(', ')}. Treat empty sections as unknown.`));
+  if (result.limitations.includes('timeLimit')) {
+    lines.push(style.yellow('Partial view: GitHub reads stopped at the 30-second limit. Run it again; changed-file lists are cached, so the next run is faster.'));
+  }
+  const others = result.limitations.filter(limit => limit !== 'timeLimit');
+  if (others.length) lines.push(style.yellow(`Partial view: ${others.join(', ')}. Treat empty sections as unknown.`));
   if (!result.coordinationEnabled) lines.push(style.dim('Claims are off: this repository has no .github/atc.json, so ATC only reads here.'));
   section(lines, style, 'Agents on this machine', result.sessions.map(session =>
     `${issueName(session.issue, labels)}  ${stateWord(session.state, style)}  ${style.dim(ago(session.active, now))}`));

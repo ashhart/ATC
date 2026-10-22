@@ -1,6 +1,7 @@
 import { ensure } from '../core/failure.js';
 import { isCursor, isNumber, isRecord } from '../core/values.js';
 import { isFilePath } from './reader.js';
+import { hasTime, isTimeLimit } from './timeBudget.js';
 
 const invalid = 'GitHub returned an invalid list';
 const pageSize = 50;
@@ -16,7 +17,14 @@ export function readPullFileSets(gh, repository, wanted) {
   const missing = new Set(wanted);
   let cursor;
   for (let page = 0; page < maxPages && missing.size > 0; page += 1) {
-    const connection = gh.graphql(pullsQuery, { owner, name, ...(cursor ? { cursor } : {}) })?.data?.repository?.pullRequests;
+    if (!hasTime(gh, 7000)) return { sets, timed: true };
+    let connection;
+    try {
+      connection = gh.graphql(pullsQuery, { owner, name, ...(cursor ? { cursor } : {}) })?.data?.repository?.pullRequests;
+    } catch (error) {
+      if (!isTimeLimit(error)) throw error;
+      return { sets, timed: true };
+    }
     ensure(isRecord(connection) && Array.isArray(connection.nodes) && connection.nodes.length <= pageSize
       && typeof connection.pageInfo?.hasNextPage === 'boolean', invalid);
     for (const node of connection.nodes) {
@@ -29,7 +37,7 @@ export function readPullFileSets(gh, repository, wanted) {
     ensure(isCursor(connection.pageInfo.endCursor), invalid);
     cursor = connection.pageInfo.endCursor;
   }
-  return sets;
+  return { sets, timed: false };
 }
 
 export function readFiles(connection) {

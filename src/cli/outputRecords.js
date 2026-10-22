@@ -2,7 +2,7 @@ import { areaList, artifactId, booleanValue, contributorId, enumValue, issueList
 
 export const limitations = list(enumValue('commentsLimit', 'openIssuesLimit', 'pullRequestsLimit', 'invalidPulls', 'boardPullRequestsLimit',
   'pullFilesLimit', 'invalidFiles', 'contributorReferencesUnavailable', 'pullFilesUnavailable', 'workingTreeUnavailable',
-  'myPullRequestsLimit', 'otherPullRequestsLimit', 'configurationUnpinned', 'inconsistentComments'), 14, 0, true);
+  'myPullRequestsLimit', 'otherPullRequestsLimit', 'configurationUnpinned', 'inconsistentComments', 'timeLimit'), 15, 0, true);
 
 export const proposalKind = enumValue('pair', 'split', 'takeover', 'review');
 export const role = enumValue('work', 'review');

@@ -1,5 +1,6 @@
 import { ensure } from '../core/failure.js';
 import { isActorLogin, isCursor, isId, isNumber, isRecord } from '../core/values.js';
+import { hasTime, isTimeLimit } from './timeBudget.js';
 
 const invalid = 'GitHub returned an invalid issue';
 const pageSize = 50;
@@ -17,7 +18,14 @@ export function readOpenIssues(gh, repository) {
   const items = [];
   let cursor;
   for (let page = 0; page < maxPages; page += 1) {
-    const connection = gh.graphql(issuesQuery, { owner, name, ...(cursor ? { cursor } : {}) })?.data?.repository?.issues;
+    if (page > 0 && !hasTime(gh, 6000)) return { items: sorted(items), partial: true, timed: true };
+    let connection;
+    try {
+      connection = gh.graphql(issuesQuery, { owner, name, ...(cursor ? { cursor } : {}) })?.data?.repository?.issues;
+    } catch (error) {
+      if (!isTimeLimit(error)) throw error;
+      return { items: sorted(items), partial: true, timed: true };
+    }
     ensure(isRecord(connection) && Array.isArray(connection.nodes) && connection.nodes.length <= pageSize
       && typeof connection.pageInfo?.hasNextPage === 'boolean', invalid);
     items.push(...connection.nodes.map(readIssueNode));

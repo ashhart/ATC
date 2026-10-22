@@ -135,7 +135,8 @@ test('unusable batched file nodes are left for the validated REST fallback', () 
     node(2, { totalCount: 1, pageInfo: { hasNextPage: false }, nodes: [{ path: 'src/a.js', changeType: 'IGNORE' }] }),
     node(3, { totalCount: 2, pageInfo: { hasNextPage: false }, nodes: [{ path: 'src/a.js', changeType: 'ADDED' }] }),
     node(4, null), node(5, { totalCount: 1, pageInfo: { hasNextPage: false }, nodes: [{ path: '../private', changeType: 'ADDED' }] })] } } } };
-  const sets = readPullFileSets({ graphql: () => response }, repository, [1, 2, 3, 4, 5]);
+  const { sets, timed } = readPullFileSets({ graphql: () => response }, repository, [1, 2, 3, 4, 5]);
+  assert.equal(timed, false);
   assert.deepEqual([...sets.keys()], [1, 5]);
   assert.deepEqual(sets.get(1), { files: ['src/a.js'], partial: false, invalid: false });
   assert.deepEqual(sets.get(5), { files: [], partial: false, invalid: true });

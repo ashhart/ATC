@@ -59,7 +59,7 @@ The CLI also accepts a configured area label supplied as an argument for compati
 | `atc overlap [--base <ref>]` | Compare local changes and your open pull requests with others' open pull requests and other local worktrees, and test-merge each overlap |
 | `atc who <file>` | List open pull requests and other local worktrees that also change a file in this clone |
 
-`doctor` returns `ready` and individual `checks` for Node.js, git, the clone, the GitHub CLI, authentication, repository discovery, the local remote, and configuration. Check results use fixed enums instead of raw tool output.
+`doctor` returns `ready` and individual `checks` for Node.js, git, the clone, the GitHub CLI, authentication, repository discovery, the local remote, and configuration. Check results use fixed enums instead of raw tool output. `git` is `unsupported` below version 2.38, which `overlap` needs for `git merge-tree --write-tree`.
 
 `status` uses `mine` booleans rather than usernames. Proposal IDs are GitHub comment IDs; read them from `proposalsForMe` or `myProposals`. A claim's `role` is `work` or `review`, and its `areas` describe its scope.
 

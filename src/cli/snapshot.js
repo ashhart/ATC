@@ -19,9 +19,10 @@ export function takeSnapshot(context) {
   const events = readEvents(history.comments, context.repository, config).filter(event => !event.onPull && openNumbers.has(event.issue));
   const closed = new Set();
   const state = replay(events, { closed, pulls }, config, now);
-  const limitations = [history.commentsPartial && 'commentsLimit', history.inconsistent && 'inconsistentComments',
-    history.issuesPartial && 'openIssuesLimit', !config.areasPinned && 'configurationUnpinned',
-    fetchedPulls.partial && 'pullRequestsLimit', pulls.length !== fetchedPulls.items.length && 'invalidPulls'].filter(Boolean).sort();
+  const limitations = [...new Set([history.commentsPartial && 'commentsLimit', history.inconsistent && 'inconsistentComments',
+    history.issuesPartial && 'openIssuesLimit', !config.areasPinned && 'configurationUnpinned', (history.timed || fetchedPulls.timed) && 'timeLimit',
+    fetchedPulls.partial && !fetchedPulls.timed && 'pullRequestsLimit', pulls.length !== fetchedPulls.items.length && 'invalidPulls'])]
+    .filter(Boolean).sort();
   return { config, pulls, state, partial: limitations.length > 0, limitations, now, events, closed, openIssues: history.issues };
 }
 

@@ -24,9 +24,14 @@ export function inspectOverlap(context, snapshot, flags) {
   if (mine.length > 10) limitations.push('myPullRequestsLimit');
   if (others.length > 200) limitations.push('otherPullRequestsLimit');
   const read = readPullFiles(context, [...mine.slice(0, 10), ...others.slice(0, 200)], snapshot.pulls);
+  if (read.timed) limitations.push('timeLimit');
   function withFiles(pulls) {
-    return pulls.map(pull => {
-      const result = read.get(pull.number);
+    return pulls.filter(pull => {
+      if (read.files.has(pull.number)) return true;
+      limitations.push('pullFilesUnavailable');
+      return false;
+    }).map(pull => {
+      const result = read.files.get(pull.number);
       if (result.partial) limitations.push('pullFilesLimit');
       if (result.invalid) limitations.push('invalidFiles');
       return { number: pull.number, files: new Set(result.files) };

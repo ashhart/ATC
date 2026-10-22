@@ -11,7 +11,9 @@ export function inspectTraffic(context, snapshot) {
   const identities = contributorReferences(snapshot, snapshot.openIssues, presence.length ? context.me : null);
   const pullFiles = new Map();
   const listed = snapshot.pulls.slice(0, 200);
-  for (const [number, files] of readPullFiles(context, listed, snapshot.pulls)) {
+  const read = readPullFiles(context, listed, snapshot.pulls);
+  if (read.timed) limitations.push('timeLimit');
+  for (const [number, files] of read.files) {
     if (files.partial) limitations.push('pullFilesLimit');
     if (files.invalid) limitations.push('invalidFiles');
     pullFiles.set(number, new Set(files.files));

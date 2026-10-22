@@ -12,6 +12,8 @@ export class UncertainWrite extends Failure {
   }
 }
 
+export class TimeLimit extends Failure {}
+
 export function createTransport(run, options = {}) {
   ensure(options && typeof options === 'object' && !Array.isArray(options), 'Invalid GitHub request limits.');
   const now = options.now === undefined ? () => performance.now() : options.now;
@@ -25,26 +27,29 @@ export function createTransport(run, options = {}) {
   const deadline = last + deadlineMs;
   let requests = 0;
   let blocked = null;
+  let blockedByTime = false;
   function remaining() {
     const current = now();
     ensure(Number.isFinite(current), 'Invalid GitHub request clock.');
     last = Math.max(last, current);
     return Math.floor(deadline - last);
   }
+  function outOfTime(message = deadlineExceeded) {
+    blocked = message;
+    blockedByTime = true;
+    return new TimeLimit(message);
+  }
   function finish(write = false) {
-    try {
-      ensure(remaining() > 0, 'GitHub request deadline exceeded.');
-    } catch (error) {
-      blocked = requestFailed;
-      throw write ? new UncertainWrite() : error;
-    }
+    if (remaining() > 0) return;
+    const error = outOfTime();
+    throw write ? new UncertainWrite() : error;
   }
   return {
     request(args, write = false) {
-      if (blocked) throw new Failure(blocked);
+      if (blocked) throw blockedByTime ? new TimeLimit(blocked) : new Failure(blocked);
       ensure(requests < maxRequests, 'GitHub request budget exceeded.');
       const budget = remaining();
-      ensure(budget > 0, 'GitHub request deadline exceeded.');
+      if (budget <= 0) throw new TimeLimit(deadlineExceeded);
       requests += 1;
       let response;
       try {
@@ -53,15 +58,20 @@ export function createTransport(run, options = {}) {
         blocked = requestFailed;
         throw write ? new UncertainWrite() : new Failure(requestFailed);
       }
-      if (response?.error || response?.signal) {
-        blocked = !response?.signal ? requestFailed : Math.floor(deadline - Math.max(last, now())) <= 0 ? deadlineExceeded : timedOut;
-        throw write ? new UncertainWrite() : new Failure(blocked);
+      if (response?.signal) {
+        const error = outOfTime(remaining() <= 0 ? deadlineExceeded : timedOut);
+        throw write ? new UncertainWrite() : error;
+      }
+      if (response?.error) {
+        blocked = requestFailed;
+        throw write ? new UncertainWrite() : new Failure(requestFailed);
       }
       finish(write);
       return response;
     },
     finish,
-    block(message = requestFailed) { blocked = message; }
+    timeLeft: () => Math.max(0, remaining()),
+    block(message = requestFailed) { if (!blockedByTime) blocked = message; }
   };
 }
 

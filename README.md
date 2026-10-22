@@ -26,7 +26,7 @@ Ready to pick up
 
 ## Try it
 
-You need Node.js 22.16 or later, git and the GitHub CLI (`gh auth login`).
+You need Node.js 22.16 or later, git 2.38 or later and the GitHub CLI (`gh auth login`). `atc doctor` checks all three.
 
 ```bash
 npx atc-github --repo owner/name

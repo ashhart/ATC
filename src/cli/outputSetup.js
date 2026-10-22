@@ -6,7 +6,7 @@ export const initOutput = record({ command: enumValue('init'), outcome: enumValu
   cursor: enumValue('created', 'present', 'planned') });
 
 export const doctorOutput = record({ command: enumValue('doctor'), ready: booleanValue, checks: record({
-  node: enumValue('ok', 'unsupported'), git: enumValue('ok', 'missing'), clone: enumValue('ok', 'missing', 'skipped'),
+  node: enumValue('ok', 'unsupported'), git: enumValue('ok', 'missing', 'unsupported'), clone: enumValue('ok', 'missing', 'skipped'),
   gh: enumValue('ok', 'missing'), authentication: enumValue('ok', 'failed', 'skipped'), repository: enumValue('ok', 'failed', 'skipped'),
   remote: enumValue('ok', 'missing', 'failed', 'skipped', 'notRequired'), configuration: enumValue('ok', 'missing', 'invalid', 'unpinned', 'skipped')
 }) });

@@ -1,6 +1,7 @@
 import { Failure, ensure } from '../core/failure.js';
 import { isActorLogin, isNumber, isRepository } from '../core/values.js';
 import { isRef } from './git.js';
+import { hasTime, isTimeLimit } from './timeBudget.js';
 
 const filePattern = /^[^\u0000-\u001f\u007f]{1,4096}$/;
 
@@ -10,15 +11,22 @@ export function createReader(gh, repository) {
 
   function pages(path, limit) {
     const items = [];
-    for (let page = 1; page <= limit; page += 1) {
-      const batch = gh.get(`${path}${path.includes('?') ? '&' : '?'}per_page=100&page=${page}`);
-      ensure(Array.isArray(batch) && batch.length <= 100, 'GitHub returned an invalid list');
-      items.push(...batch);
-      if (batch.length < 100) return { items, partial: false, requests: page };
+    let page = 1;
+    try {
+      for (; page <= limit; page += 1) {
+        if (page > 1 && !hasTime(gh, 3000)) return { items, partial: true, timed: true, requests: page - 1 };
+        const batch = gh.get(`${path}${path.includes('?') ? '&' : '?'}per_page=100&page=${page}`);
+        ensure(Array.isArray(batch) && batch.length <= 100, 'GitHub returned an invalid list');
+        items.push(...batch);
+        if (batch.length < 100) return { items, partial: false, requests: page };
+      }
+      const extra = gh.get(`${path}${path.includes('?') ? '&' : '?'}per_page=1&page=${limit * 100 + 1}`);
+      ensure(Array.isArray(extra) && extra.length <= 1, 'GitHub returned an invalid list');
+      return { items, partial: extra.length > 0, requests: limit + 1 };
+    } catch (error) {
+      if (!isTimeLimit(error)) throw error;
+      return { items, partial: true, timed: true, requests: page };
     }
-    const extra = gh.get(`${path}${path.includes('?') ? '&' : '?'}per_page=1&page=${limit * 100 + 1}`);
-    ensure(Array.isArray(extra) && extra.length <= 1, 'GitHub returned an invalid list');
-    return { items, partial: extra.length > 0, requests: limit + 1 };
   }
 
   return {
@@ -46,7 +54,8 @@ export function createReader(gh, repository) {
     },
     pullFiles(number) {
       ensure(isNumber(number), 'Invalid pull request number');
-      const { items, partial } = pages(`${base}/pulls/${number}/files`, 3);
+      const { items, partial, timed } = pages(`${base}/pulls/${number}/files`, 3);
+      if (timed) return { files: [], partial: true, invalid: false, timed: true };
       const files = [];
       let invalid = false;
       for (const file of items) {

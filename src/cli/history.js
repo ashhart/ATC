@@ -1,4 +1,5 @@
 import { readIssue, readOpenIssues } from './graphIssues.js';
+import { hasTime } from './timeBudget.js';
 
 export function readOpenHistory(context) {
   const opened = readOpenIssues(context.gh, context.repository);
@@ -6,6 +7,7 @@ export function readOpenHistory(context) {
   let remaining = 120;
   let partial = false;
   let inconsistent = false;
+  let timed = Boolean(opened.timed);
   for (const { issue, comments: inline, overflow } of opened.items) {
     if (!overflow) {
       comments.push(...inline);
@@ -13,13 +15,16 @@ export function readOpenHistory(context) {
       continue;
     }
     if (remaining < 2) { partial = true; continue; }
+    if (timed || !hasTime(context.gh, 3000)) { partial = true; timed = true; continue; }
     const fetched = context.reader.issueComments(issue.number, Math.min(30, remaining - 1));
     comments.push(...fetched.items);
     partial ||= fetched.partial;
+    timed ||= Boolean(fetched.timed);
     if (!fetched.partial && fetched.items.length !== issue.commentCount) inconsistent = true;
     remaining -= fetched.requests;
   }
-  return { issues: opened.items.map(item => item.issue), comments, issuesPartial: opened.partial, commentsPartial: partial, inconsistent };
+  return { issues: opened.items.map(item => item.issue), comments, issuesPartial: opened.partial && !opened.timed,
+    commentsPartial: partial && !timed, inconsistent, timed };
 }
 
 export function readIssueHistory(context, number) {

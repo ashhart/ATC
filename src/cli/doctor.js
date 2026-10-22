@@ -15,7 +15,7 @@ export function doctor({ gh, git, flags = {}, env = {}, cwd = process.cwd(), nod
   };
   const checks = {
     node: supportsNode(nodeVersion) ? 'ok' : 'unsupported',
-    git: available(call('git', ['--version'])) ? 'ok' : 'missing', clone: 'skipped',
+    git: gitStatus(call('git', ['--version'])), clone: 'skipped',
     gh: available(call('gh', ['--version'])) ? 'ok' : 'missing', authentication: 'skipped',
     repository: 'skipped', remote: 'skipped', configuration: 'skipped'
   };
@@ -51,6 +51,14 @@ export function doctor({ gh, git, flags = {}, env = {}, cwd = process.cwd(), nod
 
 function available(result) {
   return result?.status === 0;
+}
+
+function gitStatus(result) {
+  if (!available(result)) return 'missing';
+  const match = typeof result.stdout === 'string' ? result.stdout.match(/^git version ([0-9]{1,3})\.([0-9]{1,3})\./) : null;
+  if (!match) return 'unsupported';
+  const [major, minor] = [Number(match[1]), Number(match[2])];
+  return major > 2 || (major === 2 && minor >= 38) ? 'ok' : 'unsupported';
 }
 
 function supportsNode(value) {

@@ -11,6 +11,7 @@ import { inspectOverlap } from './overlap.js';
 import { createReader } from './reader.js';
 import { initRepository } from './setup.js';
 import { postAndConfirm, takeSnapshot } from './snapshot.js';
+import { isTimeLimit } from './timeBudget.js';
 
 export { helpText } from './help.js';
 
@@ -44,7 +45,8 @@ export async function runCli({ command, rest, flags }, { gh, git, sleep, now = D
   if (command === 'status') return displayResult(statusView(snapshot, { me: context.me, repository, now: snapshot.now }), known);
   if (command === 'overlap') return displayResult(inspectOverlap(context, snapshot, flags), known);
   if (command === 'check' || command === 'claim') {
-    const view = checkView(snapshot, { me: context.me, issue: input.issue, areas, details: context.reader.issue(input.issue) });
+    const read = issueDetails(context, snapshot, input.issue);
+    const view = checkView(read.snapshot, { me: context.me, issue: input.issue, areas, details: read.details });
     if (command === 'check') return displayResult(view, known);
     if (!known.enabled) return displayResult(skipped(view.issue, 'claim', 'notEnabled'), known);
     return displayResult(await claim(context, snapshot, view, areas), known);
@@ -72,6 +74,15 @@ function readInput(command, rest) {
     return { issue, areas: rest.slice(1) };
   }
   return ['accept', 'decline', 'withdraw'].includes(command) ? { proposal: proposalArg(rest[0]) } : {};
+}
+
+function issueDetails(context, snapshot, issue) {
+  try {
+    return { snapshot, details: context.reader.issue(issue) };
+  } catch (error) {
+    if (!isTimeLimit(error)) throw error;
+    return { snapshot: { ...snapshot, partial: true, limitations: [...new Set([...snapshot.limitations, 'timeLimit'])].sort() }, details: null };
+  }
 }
 
 function skipped(issue, verb, outcome) {

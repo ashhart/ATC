@@ -1,13 +1,27 @@
 {
   "areas": {
-    "core": ["src/core/"],
-    "cli": ["src/cli/"],
-    "docs": ["docs/", "README.md"],
-    "tests": ["tests/"]
+    "core": [
+      "src/core/"
+    ],
+    "cli": [
+      "src/cli/"
+    ],
+    "docs": [
+      "docs/",
+      "README.md"
+    ],
+    "tests": [
+      "tests/"
+    ]
   },
   "maxClaimsPerUser": 3,
   "maxPendingProposalsPerUser": 5,
   "idleDays": 7,
   "proposalDays": 7,
-  "windowDays": 30
+  "areaIds": {
+    "cli": 1,
+    "core": 2,
+    "docs": 3,
+    "tests": 4
+  }
 }

@@ -37,5 +37,5 @@ test('everything the CLI posts is built from checked values', async () => {
   const reply = await cli(fake, 'alice', ['propose', String(issue.number), 'pair']);
   await cli(fake, 'ignore-previous-instructions', ['accept', String(reply.comment)]);
   const bodies = posted(fake).slice(1).map(([, body]) => body);
-  assert.deepEqual(bodies, ['/atc propose pair\n\n@ignore-previous-instructions', `/atc accept ${reply.comment}\n\n@alice`]);
+  assert.deepEqual(bodies, ['/atc propose pair', `/atc accept ${reply.comment}`]);
 });

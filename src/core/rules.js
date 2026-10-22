@@ -3,14 +3,22 @@ export function claimIssue(state, { login, issue, areas, open }, config, now) {
   if (!knownAreas(areas, config)) return 'unknownArea';
   const own = state.claims.find(claim => claim.issue === issue && claim.login === login);
   if (own?.role === 'work') {
-    own.areas = [...areas];
+    if (areas.length > 0 && workOn(state, issue).length > 1 && !sameAreas(own.areas, areas)) return 'sharedClaim';
+    if (areas.length > 0) own.areas = [...areas];
     own.active = now;
     return 'claimUpdated';
   }
   if (workOn(state, issue).length > 0) return 'claimTaken';
-  if (state.claims.filter(claim => claim.login === login && claim.role === 'work').length >= config.maxClaimsPerUser) return 'claimLimit';
   addClaim(state, { issue, login, role: 'work', areas }, now);
   return 'claimed';
+}
+
+export function renewClaim(state, { login, issue, open }, now) {
+  if (!open) return 'notClaimable';
+  const own = state.claims.find(claim => claim.issue === issue && claim.login === login);
+  if (!own) return 'nothingToRenew';
+  own.active = now;
+  return 'renewed';
 }
 
 export function releaseClaim(state, { login, issue }) {
@@ -37,7 +45,6 @@ export function proposeWork(state, { id, login, issue, kind, areas, open }, conf
   if (state.claims.some(claim => claim.issue === issue && claim.login === login)) return 'alreadyInvolved';
   if (!knownAreas(areas, config)) return 'unknownArea';
   if (state.proposals.some(proposal => proposal.issue === issue && proposal.from === login && proposal.kind === kind)) return 'proposalExists';
-  if (state.proposals.filter(proposal => proposal.from === login).length >= config.maxPendingProposalsPerUser) return 'proposalLimit';
   if (state.proposals.filter(proposal => proposal.issue === issue).length >= 10) return 'proposalLimit';
   state.proposals.push({ id, issue, from: login, kind, areas: [...areas], at: now });
   return 'proposed';
@@ -67,16 +74,19 @@ export function tidy(state, issue) {
 
 function acceptProposal(state, { proposal, work, decider }, config, now) {
   const { issue, from, kind } = proposal;
-  const held = state.claims.filter(claim => claim.login === from && claim.role === 'work').length;
-  if (kind !== 'review' && held >= config.maxClaimsPerUser) return 'proposerAtLimit';
+  if (['pair', 'split'].includes(kind) && work.length >= 10) return 'participantLimit';
   if (kind === 'split') {
-    const kept = work.map(claim => (claim.areas.length ? claim.areas : Object.keys(config.areas).sort()).filter(area => !proposal.areas.includes(area)));
-    if (kept.some(areas => areas.length === 0)) return 'splitLeavesNothing';
-    work.forEach((claim, index) => { claim.areas = kept[index]; });
+    const effective = claim => claim.areas.length ? claim.areas : Object.keys(config.areas);
+    if (work.some(claim => claim !== decider && effective(claim).some(area => proposal.areas.includes(area)))) return 'sharedClaim';
+    if (proposal.areas.some(area => !effective(decider).includes(area))) return 'splitUnavailable';
+    const kept = effective(decider).filter(area => !proposal.areas.includes(area));
+    if (kept.length === 0) return 'splitLeavesNothing';
+    decider.areas = kept;
     addClaim(state, { issue, login: from, role: 'work', areas: proposal.areas }, now);
   } else if (kind === 'pair') {
     addClaim(state, { issue, login: from, role: 'work', areas: decider.areas }, now);
   } else if (kind === 'takeover') {
+    if (work.length > 1) return 'sharedClaim';
     const areas = work.some(claim => claim.areas.length === 0) ? [] : [...new Set(work.flatMap(claim => claim.areas))];
     state.claims = state.claims.filter(claim => !(claim.issue === issue && claim.role === 'work'));
     addClaim(state, { issue, login: from, role: 'work', areas }, now);
@@ -99,4 +109,8 @@ function workOn(state, issue) {
 
 function knownAreas(areas, config) {
   return areas.every(area => Object.hasOwn(config.areas, area));
+}
+
+function sameAreas(first, second) {
+  return first.length === second.length && first.every(area => second.includes(area));
 }

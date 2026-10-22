@@ -1,8 +1,26 @@
 {
   "areas": {
-    "core": ["src/core/"],
-    "cli": ["src/cli/"],
-    "docs": ["README.md", "SECURITY.md", "AGENTS.md", "skills/", "examples/"],
-    "tests": ["tests/"]
+    "core": [
+      "src/core/"
+    ],
+    "cli": [
+      "src/cli/"
+    ],
+    "docs": [
+      "README.md",
+      "SECURITY.md",
+      "AGENTS.md",
+      "skills/",
+      "examples/"
+    ],
+    "tests": [
+      "tests/"
+    ]
+  },
+  "areaIds": {
+    "cli": 1,
+    "core": 2,
+    "docs": 3,
+    "tests": 4
   }
 }

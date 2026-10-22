@@ -1,0 +1,44 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/src/hooks/sessionStart.js"],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/src/hooks/postEdit.js"],
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(gh *)",
+            "command": "node",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/src/hooks/preBash.js"],
+            "timeout": 90,
+            "statusMessage": "Checking for overlapping work with ATC"
+          }
+        ]
+      }
+    ]
+  }
+}

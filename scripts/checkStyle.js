@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const roots = ['src', 'scripts'];
+const roots = ['src', 'scripts', 'site'];
 const files = [];
 function visit(folder) {
   for (const entry of fs.readdirSync(folder, { withFileTypes: true })) {

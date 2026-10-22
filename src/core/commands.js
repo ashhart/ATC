@@ -2,6 +2,11 @@ import { isArea } from './values.js';
 
 export const proposalKinds = ['split', 'pair', 'takeover', 'review'];
 const idPattern = /^[1-9][0-9]{0,15}$/;
+const areaReferencePattern = /^(?:[1-9]|1[0-9]|2[0-4])$/;
+
+export function isAreaReference(value) {
+  return typeof value === 'string' && !/[\r\n]/.test(value) && areaReferencePattern.test(value);
+}
 
 export function parseCommand(body) {
   if (typeof body !== 'string') return null;
@@ -14,7 +19,7 @@ export function parseCommand(body) {
 
 export function commandText(command) {
   if (command.verb === 'claim') return ['/atc', 'claim', ...command.areas].join(' ');
-  if (command.verb === 'release' || command.verb === 'reset') return `/atc ${command.verb}`;
+  if (['release', 'reset', 'renew'].includes(command.verb)) return `/atc ${command.verb}`;
   if (command.verb === 'propose') return ['/atc', 'propose', command.kind, ...command.areas].join(' ');
   return `/atc ${command.verb} ${command.proposal}`;
 }
@@ -24,7 +29,7 @@ function readWords([verb, ...rest]) {
     const areas = readAreas(rest);
     return areas && { verb, areas };
   }
-  if (verb === 'release' || verb === 'reset') return rest.length === 0 ? { verb } : null;
+  if (['release', 'reset', 'renew'].includes(verb)) return rest.length === 0 ? { verb } : null;
   if (verb === 'propose') {
     const [kind, ...areaWords] = rest;
     const areas = readAreas(areaWords);
@@ -39,6 +44,6 @@ function readWords([verb, ...rest]) {
 }
 
 function readAreas(words) {
-  if (words.length > 8 || !words.every(isArea) || new Set(words).size !== words.length) return null;
-  return [...words].sort();
+  if (words.length > 8 || !words.every(word => isArea(word) || isAreaReference(word)) || new Set(words).size !== words.length) return null;
+  return [...words].sort(words.every(isAreaReference) ? (first, second) => Number(first) - Number(second) : undefined);
 }

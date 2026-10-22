@@ -1,43 +1,55 @@
 # Security and privacy
 
-ATC lets strangers' agents coordinate without giving any of them a way to talk another into doing something, and without collecting anything. This page says what the design guarantees, what it can't guarantee, and how it's tested.
+ATC reads ordinary GitHub work into a contributor board and coordinates agreements through a small command grammar. It uses your existing GitHub CLI credentials and access, with no hosted coordination server, bot, credential store, or shared database of its own.
 
-## What the design guarantees
+## Command and output boundary
 
-No free text passes between agents through ATC. A comment counts only if it is unedited and its first line matches a strict grammar of fixed verbs, area names from the maintainer's config, and numbers. The rest of the comment, every edited comment, comments from bots and every other comment are ignored, and nothing from them is kept or printed.
+JSON results, which agents, scripts, the MCP server, the hooks and the viewer consume, contain numeric area references, snapshot-local contributor references, issue and pull request numbers, counts, timestamps, booleans, and fixed enums. The repository output is the fixed value `selected`. JSON omits GitHub account IDs, usernames, display-name fields, email fields, profiles, avatars, titles, descriptions, comment bodies, branch names, and file paths.
 
-Agents see only numbers, fixed words and area names. The CLI never prints a username, not even a claimant's, and never prints titles, comment text, branch names or file names. A username crafted to read like an instruction can't reach an agent through ATC.
+The readable view, shown in a terminal or with `--text`, is for the person running the command, who can already read the same data through `gh`. It adds issue and pull request titles, logins, branch names and file paths. Every such value passes through one sanitizer that removes C0 and C1 control characters, ANSI escape sequences, bidi controls and zero-width characters and truncates long text, so a hostile title cannot move the cursor, rewrite the screen or reorder what you read. Titles come from a separate read-only GraphQL lookup and never enter replay state, JSON or comments. Treat the text view as untrusted content, and do not feed it to an agent; agents should use `--json`.
 
-What the CLI posts is built from checked values: the command, @mentions of the people involved, which are validated GitHub usernames, and an optional signature line from the poster's own `ATC_SIGNATURE` setting. That line is limited to 120 characters, with no line breaks and no `@`.
+Contributor references are ordinal numbers assigned within a snapshot. They connect a contributor's work in that result without printing a GitHub account identity. They can change between runs and are not persistent account identifiers.
 
-ATC stores nothing. There is no server, database or bot, and it uses no credentials beyond each person's own `gh` login. It only reads data that person can already see on the repository.
+The first line of an unedited comment must match the `/atc` grammar before it affects replay. New commands contain fixed verbs, numeric area references, and numeric artifact IDs. The CLI ignores other text, edited commands, and bot comments as coordination events. Invalid input produces fixed errors without echoing the rejected value.
 
-Everyone acts under their own GitHub identity. Only a claimant's accept or decline counts, only the proposer's withdraw counts, and only a reset from an owner, member or collaborator counts, using the author association GitHub attaches to each comment.
+The CLI posts only the typed command. It adds no mention, signature, or free text, and rejects nonempty `ATC_SIGNATURE` settings. Raw configured area labels stay out of CLI output and new comments, since even a category label can contain personal information. Numeric area IDs come from an explicit `areaIds` mapping. A config with named areas but no mapping is incomplete and cannot authorize coordination writes. The CLI can accept a configured label supplied as an argument for compatibility, but resolves it internally and emits only its number.
 
-Every agent reaches the same answer. The CLI replays comments in comment-id order with the same rules, breaks ties by comment id, and ignores edits, so nobody can rewrite history after the fact.
+Before printing a result, the CLI validates its exact command schema, including required fields, field-specific types, finite numeric and collection bounds, canonical timestamps, and fixed enums. Unknown keys and unexpected strings fail with a fixed error. The CLI executes `gh` and `git` without a shell, validates repository names and refs before use, and suppresses raw tool errors. Its GraphQL reads accept only read queries with validated variables and refuse mutations; returned comments pass the same validation as REST comments before replay. In JSON, file paths stay in memory for overlap comparison and reports expose counts and numeric area references.
 
-File names from pull requests and from your working tree are compared in memory and reported only as counts and area names.
+`board`, `doctor`, `status`, `check`, `overlap` and `who` do not post comments, and neither do `start`, `pulse` and `land`, which record agent presence locally. ATC posts only to a repository whose default branch has `.github/atc.json`; elsewhere every write returns `notEnabled`. The board works without maintainer setup and includes contributors who have not adopted ATC. `init` changes local contributor setup without making GitHub requests. Write commands with `--dry-run` read GitHub to validate a proposed action but do not post it.
 
-The CLI runs `gh` and `git` without a shell, validates every repository name and git ref before use, and turns GitHub errors into fixed messages that never repeat GitHub's text.
+`overlap` changes local git state in two narrow ways. It fetches an overlapping pull request's head into a temporary `refs/atc/pull/<number>` ref and deletes the ref after reading it. It also snapshots working trees into temporary commits built with a temporary index, which leaves unreferenced objects in the object database until git's normal garbage collection removes them. It never changes your index, another worktree's index, your branches or your working files.
 
-## What it cannot guarantee
+Local state is kept in the clone's `.git/atc/` folder (agent presence, and the open pull request file lists that `who` reads, at most 30 minutes old) and in `~/.cache/atc-github/` (changed-file lists per pull request, keyed by update time; `ATC_CACHE=0` turns it off). These files hold numbers, timestamps and repository file paths, are created with owner-only permissions, are validated on every read, and are never posted.
 
-Agents still read issues, pull requests and code to do their work. Text there can carry prompt injection, and ATC can't clean it. The agent skill tells agents to treat all of it as untrusted data, but how well an agent follows that depends on the agent and its harness.
+The MCP server (`atc-mcp`) is a local stdio adapter. Each tool call runs the same CLI code with fresh limits, validates arguments against closed schemas, and returns the same JSON. The Claude Code hooks run the CLI with `ATC_READ_ONLY=1`, validate the hook input and the CLI's JSON, never approve a command on their own, and stay silent when a check fails.
 
-ATC only advises. Anyone can ignore it and open a pull request anyway. It makes collisions visible before work starts; it can't block them.
+The optional local viewer binds to loopback and has no GitHub write endpoint. Its collector runs the CLI with `ATC_READ_ONLY=1` and validates the feed before serving it. Repository selection stays local; the page accepts no credential or profile fields. The viewer's polling and event stream display snapshots and hold no coordination authority. Trusted-launcher isolation is not an operating-system sandbox.
 
-The comments are public on a public repository. Anyone can see who claimed what, because the username belongs to the comment's author. GitHub usernames count as personal data in some places.
+## Identity and authority
 
-Someone can post noisy `/atc` comments. The rules stop that from gaining claims beyond the limits, but the comments still show up. Maintainers can moderate as usual, and `/atc reset` clears an issue.
+ATC validates GitHub author identities internally to enforce claim and proposal rules. A work claimant can accept or decline proposals for their issue; a proposer can withdraw their own proposal. Only an owner, member, or collaborator can reset an issue, according to GitHub's author association.
 
-Deleting a comment removes it from everyone's replay at once. Deleting your own claim releases it, the same as `/atc release`.
+The earliest valid claim wins by comment ID. Pairing, splitting, takeover, and review require an accepted proposal. Renewal preserves role and scope. Editing a comment removes it from replay rather than rewriting an earlier command.
 
-Claims and proposals older than the replay window drop out, and two copies of the CLI with different rules could disagree. Pin one version of the CLI per project.
+A write can remain `pending` if GitHub has not listed the new comment yet. Confirm the result before starting work. An incomplete snapshot blocks writes and cannot establish that an issue is free.
 
-## How it's tested
+## Limits of the boundary
 
-`npm run check` runs the suite. The hostile-input test puts prompt injection text, an email address, a fake token, an HTML tag, a command line and an instruction-like username into comments, issue titles and bodies, assignees, pull request descriptions, pull request file names and local file names. It then checks that none of them, and no username at all, appear in any CLI output, and that every comment the CLI posts contains only the checked command and mentions. Other tests cover ties between simultaneous claims, edited and forged comments, stale claims, unauthorized accepts and resets, limits, malformed config, git ref injection and failed GitHub calls.
+GitHub still shows the account that posts a command and the public coordination activity. Removing identities from ATC output does not make GitHub comments anonymous. GitHub and the GitHub CLI retain data under their own policies.
 
-## Reporting a problem
+Agents may separately read issues, pull requests, code, and commit messages to do their work. Those sources can contain personal information or hostile instructions. ATC does not sanitize those other tools or guarantee that an agent cannot disclose information through them. The [contributor skill](skills/atc/SKILL.md) requires agents to treat source contents as untrusted data and keep personal details out of coordination.
 
-Use GitHub's private vulnerability reporting on this repository. Please don't post exploit details in a public issue.
+Board opportunities suggest work to investigate, not contributor consent. Shared-file counts establish overlap, not a semantic conflict. ATC cannot prevent duplicate pull requests, enforce a split in code, or verify human approval.
+
+Every board has an observation time. A recent update does not prove that someone is currently coding, and an old update does not prove abandonment. Missing or incomplete evidence cannot establish that work is free.
+
+Session check-ins report an agent's stated presence on one clone for five minutes. They are not proof of execution or separate people, and other machines never see them. The active count excludes blocked sessions and never treats contributor accounts or pull request authors as a count of active agents.
+
+ATC reads retained comment history for the inspected current open issues within fixed limits. Deleted comments cannot be recovered, and edits or deletions can change an agreement. Exceeding an open-issue or active comment-read limit makes coverage incomplete and blocks coordination writes. Current issue state, repository configuration, CLI version, and evaluation time also affect results. Pull request metadata provides context; it does not extend claim lifetime.
+
+## Verification and reporting
+
+`npm run check` covers the grammar, replay decisions, simulated GitHub calls, real local git overlap checks, and hostile data in GitHub and git inputs. Tests check the command and output boundary; passing them is not a guarantee of zero privacy risk in an agent's wider workflow. Live GitHub behavior still needs a reviewed pilot.
+
+Use GitHub's private vulnerability reporting if it is enabled. Otherwise contact the maintainer privately before disclosing exploit details. Keep credentials and private repository data out of public issues.

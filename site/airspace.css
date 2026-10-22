@@ -1,0 +1,149 @@
+.airspace .traffic-scope {
+  --scope-base: #e9f1f7;
+  --scope-grid: #b8ccdd;
+  --scope-ring: #afc7da;
+  --scope-text: #213f5c;
+  --scope-muted: #617a91;
+  --scope-hover: #ffffffb3;
+  --scope-blue: #286398;
+  --scope-green: #1b6b5c;
+  --scope-amber: #8b5a18;
+  --scope-grey: #5d7388;
+  position: relative;
+  isolation: isolate;
+  margin: 0 16px;
+  min-height: 380px;
+  flex: 1 0 380px;
+  border: 1px solid #d4e1eb;
+  border-radius: 12px;
+  background: var(--scope-base);
+  overflow: hidden;
+  color: var(--scope-text);
+}
+.airspace .traffic-scope::before { display: none; }
+[data-theme=dark] .airspace .traffic-scope {
+  --scope-base: #0b1e30;
+  --scope-grid: #25435d;
+  --scope-ring: #375d7b;
+  --scope-text: #e1edf8;
+  --scope-muted: #91aec8;
+  --scope-hover: #23435f66;
+  --scope-blue: #82c4f4;
+  --scope-green: #7ed6bb;
+  --scope-amber: #f0bc73;
+  --scope-grey: #7e94a9;
+  border-color: #304a62;
+  box-shadow: inset 0 0 90px #05121f66;
+}
+.scope-scene { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
+.scope-scene::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: linear-gradient(var(--scope-grid) 1px, transparent 1px), linear-gradient(90deg, var(--scope-grid) 1px, transparent 1px);
+  background-size: 32px 32px; opacity: .23;
+  mask-image: radial-gradient(ellipse at 48% 52%, #000 18%, transparent 75%);
+}
+.scope-rings {
+  position: absolute; width: 560px; height: 560px; left: 47%; top: 52%;
+  transform: translate(-50%, -50%); border-radius: 50%;
+}
+.scope-ring { position: absolute; border: 1px solid var(--scope-ring); border-radius: 50%; opacity: .28; }
+.ring-1 { inset: 36%; }
+.ring-2 { inset: 23%; }
+.ring-3 { inset: 10%; }
+.ring-4 { inset: -3%; border-style: dashed; opacity: .16; }
+.scope-crosshair { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; transform: translate(-50%,-50%); }
+.scope-crosshair::before,.scope-crosshair::after { content: ''; position: absolute; background: var(--scope-ring); opacity: .65; }
+.scope-crosshair::before { width: 16px; height: 1px; top: 7px; }
+.scope-crosshair::after { width: 1px; height: 16px; left: 7px; }
+.scope-horizon { position: absolute; inset: 52% 0 auto; border-top: 1px solid var(--scope-ring); opacity: .16; transform: rotate(-18deg); }
+.scope-sweep {
+  position: absolute; inset: 0; border-radius: 50%; opacity: .15;
+  background: conic-gradient(from 0deg, transparent 0deg 325deg, var(--scope-blue) 358deg, transparent 359deg);
+  mask-image: radial-gradient(circle, transparent 8%, #000 20% 65%, transparent 72%);
+}
+.scope-topline { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 18px 21px 0; }
+.scope-track-count { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--scope-muted); }
+.scope-track-count strong { color: var(--scope-text); font-size: 13px; font-weight: 600; }
+.scope-signal { width: 5px; height: 5px; background: var(--scope-green); border-radius: 50%; box-shadow: 0 0 0 4px #7ed6bb12; margin-right: 2px; }
+.scope-window { font-size: 10px; color: var(--scope-muted); }
+.scope-field {
+  position: absolute; inset: 65px 17px 57px;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 1fr;
+  column-gap: 8px; row-gap: 12px; align-items: center;
+}
+.scope-flight {
+  --track-color: var(--scope-blue);
+  position: relative; display: flex; align-items: center; gap: 11px;
+  padding: 10px 8px 10px 17px; min-width: 0; min-height: 76px;
+  border: 1px solid transparent; border-radius: 9px; text-align: left; background: transparent;
+  color: var(--scope-text); transition: background .18s, border-color .18s, transform .18s;
+}
+.scope-flight.reviewing { --track-color: var(--scope-green); }
+.scope-flight.blocked { --track-color: var(--scope-amber); }
+.scope-flight.idle { --track-color: var(--scope-grey); }
+.scope-flight:hover,.scope-flight:focus-visible { background: var(--scope-hover); border-color: var(--scope-ring); transform: translateY(-2px); }
+.scope-flight:focus-visible { outline: 2px solid var(--track-color); outline-offset: 3px; }
+.scope-tail {
+  position: absolute; width: 62px; height: 34px; left: -12px; top: 44px;
+  border-top: 1px solid var(--track-color); border-radius: 70% 0 0; transform: rotate(-35deg); transform-origin: right top;
+  opacity: .25; pointer-events: none;
+}
+.scope-tail::before { content: ''; position: absolute; width: 35px; height: 1px; top: -1px; right: 0; background: var(--track-color); box-shadow: 0 0 7px var(--track-color); opacity: .7; }
+.scope-beacon { position: relative; display: grid; place-items: center; flex: 0 0 29px; height: 29px; color: var(--track-color); }
+.scope-halo { position: absolute; inset: 0; border-radius: 50%; background: currentColor; opacity: .08; box-shadow: 0 0 0 7px currentColor; }
+.airspace .traffic-scope .scope-symbol { position: static; width: 23px; height: 23px; overflow: visible; filter: drop-shadow(0 0 6px var(--track-color)); }
+.airspace .traffic-scope .scope-symbol path { fill: currentColor; stroke: none; opacity: 1; }
+.scope-flight.reviewing .scope-symbol { transform: rotate(20deg); }
+.scope-flight.blocked .scope-symbol { transform: rotate(-70deg); }
+.scope-flight.idle .scope-symbol { opacity: .45; filter: none; }
+.scope-flight.idle .scope-tail { opacity: .1; }
+.scope-flight.idle .scope-halo { display: none; }
+.scope-callout { display: flex; flex-direction: column; min-width: 0; position: relative; }
+.scope-identity { display: flex; align-items: center; gap: 8px; }
+.scope-identity strong { font-size: 15px; line-height: 1.25; letter-spacing: .2px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.scope-state-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--track-color); opacity: .85; }
+.scope-phase { color: var(--track-color); font-size: 11px; margin-top: 4px; line-height: 1.2; font-weight: 500; }
+.scope-metadata { display: flex; align-items: center; gap: 3px; margin-top: 7px; color: var(--scope-muted); font-size: 11px; line-height: 1; }
+.scope-agent-count { margin-right: 5px; white-space: nowrap; }
+.scope-agent-pip { display: block; width: 3px; height: 7px; border-radius: 2px; background: var(--track-color); opacity: .65; }
+.scope-statusbar { position: absolute; inset: auto 20px 17px; display: flex; justify-content: space-between; gap: 8px; border-top: 1px solid var(--scope-grid); padding-top: 13px; }
+.scope-status { display: flex; align-items: center; gap: 5px; color: var(--scope-muted); font-size: 10px; white-space: nowrap; }
+.scope-status i { width: 4px; height: 4px; border-radius: 50%; background: var(--scope-blue); }
+.scope-status.reviewing i { background: var(--scope-green); }
+.scope-status.blocked i { background: var(--scope-amber); }
+.scope-status.idle i { background: var(--scope-grey); }
+.scope-status strong { font-size: 11px; color: var(--scope-text); font-weight: 600; margin-left: 2px; }
+.scope-overflow { position: absolute; bottom: 47px; right: 22px; color: var(--scope-muted); font-size: 9px; }
+.scope-empty { position: absolute; inset: 70px 20px 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--scope-muted); }
+.scope-empty strong { color: var(--scope-text); font-size: 15px; font-weight: 500; }
+.scope-empty span { font-size: 12px; }
+.scope-empty .scope-symbol { color: var(--scope-blue); margin-bottom: 5px; }
+.airspace .map-footer { font-size: 10px; padding-top: 14px; padding-bottom: 17px; }
+@media(min-width:1450px) { .scope-field { left: 25px; right: 25px; column-gap: 20px; } .scope-identity strong { font-size: 16px; } }
+@media(max-width:1150px) and (min-width:801px) { .scope-field { grid-template-columns: repeat(2,minmax(0,1fr)); } .airspace .traffic-scope { min-height: 448px; flex-basis: 448px; } }
+@media(max-width:560px) {
+  .airspace .traffic-scope { margin: 0 10px; min-height: 444px; flex-basis: 444px; }
+  .scope-field { inset: 64px 12px 61px; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 5px 4px; }
+  .scope-flight { padding-left: 12px; gap: 10px; min-height: 73px; }
+  .scope-topline { padding: 17px 17px 0; gap: 8px; }
+  .scope-window { font-size: 9px; }
+  .scope-track-count { font-size: 10px; }
+  .scope-identity strong { font-size: 14px; }
+  .scope-statusbar { left: 16px; right: 16px; gap: 7px; }
+  .scope-status { gap: 4px; font-size: 9px; }
+  .scope-status strong { font-size: 10px; }
+  .scope-beacon { flex-basis: 24px; height: 24px; }
+  .scope-rings { width: 480px; height: 480px; }
+  .scope-overflow { bottom: 47px; right: 16px; font-size: 8px; }
+}
+@media(prefers-reduced-motion:no-preference) {
+  .traffic-scope.is-scanning .scope-sweep { animation: scopeSweep 22s linear infinite; }
+  .traffic-scope.is-scanning .scope-flight:not(.idle) .scope-halo { animation: scopeSignal 4s ease-out infinite; }
+  .scope-flight:nth-child(3n) .scope-halo { animation-delay: -1.6s!important; }
+  .scope-flight:nth-child(2n) .scope-halo { animation-delay: -3s!important; }
+  @keyframes scopeSweep { to { transform: rotate(360deg); } }
+  @keyframes scopeSignal { 0%,100% { opacity: .07; transform: scale(.9); } 55% { opacity: .02; transform: scale(1.35); } }
+}
+@media(prefers-reduced-motion:reduce) { .traffic-scope * { animation: none!important; transition: none!important; } }
+.scope-identity strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scope-statusbar { flex-wrap: wrap; }

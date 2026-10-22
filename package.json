@@ -1,15 +1,44 @@
 {
   "name": "atc-github",
-  "version": "0.1.0",
-  "private": true,
-  "description": "GitHub-native coordination for independent coding agents: claim issues, spot overlapping work and agree how to share it, with typed commands only",
+  "version": "0.5.0",
+  "description": "Agent Traffic Control: see who is working on what in a GitHub repository, catch merge conflicts between agents before they happen, and coordinate issue work without a bot or server",
+  "keywords": [
+    "github",
+    "agents",
+    "coding-agents",
+    "claude-code",
+    "mcp",
+    "merge-conflicts",
+    "worktrees",
+    "coordination"
+  ],
   "type": "module",
-  "engines": { "node": ">=22.16.0" },
-  "bin": { "atc": "./src/cli/main.js" },
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "bin": {
+    "atc": "./src/cli/main.js",
+    "atc-github": "./src/cli/main.js",
+    "atc-mcp": "./src/mcp/server.js"
+  },
+  "files": [
+    "src/",
+    "skills/atc/SKILL.md",
+    "docs/",
+    "examples/",
+    "README.md",
+    "SECURITY.md",
+    "LICENSE",
+    "site/",
+    ".claude-plugin/",
+    "hooks/"
+  ],
   "scripts": {
     "test": "node --test --test-concurrency=1 tests/*.test.js",
     "test:coverage": "node --experimental-test-coverage --test --test-concurrency=1 tests/*.test.js",
-    "check": "node scripts/checkStyle.js && npm test"
+    "check": "node scripts/checkStyle.js && npm test",
+    "site": "node src/site/main.js",
+    "demo": "node scripts/demo/main.js"
   },
   "license": "Apache-2.0"
 }

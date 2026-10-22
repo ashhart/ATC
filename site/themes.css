@@ -1,0 +1,374 @@
+:root[data-theme=dark] {
+  --ink:#dce9f6;
+  --muted:#9db1c8;
+  --subtle:#819bb6;
+  --line:#293c53;
+  --paper:#14263a;
+  --ground:#0d1b2c;
+  --navy:#a7c8e8;
+  --blue:#76a4de;
+  --ice:#213e5a;
+  --teal:#7fc5b6;
+  --amber:#dfb578;
+  --rose:#e394a4;
+  --shadow:0 10px 30px #00000010
+}
+ [data-theme=dark] .sidebar {
+  background:#102035
+}
+[data-theme=dark] .topbar {
+  background:#102035c9
+}
+[data-theme=dark] .brand-symbol i {
+  background:#b6d1eb
+}
+[data-theme=dark] .brand-symbol i:nth-child(2) {
+  background:#6c9ac3
+}
+[data-theme=dark] .brand-symbol i:nth-child(3) {
+  background:#3b5d7e
+}
+[data-theme=dark] .brand-note,[data-theme=dark] .workspace-picker small,[data-theme=dark] .agent-guide p,[data-theme=dark] .privacy-button {
+  color:#9bb0c7
+}
+[data-theme=dark] .workspace-picker {
+  background:#14283e
+}
+[data-theme=dark] .workspace-icon {
+  background:#223e58;
+  color:#a7c5e1
+}
+[data-theme=dark] .nav-item {
+  color:#93abc4
+}
+[data-theme=dark] .nav-item.active {
+  background:#213d58;
+  color:#cee2f5
+}
+[data-theme=dark] .nav-item:hover {
+  background:#1b334d
+}
+[data-theme=dark] .nav-count {
+  background:#294865;
+  color:#c7dcef
+}
+[data-theme=dark] .agent-guide {
+  background:#152b42;
+  border-color:#2a4057
+}
+[data-theme=dark] .guide-mark,[data-theme=dark] .text-button {
+  color:#a8c9e8
+}
+[data-theme=dark] .sidebar-foot {
+  color:#859bb2
+}
+[data-theme=dark] .breadcrumb {
+  color:#92a8c0
+}
+[data-theme=dark] .breadcrumb strong {
+  color:#c1d3e5
+}
+[data-theme=dark] .connection {
+  color:#a8c8bc
+}
+[data-theme=dark] .icon-button {
+  background:#1a3047;
+  color:#bfd5eb
+}
+[data-theme=dark] .primary-button {
+  background:#aecde9;
+  color:#142d46;
+  box-shadow:none
+}
+[data-theme=dark] .primary-button:hover {
+  background:#c6def2
+}
+[data-theme=dark] .location-label,[data-theme=dark] .page-intro p {
+  color:#91a8c0
+}
+[data-theme=dark] .intro-meta small {
+  color:#91a8c0
+}
+[data-theme=dark] .demo-notice {
+  background:#172f49;
+  border-color:#2a4561;
+  color:#a2bad2
+}
+[data-theme=dark] .demo-notice strong {
+  color:#c4d9ee
+}
+[data-theme=dark] .notice-icon {
+  color:#96b8d8
+}
+[data-theme=dark] .feed-warning {
+  background:#3b2f20;
+  border-color:#665136;
+  color:#e4c590
+}
+[data-theme=dark] .metrics {
+  background:var(--paper)
+}
+[data-theme=dark] .metric-label,[data-theme=dark] .metric-detail {
+  color:#9fb4cb
+}
+[data-theme=dark] .info {
+  color:#92abc6
+}
+[data-theme=dark] .mini-signal i {
+  background:#6f9b92
+}
+[data-theme=dark] .panel-heading p,[data-theme=dark] .flight-heading p {
+  color:#9aafc7
+}
+[data-theme=dark] .live-pill {
+  border-color:#2d455f;
+  color:#9fb8d0
+}
+[data-theme=dark] .radar {
+  background:#11283e
+}
+[data-theme=dark] .radar:before {
+  background-image:linear-gradient(#29455e77 1px,transparent 1px),linear-gradient(90deg,#29455e77 1px,transparent 1px);
+  opacity:.7
+}
+[data-theme=dark] .flight-marker {
+  background:#1c3852;
+  border-color:#3a5873;
+  box-shadow:0 6px 20px #0000001c
+}
+[data-theme=dark] .flight-marker:hover {
+  background:#254763
+}
+[data-theme=dark] .flight-marker small {
+  color:#a2bad1
+}
+[data-theme=dark] .marker-dot {
+  background:#284f70;
+  color:#bbd7ef
+}
+[data-theme=dark] .flight-marker.reviewing .marker-dot {
+  background:#254e48;
+  color:#b1dfcf
+}
+[data-theme=dark] .flight-marker.blocked .marker-dot {
+  background:#584329;
+  color:#f2d6a7
+}
+[data-theme=dark] .flight-marker.idle .marker-dot {
+  background:#304256;
+  color:#a0b5ca
+}
+[data-theme=dark] .radar-watermark,[data-theme=dark] .radar-compass,[data-theme=dark] .map-footer {
+  color:#86a0bb
+}
+[data-theme=dark] .panel-count,[data-theme=dark] .muted-count {
+  background:#233c55;
+  color:#adc4dc
+}
+[data-theme=dark] .offer-card {
+  border-color:#2c435b;
+  background:#172b40
+}
+[data-theme=dark] .offer-card.warning {
+  background:#302c25;
+  border-color:#504536
+}
+[data-theme=dark] .offer-tag {
+  color:#9bbce0
+}
+[data-theme=dark] .offer-tag.amber {
+  color:#d6b077
+}
+[data-theme=dark] .offer-card p,[data-theme=dark] .offer-card button {
+  color:#a6bdd3
+}
+[data-theme=dark] .coordination-foot {
+  color:#90a7c0
+}
+[data-theme=dark] .search-field,[data-theme=dark] .search-field input {
+  color:#c6d8e8
+}
+[data-theme=dark] .search-field input::placeholder {
+  color:#8ca6bf
+}
+[data-theme=dark] .search-field kbd {
+  border-color:#34506b
+}
+[data-theme=dark] .filter {
+  color:#9fb3c9
+}
+[data-theme=dark] .filter.active {
+  background:#223d59;
+  border-color:#33526e;
+  color:#d0e3f4
+}
+[data-theme=dark] .filter:hover {
+  background:#1c344e
+}
+[data-theme=dark] .table-heading {
+  background:#102238;
+  border-color:#293d54;
+  color:#9db3ca
+}
+[data-theme=dark] .flight-row {
+  border-color:#243a51
+}
+[data-theme=dark] .flight-row:hover {
+  background:#1a334e
+}
+[data-theme=dark] .issue-symbol {
+  background:#1d354d;
+  border-color:#355069;
+  color:#a9c3db
+}
+[data-theme=dark] .flight-id,[data-theme=dark] .last-seen,[data-theme=dark] .agent-stack {
+  color:#95adc6
+}
+[data-theme=dark] .agent-dot {
+  background:#2c4865;
+  border-color:var(--paper);
+  color:#cae0f3
+}
+[data-theme=dark] .scope-chip {
+  background:#1d344b;
+  border-color:#304960;
+  color:#a9bfd5
+}
+[data-theme=dark] .state-badge {
+  background:#223f5b;
+  color:#a2c4e5
+}
+[data-theme=dark] .state-badge.reviewing {
+  background:#203f3c;
+  color:#a4d3c3
+}
+[data-theme=dark] .state-badge.blocked {
+  background:#473a27;
+  color:#e3c18b
+}
+[data-theme=dark] .state-badge.idle {
+  background:#26374a;
+  color:#9fb0c4
+}
+[data-theme=dark] .row-arrow {
+  color:#8ca6bf
+}
+[data-theme=dark] .table-footer,[data-theme=dark] .quiet-label {
+  color:#8fa8c1
+}
+[data-theme=dark] .activity-icon {
+  background:#223d56;
+  color:#adcae4
+}
+[data-theme=dark] .activity-item p {
+  color:#96aec7
+}
+[data-theme=dark] .page-footer {
+  color:#8ba1ba
+}
+[data-theme=dark] .brand-small {
+  color:#99b2ca
+}
+[data-theme=dark] .empty-state {
+  color:#a2b8cd
+}
+[data-theme=dark] .dialog {
+  background:#14283d;
+  border-color:#385068;
+  box-shadow:0 25px 80px #00000055
+}
+[data-theme=dark] .dialog-brand {
+  color:#c6ddef
+}
+[data-theme=dark] .dialog p {
+  color:#aac0d6
+}
+[data-theme=dark] .dialog input {
+  background:#102237;
+  border-color:#3b536d;
+  color:#dce9f6
+}
+[data-theme=dark] .dialog input::placeholder {
+  color:#91a9c2
+}
+[data-theme=dark] .dialog .form-error {
+  color:#edacb6
+}
+[data-theme=dark] .command-box {
+  background:#102337;
+  border-color:#304960
+}
+[data-theme=dark] .command-box button {
+  color:#b5d5ef
+}
+[data-theme=dark] .detail-grid small,[data-theme=dark] .detail-agent {
+  color:#9fb6cc
+}
+[data-theme=dark] .toast {
+  background:#1c354e;
+  border-color:#42617f;
+  color:#d1e6f6
+}
+[data-theme=dark] .skip-link {
+  background:#18324b;
+  color:#fff
+}
+ @media(max-width:560px) {
+  .topbar-actions {
+    gap:9px
+  }
+  .connection #connectionLabel {
+    display:none
+  }
+  .primary-button.compact {
+    display:block;
+    font-size:10px;
+    padding:8px 10px
+  }
+  .breadcrumb strong {
+    font-size:0
+  }
+  .breadcrumb strong:before {
+    font-size:25px;
+    margin-right:0
+  }
+  [data-theme=dark] .sidebar {
+    background:#102035f5
+  }
+}
+ :root:not([data-theme=dark]) {
+  --muted:#596c81
+}
+ :root:not([data-theme=dark]) :is(.page-intro p,.location-label,.metric-label,.metric-detail,.panel-heading p,.flight-heading p,.live-pill,.flight-marker small,.map-footer,.radar-watermark,.radar-compass,.offer-card p,.coordination-foot,.muted-count,.table-heading,.last-seen,.flight-id,.agent-stack,.scope-chip,.table-footer,.activity-item p,.quiet-label,.page-footer,.sidebar-foot,.privacy-button,.dialog p,.detail-grid small,.detail-agent,.empty-state,.intro-meta small,.search-field,.breadcrumb) {
+  color:#52667d
+}
+ :root:not([data-theme=dark]) :is(.demo-notice,.info,.nav-item,.icon-button,.notice-icon,.offer-symbol,.panel-count,.row-arrow) {
+  color:#536b84
+}
+ :root:not([data-theme=dark]) .state-badge {
+  color:#355e8b
+}
+:root:not([data-theme=dark]) .state-badge.reviewing {
+  color:#326e5e
+}
+:root:not([data-theme=dark]) .state-badge.blocked {
+  color:#825923
+}
+:root:not([data-theme=dark]) .state-badge.idle {
+  color:#596b7d
+}
+ :root:not([data-theme=dark]) .offer-tag {
+  color:#456b8e
+}
+:root:not([data-theme=dark]) .offer-tag.amber {
+  color:#825923
+}
+:root:not([data-theme=dark]) .filter {
+  color:#52667d
+}
+:root:not([data-theme=dark]) .agent-dot {
+  color:#456783
+}
+:root:not([data-theme=dark]) .brand-small {
+  color:#52667d
+}

@@ -1,0 +1,17 @@
+{
+  "name": "atc",
+  "displayName": "Agent Traffic Control",
+  "version": "0.5.0",
+  "description": "See who is working on what in a GitHub repository, claim issues, and catch overlapping or conflicting changes before opening a pull request.",
+  "author": {
+    "name": "Agent Traffic Control contributors"
+  },
+  "license": "Apache-2.0",
+  "keywords": ["github", "coordination", "agents", "pull-requests", "merge-conflicts"],
+  "mcpServers": {
+    "atc": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/src/mcp/server.js"]
+    }
+  }
+}

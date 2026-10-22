@@ -15,10 +15,12 @@ test('overlap compares your changes and pull requests with everyone else\'s, by 
   const git = stubGit(['src/core/engine.js', 'src/core/parser.js', 'README.md']);
   const report = await cli(fake, 'alice', ['overlap'], { git });
   assert.deepEqual(report, {
+    complete: true, limitations: [],
     changedFiles: 3,
     myPullRequests: [mine.number],
-    overlaps: [{ source: 'workingTree', pullRequest: theirs.number, sharedFiles: 1, areas: ['core'] },
-      { source: mine.number, pullRequest: theirs.number, sharedFiles: 1, areas: ['docs'] }]
+    overlaps: [{ source: 'workingTree', pullRequest: theirs.number, sharedFiles: 1, areas: [1], conflict: 'unknown', conflictFiles: null },
+      { source: mine.number, pullRequest: theirs.number, sharedFiles: 1, areas: [2], conflict: 'unknown', conflictFiles: null }],
+    worktrees: 0, worktreeOverlaps: []
   });
   assert.equal(JSON.stringify(report).includes('engine'), false);
   const noClone = { remoteFor: () => { throw new Error('not a repository'); } };

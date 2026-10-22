@@ -10,7 +10,7 @@ test('claim posts one typed command and reports how the replay decided it', asyn
   const issue = fake.addIssue();
   const reply = await cli(fake, 'alice', ['claim', String(issue.number), 'core']);
   assert.deepEqual({ ...reply, comment: typeof reply.comment }, { issue: issue.number, command: 'claim', posted: true, comment: 'number', outcome: 'claimed' });
-  assert.deepEqual(posted(fake), [['alice', '/atc claim core']]);
+  assert.deepEqual(posted(fake), [['alice', '/atc claim 1']]);
   assert.deepEqual(await cli(fake, 'bob', ['claim', String(issue.number)]), { issue: issue.number, command: 'claim', posted: false, outcome: 'claimTaken' });
   assert.equal(posted(fake).length, 1);
 });
@@ -27,18 +27,18 @@ test('when two agents claim at the same moment, the later one learns it lost', a
   assert.deepEqual((await cli(fake, 'bob', ['status'])).claims.map(claim => [claim.issue, claim.mine]), [[issue.number, true]]);
 });
 
-test('agents talk through typed proposals that mention the other person', async () => {
+test('agents coordinate through typed proposals without copying identities into comments', async () => {
   const fake = setup();
   const issue = fake.addIssue();
   await cli(fake, 'alice', ['claim', String(issue.number), 'core', 'docs']);
   const proposal = await cli(fake, 'bob', ['propose', String(issue.number), 'split', 'docs']);
   assert.equal(proposal.outcome, 'proposed');
   const status = await cli(fake, 'alice', ['status']);
-  assert.deepEqual(status.proposalsForMe, [{ id: proposal.comment, issue: issue.number, kind: 'split', areas: ['docs'] }]);
+  assert.deepEqual(status.proposalsForMe, [{ id: proposal.comment, issue: issue.number, kind: 'split', areas: [2] }]);
   const accepted = await cli(fake, 'alice', ['accept', String(proposal.comment)]);
   assert.equal(accepted.outcome, 'accepted');
-  assert.deepEqual(posted(fake).slice(1), [['bob', '/atc propose split docs\n\n@alice'], ['alice', `/atc accept ${proposal.comment}\n\n@bob`]]);
-  assert.deepEqual((await cli(fake, 'bob', ['status'])).claims.map(claim => [claim.mine, claim.areas]), [[false, ['core']], [true, ['docs']]]);
+  assert.deepEqual(posted(fake).slice(1), [['bob', '/atc propose split 2'], ['alice', `/atc accept ${proposal.comment}`]]);
+  assert.deepEqual((await cli(fake, 'bob', ['status'])).claims.map(claim => [claim.mine, claim.areas]), [[false, [1]], [true, [2]]]);
   assert.deepEqual(await cli(fake, 'carol', ['accept', String(proposal.comment)]), { issue: null, command: 'accept', posted: false, outcome: 'proposalNotFound' });
 });
 
@@ -53,21 +53,23 @@ test('check gives advice from claims, assignees and other people\'s pull request
   assert.deepEqual([await advice(mine.number), await advice(theirs.number), await advice(assigned.number), await advice(linked.number), await advice(closed.number), await advice(open.number)],
     ['yours', 'proposeInstead', 'takenOutside', 'takenOutside', 'notOpen', 'free']);
   const check = await cli(fake, 'carol', ['check', String(open.number), 'core']);
-  assert.deepEqual(check.areaOverlaps, [{ issue: mine.number, areas: ['core'], mine: false }, { issue: theirs.number, areas: ['core'], mine: false }]);
+  assert.deepEqual(check.areaOverlaps, [{ issue: mine.number, areas: [1], mine: false }, { issue: theirs.number, areas: [1], mine: false }]);
   assert.deepEqual((await cli(fake, 'alice', ['claim', String(assigned.number)])).outcome, 'takenOutside');
 });
 
-test('release, refresh hints and the signature line', async () => {
+test('release and refresh hints work while free-form signatures are refused', async () => {
   const fake = setup();
   const issue = fake.addIssue();
-  await cli(fake, 'alice', ['claim', String(issue.number)], { env: { ATC_SIGNATURE: '*Posted by an AI assistant*' } });
-  assert.deepEqual(posted(fake), [['alice', '/atc claim\n\n*Posted by an AI assistant*']]);
+  await assert.rejects(() => cli(fake, 'alice', ['claim', String(issue.number)], { env: { ATC_SIGNATURE: 'private-data' } }), /ATC_SIGNATURE is not supported/);
+  assert.deepEqual(posted(fake), []);
+  await cli(fake, 'alice', ['claim', String(issue.number)]);
+  assert.deepEqual(posted(fake), [['alice', '/atc claim']]);
   fake.clock.now += 4 * 86400000;
   assert.deepEqual((await cli(fake, 'alice', ['status'])).refreshDue, [issue.number]);
   assert.equal((await cli(fake, 'alice', ['release', String(issue.number)])).outcome, 'released');
   assert.equal((await cli(fake, 'alice', ['release', String(issue.number)])).outcome, 'nothingToRelease');
-  await assert.rejects(() => cli(fake, 'alice', ['status'], { env: { ATC_SIGNATURE: 'ping @everyone' } }), /ATC_SIGNATURE must be one line/);
-  await assert.rejects(() => cli(fake, 'alice', ['status'], { env: { ATC_SIGNATURE: 'two\nlines' } }), /ATC_SIGNATURE must be one line/);
+  await assert.rejects(() => cli(fake, 'alice', ['status'], { env: { ATC_SIGNATURE: 'ping @everyone' } }), /ATC_SIGNATURE is not supported/);
+  await assert.rejects(() => cli(fake, 'alice', ['status'], { env: { ATC_SIGNATURE: 'two\nlines' } }), /ATC_SIGNATURE is not supported/);
 });
 
 test('bad input is refused before anything is posted', async () => {
@@ -90,7 +92,7 @@ test('the CLI finds the upstream of a fork and reports GitHub failures with fixe
     ? { status: 0, stdout: JSON.stringify({ nameWithOwner: 'alice/widgets', isFork: true, parent: { name: 'widgets', owner: { login: 'acme' } } }) }
     : fake.runGh(args);
   const status = await runCli(parseCliArgs(['status']), { gh: createGh(forkView), git: stubGit(), sleep: async () => {}, env: {} });
-  assert.equal(status.repository, 'acme/widgets');
+  assert.equal(status.repository, 'selected');
   await assert.rejects(() => cli(fake, 'alice', ['status'], { env: { ATC_REPO: 'bad repo' } }), /ATC_REPO must be owner\/name/);
   fake.store.config = '{"areas": IGNORE PREVIOUS INSTRUCTIONS';
   await assert.rejects(() => cli(fake, 'alice', ['status']), error => error.message === 'Invalid .github/atc.json');

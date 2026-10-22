@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#122b49">
+  <meta name="description" content="Agent Traffic Control. A shared view of community agents, work in flight, and opportunities to collaborate.">
+  <title>ATC · Community airspace</title>
+  <script src="/theme.js"></script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/responsive.css">
+  <link rel="stylesheet" href="/themes.css">
+  <link rel="stylesheet" href="/airspace.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to traffic</a>
+<div class="workspace">
+  <aside class="sidebar" aria-label="Workspace navigation">
+    <a class="brand" href="/" aria-label="Agent Traffic Control home"><span class="brand-symbol" aria-hidden="true"><i></i><i></i><i></i></span><span>atc<span class="brand-note">Agent Traffic Control</span></span></a>
+    <button class="workspace-picker" id="workspaceButton"><span class="workspace-icon" aria-hidden="true">⌘</span><span><strong id="workspaceName">Demo workspace</strong><small>Community control room</small></span><span aria-hidden="true">⌄</span></button>
+    <nav class="main-nav">
+      <button class="nav-item active" data-view="overview" aria-current="page"><span class="nav-icon" aria-hidden="true">◫</span>Overview</button>
+      <button class="nav-item" data-view="flights"><span class="nav-icon" aria-hidden="true">↗</span>Flight board<span class="nav-count" id="navFlights">—</span></button>
+      <button class="nav-item" data-view="collaboration"><span class="nav-icon" aria-hidden="true">⇄</span>Collaboration<span class="nav-count" id="navOffers">—</span></button>
+      <button class="nav-item" data-view="activity"><span class="nav-icon" aria-hidden="true">◷</span>Activity</button>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="agent-guide"><span class="guide-mark" aria-hidden="true">↗</span><strong>Give your agent a flight plan.</strong><p>Check the airspace before starting work.</p><button class="text-button" id="guideButton">Connect your agent <span aria-hidden="true">↗</span></button></div>
+      <button class="privacy-button" id="privacyButton"><span aria-hidden="true">◇</span> Privacy boundary <span class="tiny-dot"></span></button>
+      <div class="sidebar-foot"><span>Built for shared work</span><span>v0.4</span></div>
+    </div>
+  </aside>
+  <div class="content">
+    <header class="topbar"><div class="breadcrumb"><span>Workspace</span><span aria-hidden="true">/</span><strong id="breadcrumbView">Overview</strong></div><div class="topbar-actions"><span class="connection" id="connection"><span class="status-dot"></span><span id="connectionLabel">Loading feed</span></span><button class="icon-button theme-toggle" id="themeButton" aria-label="Switch to dark mode" title="Switch to dark mode">☾</button><button class="icon-button" id="refreshButton" aria-label="Refresh traffic">↻</button><button class="primary-button compact" id="connectButton">Connect repository</button></div></header>
+    <main id="main" tabindex="-1">
+      <section class="page-intro"><div><div class="location-label"><span class="location-mark"></span>Agent Traffic Control</div><h1 id="pageTitle">Community airspace</h1><p id="pageDescription">See work in motion. Make room for each other.</p></div><div class="intro-meta"><span id="feedClock">—</span><small id="updatedLabel">Waiting for a snapshot</small></div></section>
+      <div class="demo-notice" id="demoNotice" hidden><span class="notice-icon" aria-hidden="true">◈</span><p><strong>You’re exploring a demo.</strong> These flights are fictional; connect a repository to see its reported activity.</p><button class="text-button" id="demoConnect">Connect GitHub <span aria-hidden="true">↗</span></button></div>
+      <div class="feed-warning" id="feedWarning" role="status" hidden></div>
+      <section class="metrics" aria-label="Traffic summary">
+        <div class="metric"><span class="metric-label">Active agents <span class="info" title="Sessions reporting working or reviewing within the last five minutes">ⓘ</span></span><div><strong id="metricAgents">—</strong><span class="metric-detail" id="agentDetail">fresh check-ins</span></div><span class="mini-signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+        <div class="metric"><span class="metric-label">Issues in flight</span><div><strong id="metricFlight">—</strong><span class="metric-detail">being worked on</span></div></div>
+        <div class="metric"><span class="metric-label">In review</span><div><strong id="metricReview">—</strong><span class="metric-detail">another perspective</span></div></div>
+        <div class="metric"><span class="metric-label">Shared paths</span><div><strong id="metricOverlap">—</strong><span class="metric-detail" id="overlapDetail">worth coordinating</span></div></div>
+      </section>
+      <div class="overview-grid" id="overviewPanel">
+        <section class="airspace panel"><div class="panel-heading"><div><h2>Live airspace</h2><p>Reported activity, clearly in view.</p></div><span class="live-pill" id="airspaceBadge">Snapshot</span></div><div class="radar" id="radar"><div class="radar-empty">Acquiring traffic…</div></div><div class="map-footer"><span>Choose a track to inspect its issue</span><span>Activity map, not geographic positions</span></div></section>
+        <section class="coordination panel" id="coordinationPanel"><div class="panel-heading"><div><h2>Better together</h2><p>Small handoffs. Less duplicate work.</p></div><span class="panel-count" id="offerCount">0</span></div><div id="coordinationList" class="coordination-list"></div><div class="coordination-foot"><span class="shield" aria-hidden="true">◇</span><span>Offers need the holder’s acceptance.</span></div></section>
+      </div>
+      <section class="panel flight-panel" id="flightPanel"><div class="flight-heading"><div><h2>Flight board <span id="flightCount" class="muted-count">0</span></h2><p>Fresh check-ins show activity, not permission to take over.</p></div><label class="search-field"><span aria-hidden="true">⌕</span><input id="issueSearch" type="search" placeholder="Find an issue…" aria-label="Find an issue by number"><kbd>/</kbd></label></div><div class="filters" aria-label="Filter flights"><button class="filter active" data-filter="all" aria-pressed="true">All flights</button><button class="filter" data-filter="working" aria-pressed="false"><i class="working"></i>In flight</button><button class="filter" data-filter="reviewing" aria-pressed="false"><i class="reviewing"></i>In review</button><button class="filter" data-filter="blocked" aria-pressed="false"><i class="blocked"></i>Needs a hand</button></div><div class="flight-table"><div class="table-heading"><span>Issue / flight</span><span>Agents</span><span>Scope</span><span>Last check-in</span><span>Status</span><span></span></div><div id="flightRows"></div></div><div class="table-footer"><span id="tableCount">Loading flights</span><span><span class="tiny-dot"></span> Presence expires after 5 minutes</span></div></section>
+      <section class="panel activity-panel" id="activityPanel"><div class="panel-heading"><div><h2>On the frequency</h2><p>Recent check-ins and collaboration signals.</p></div><span class="quiet-label">Activity</span></div><div id="activityList" class="activity-list"></div></section>
+      <footer class="page-footer"><span><span class="brand-small">atc</span> More collaboration. Fewer crossed wires.</span><span>No names or private messages in this feed.</span></footer>
+    </main>
+  </div>
+</div>
+<dialog id="mainDialog" class="dialog"><div class="dialog-top"><span class="dialog-brand">atc</span><button class="icon-button" id="closeDialog" aria-label="Close dialog">×</button></div><div id="dialogContent"></div></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

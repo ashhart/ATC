@@ -1,3 +1,5 @@
+import { graphKind, graphResponse } from './fakeGraph.js';
+
 export function createFakeGithub({ repository = 'acme/widgets' } = {}) {
   const base = `/repos/${repository}`;
   const clock = { now: Date.UTC(2026, 9, 17, 12) };
@@ -6,9 +8,9 @@ export function createFakeGithub({ repository = 'acme/widgets' } = {}) {
   const iso = () => new Date(clock.now).toISOString();
   const account = login => ({ login, type: login.endsWith('[bot]') ? 'Bot' : 'User' });
 
-  function addIssue({ author = 'maintainer', title = 'Something to do', body = '', files = null, assignees = [] } = {}) {
+  function addIssue({ author = 'maintainer', title = 'Something to do', body = '', files = null, assignees = [], labels = [], draft = false } = {}) {
     const number = store.nextNumber++;
-    const issue = { number, title, body, user: account(author), state: 'open', locked: false, assignees: assignees.map(account),
+    const issue = { number, title, body, user: account(author), state: 'open', locked: false, assignees: assignees.map(account), labels, draft, comments: 0,
       created_at: iso(), updated_at: iso() };
     if (files) {
       issue.pull_request = { url: `https://api.github.com${base}/pulls/${number}` };
@@ -24,6 +26,8 @@ export function createFakeGithub({ repository = 'acme/widgets' } = {}) {
     const comment = { id, user: account(author), body, author_association: store.roles[author] || 'NONE', created_at: iso(), updated_at: iso(),
       html_url: `https://github.com/${repository}/${kind}/${number}#issuecomment-${id}`, issue_url: `https://api.github.com${base}/issues/${number}` };
     store.comments.push(comment);
+    const issue = store.issues.get(number);
+    if (issue) issue.comments += 1;
     return comment;
   }
 
@@ -44,8 +48,9 @@ export function createFakeGithub({ repository = 'acme/widgets' } = {}) {
     let match;
     if (path === '/contents/.github/atc.json' && method === 'GET') {
       if (store.config === null) return [404, { message: 'Not Found' }];
-      const content = Buffer.from(typeof store.config === 'string' ? store.config : JSON.stringify(store.config)).toString('base64');
-      return [200, { type: 'file', encoding: 'base64', size: content.length, content }];
+      const text = typeof store.config === 'string' ? store.config : JSON.stringify(store.config);
+      const content = Buffer.from(text).toString('base64');
+      return [200, { type: 'file', encoding: 'base64', size: Buffer.byteLength(text), content }];
     }
     if (path === '/issues' && method === 'GET') {
       const state = query.get('state') || 'open';
@@ -66,19 +71,33 @@ export function createFakeGithub({ repository = 'acme/widgets' } = {}) {
       if (store.hidePosted) created.hidden = true;
       return [201, created];
     }
+    if ((match = path.match(/^\/issues\/(\d+)\/comments$/)) && method === 'GET') {
+      const suffix = `/${match[1]}#issuecomment-`;
+      return [200, page(store.comments.filter(comment => !comment.hidden && comment.html_url.includes(suffix)), query)];
+    }
     if (path === '/pulls' && method === 'GET') {
       return [200, page([...store.issues.values()].filter(issue => issue.pull_request && issue.state === 'open').reverse()
         .map(issue => ({ number: issue.number, user: issue.user, title: issue.title, body: issue.body, created_at: issue.created_at,
-          updated_at: issue.updated_at, state: 'open' })), query)];
+          updated_at: issue.updated_at, state: 'open', draft: issue.draft })), query)];
     }
     if ((match = path.match(/^\/pulls\/(\d+)\/files$/)) && method === 'GET') {
-      return [200, page((store.files.get(Number(match[1])) || []).map(filename => ({ filename })), query)];
+      return [200, page((store.files.get(Number(match[1])) || []).map(file => typeof file === 'string' ? { filename: file } : file), query)];
     }
     return [404, { message: 'Not Found' }];
   }
 
   function runGh(args) {
     if (args[0] === 'repo') return { status: 0, stdout: JSON.stringify({ nameWithOwner: repository, isFork: false, parent: null }) };
+    if (args[1] === 'graphql') {
+      const fields = {};
+      for (let index = 2; index < args.length; index += 2) {
+        const separator = args[index + 1].indexOf('=');
+        fields[args[index + 1].slice(0, separator)] = args[index + 1].slice(separator + 1);
+      }
+      store.calls.push(`${store.cliUser} GRAPHQL ${graphKind(fields)}`);
+      const response = graphResponse(store, repository, fields);
+      return { status: response.errors ? 1 : 0, stdout: JSON.stringify(response) };
+    }
     const include = args[1] === '--include';
     const rest = include ? args.slice(2) : args.slice(1);
     const fields = {};
@@ -93,7 +112,7 @@ export function createFakeGithub({ repository = 'acme/widgets' } = {}) {
   }
 
   return { store, clock, runGh, addIssue, addComment, repository,
-    addPull: ({ author, body = '', files = [] }) => addIssue({ author, body, title: 'Work in progress', files }),
+    addPull: ({ author, body = '', files = [], draft = false }) => addIssue({ author, body, title: 'Work in progress', files, draft }),
     closeIssue: number => Object.assign(store.issues.get(number), { state: 'closed', updated_at: iso() }),
     edit: (comment, body) => Object.assign(comment, { body, updated_at: new Date(clock.now + 1000).toISOString() }) };
 }

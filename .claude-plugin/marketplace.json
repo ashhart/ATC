@@ -1,0 +1,14 @@
+{
+  "name": "atc-github",
+  "description": "Agent Traffic Control for GitHub",
+  "owner": {
+    "name": "Agent Traffic Control contributors"
+  },
+  "plugins": [
+    {
+      "name": "atc",
+      "source": "./",
+      "description": "Coordinate agents and people on a GitHub repository: who is working on what, issue claims, and merge conflict checks before a pull request."
+    }
+  ]
+}

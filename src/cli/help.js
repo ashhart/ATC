@@ -22,7 +22,7 @@ Coordinate (writes need .github/atc.json in the repository)
   atc accept <id> | decline <id>      decide an offer on an issue you hold
   atc withdraw <id>                   withdraw your offer
 
-Agents on this machine (local only, nothing is posted)
+Agents in flight on this machine (local only, nothing is posted)
   atc start <issue>                   start a session and print its number
   atc pulse <issue> <session> <state> check in as working, reviewing or blocked
   atc land <issue> <session>          end the session

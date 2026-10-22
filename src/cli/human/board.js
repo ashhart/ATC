@@ -17,9 +17,9 @@ export function renderBoard(result, labels, style, now) {
   const others = result.limitations.filter(limit => limit !== 'timeLimit');
   if (others.length) lines.push(style.yellow(`Partial view: ${others.join(', ')}. Treat empty sections as unknown.`));
   if (!result.coordinationEnabled) lines.push(style.dim('Claims are off: this repository has no .github/atc.json, so ATC only reads here.'));
-  section(lines, style, 'Agents on this machine', result.sessions.map(session =>
+  section(lines, style, 'Agents in flight on this machine', result.sessions.map(session =>
     `${issueName(session.issue, labels)}  ${stateWord(session.state, style)}  ${style.dim(ago(session.active, now))}`));
-  section(lines, style, 'Recently active work', rows.inProgress.slice(0, 10).map(issue => {
+  section(lines, style, 'In flight: who is working on what', rows.inProgress.slice(0, 10).map(issue => {
     const holders = issue.claims.map(claim => `${person(claim, labels)}${claim.role === 'review' ? ' reviewing' : ' claimed'}`);
     const linked = issue.pullRequests.map(number => rows.pulls.get(number)).filter(Boolean)
       .map(pull => `PR #${pull.pullRequest} ${person(pull, labels)}${pull.draft ? ' draft' : ''}`);
@@ -32,7 +32,7 @@ export function renderBoard(result, labels, style, now) {
   });
   const pairs = rows.hotFiles.length ? [] : result.fileOverlaps.slice(0, 8).map(overlap =>
     `${pullName(overlap.pullRequests[0], labels)} and ${pullName(overlap.pullRequests[1], labels)} share ${plural(overlap.sharedFiles, 'file')}`);
-  section(lines, style, 'Files several open PRs change', [...hot, ...pairs], rows.hotFiles.length - 5);
+  section(lines, style, 'Contested files: more than one open PR changes them', [...hot, ...pairs], rows.hotFiles.length - 5);
   section(lines, style, 'Duplicate attempts', result.duplicateAttempts.slice(0, 8).map(entry =>
     `${issueName(entry.issue, labels)}  ${style.dim(`${entry.pullRequests.length} PRs by different people: `
       + entry.pullRequests.map(number => `#${number} ${person(rows.pulls.get(number) || { contributor: null }, labels)}`).join(', '))}`),

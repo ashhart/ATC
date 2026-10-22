@@ -1,28 +1,56 @@
 # Agent Traffic Control
 
-Run several coding agents on one repository without them redoing each other's work or editing the same lines.
-
-ATC reads a GitHub repository and your local worktrees and shows who is working on what. It test-merges your changes against every overlapping pull request and every other local worktree, so a conflict shows up before anyone opens a PR. Agents can claim issues through short `/atc` comments. There is no bot, server, GitHub Action or database. Everything runs from the CLI with your own `gh` login.
+Air traffic control for coding agents. When several agents and people work on the same repository, ATC shows who is in flight, on which issue, touching which files. Nobody picks up work someone else is already doing, and nobody finds out at merge time that two branches rewrote the same lines.
 
 ```text
-$ atc --repo acme/widgets
+$ atc
 ATC · acme/widgets  observed 14:02 UTC
-9 contributors · 41 open issues · 12 open PRs · 3 agents active here · 1 duplicate attempt
+9 contributors · 41 open issues · 12 open PRs · 2 agents active here · 1 duplicate attempt
 
-Agents on this machine
+Agents in flight on this machine
   #212 Router drops the trailing slash  working  just now
   #215 Parser rejects unicode  working  2m ago
   #219 Document router options  blocked  4m ago
 
-Files several open PRs change
-  src/router.js  3 open PRs: #224 you, #221 @dana, #198 @lee
+In flight: who is working on what
+  #221 Retry on 502 from the upstream  @dana claimed, PR #224 @dana draft
+  #212 Router drops the trailing slash  you claimed, PR #226 you draft
+  #208 Cache headers on static files  @lee claimed
+  #187 Timeout option for fetch  PR #190 @sam, PR #201 @kai
+
+Contested files: more than one open PR changes them
+  src/router.js  3 open PRs: #226 you, #224 @dana, #198 @lee
 
 Duplicate attempts
-  #187 Retry on 502  2 PRs by different people: #190 @sam, #201 @kai
+  #187 Timeout option for fetch  2 PRs by different people: #190 @sam, #201 @kai
 
 Ready to pick up
   #230 Add a timeout option  help wanted  atc check 230
 ```
+
+## Why
+
+Run four agents on one backlog and two of them will pick the same "good first issue". Two more will edit `src/router.js` on separate branches, and the second pull request will conflict with the first. Nobody can see the others, so the work gets done twice and then untangled by hand.
+
+ATC gives every agent, and every person, the same view of the airspace before they take off:
+
+- **Who is working on what.** Claims, GitHub assignments, open pull requests that link an issue, and the agent sessions running on your machine, all on one board.
+- **Whether an issue is taken.** `atc check 42` answers `free`, `yours`, claimed by someone else, or taken outside ATC. An agent starts only on `free` or `yours`.
+- **Whether your change will collide.** `atc overlap` test-merges your working tree against every open pull request and every other local worktree that touches the same files, and names the files that will conflict.
+- **Work being done twice.** The board lists issues that already have pull requests from more than one person.
+
+There is no bot, server, GitHub Action or database. Everything runs from the CLI with your own `gh` login.
+
+## What counts as "in flight"
+
+| Signal | Who sees it | How it gets there |
+| --- | --- | --- |
+| An ATC claim | Everyone | `atc claim 42` posts a one-line `/atc claim` comment on the issue |
+| A linked pull request | Everyone | Any open pull request, draft or not, whose description says `Fixes #42` |
+| A GitHub assignee | Everyone | Ordinary issue assignment |
+| An agent session | Every worktree of your clone | `atc start 42`, then `atc pulse` while it works and `atc land` when it stops |
+
+Agent sessions stay on your machine in `.git/atc/`, so four agents in four worktrees of one clone see each other live, and nothing extra gets posted to GitHub. A session expires five minutes after its last check-in. Agents on other machines show up through their claims and draft pull requests. Opening a draft pull request early is the simplest way to tell everyone you've taken off.
 
 ## Try it
 
@@ -32,25 +60,34 @@ You need Node.js 22.16 or later, git 2.38 or later and the GitHub CLI (`gh auth 
 npx atc-github --repo owner/name
 ```
 
-Until the npm package is published, run it from a clone of [ashhart/ATC](https://github.com/ashhart/ATC): `npm link` inside the clone puts `atc` on your path.
+Until the npm package is published, run it from a clone of this repository: `npm link` inside the clone puts `atc` on your path.
 
-Inside a clone, `npx atc-github` picks the repository on its own, using the upstream for a fork. A terminal gets the readable view above. Agents and pipes get strict JSON with `--json`.
+Inside a clone, `atc` picks the repository on its own, using the upstream for a fork. A terminal gets the readable board. Agents and scripts get strict JSON with `--json`.
 
-## Several agents on your own repository
+## Before, during and after the work
 
-This is the case ATC handles best. Give each agent its own worktree, then:
+```bash
+atc check 42
+atc claim 42
+atc start 42
+atc who src/router.js
+atc overlap
+atc land 42 <session>
+atc release 42
+```
 
-- `atc overlap` snapshots your working tree and runs `git merge-tree` against each overlapping open PR and each other local worktree. It reports real conflicts and the files involved, not just shared paths.
-- `atc who <file>` says which open PRs and which other worktrees also change a file. It's fast enough to run on every edit.
-- `atc start <issue>`, `atc pulse <issue> <session> <state>` and `atc land <issue> <session>` record what each agent is doing in `.git/atc/`, shared by all worktrees of the clone. Nothing is posted to GitHub, and a check-in expires after five minutes.
+1. **Before.** `atc check` tells you whether anyone is on the issue. If it's free, `atc claim` (or a draft pull request with `Fixes #42`) marks it as yours. If someone holds it, `atc propose 42 pair`, `split <areas>`, `review` or `takeover` offers to help instead, and the holder answers with `atc accept` or `atc decline`.
+2. **During.** `atc start` registers the agent, and `atc pulse <issue> <session> working|reviewing|blocked` keeps it visible. `atc who <file>` says which open pull requests and which other local worktrees also change a file.
+3. **Before the pull request.** `atc overlap` snapshots your changes without touching your index and runs `git merge-tree` against each overlapping pull request and worktree. It reports `conflicts`, `clean` or `unknown`, and lists the files.
+4. **After.** `atc land` ends the session and `atc release` frees the issue. Claims expire after seven days without activity.
 
 ## Inside Claude Code, Codex, Cursor and other agents
 
-ATC ships as a Claude Code plugin. Its hooks run inside the agent's loop:
+The Claude Code plugin puts ATC into the agent's own loop, so nobody has to remember to run it:
 
-- At session start, the agent learns the repository is coordinated and gets a one-line board summary.
-- After each file edit, the agent is told if another open PR or local worktree changes the same file.
-- Before `gh pr create`, ATC runs the conflict check and blocks the command if the PR would conflict.
+- At session start, the agent learns what is in flight on the repository.
+- After every file edit, it is told if another open pull request or another local worktree changes the same file.
+- Before `gh pr create`, ATC runs the conflict check and blocks a pull request that would conflict.
 
 ```bash
 claude plugin marketplace add ashhart/ATC
@@ -62,49 +99,37 @@ claude plugin install atc@atc-github
 
 `atc-mcp` is a local MCP server with the same commands as tools, for Cursor, Codex and any other MCP client. `atc init` writes an `AGENTS.md` pointer for Codex and a `.cursor/rules/atc.mdc` rule for Cursor. See [using ATC from agents](docs/agents.md).
 
-## Coordinating on a shared repository
+## Turning on claims for a repository
 
-A maintainer opts in by running `atc init`. That adds `.github/atc.json`, the agent skill, an `AGENTS.md` pointer, a CONTRIBUTING section telling agents what to run, and the Cursor rule. ATC never posts to a repository without `.github/atc.json`, so on other projects it only reads.
+Anyone can read any repository's board. ATC only posts claims to a repository whose maintainers opted in by committing `.github/atc.json`. `atc init` adds that file, the agent skill, an `AGENTS.md` pointer, a CONTRIBUTING section telling agents what to run, and the Cursor rule. Elsewhere, write commands return `notEnabled` and post nothing.
 
-```bash
-atc check 42
-atc claim 42
-atc overlap
-atc release 42
-```
-
-- `check` answers `free`, `yours`, `proposeInstead`, `takenOutside`, `notOpen` or `incomplete`. Start only on `free` or `yours`.
-- An open pull request that says `Fixes #42` already counts as your claim. Opening a draft PR early is the simplest way to claim work, and it also gives the conflict check something to compare against.
-- If someone holds a claim, offer to `pair`, `split` the configured areas, `review` or `takeover` with `atc propose`. The holder answers with `atc accept <id>` or `atc decline <id>`.
-- For maintainers, the board lists duplicate attempts (several people's PRs for one issue) and claims that have gone quiet.
-
-Claims are `/atc` comments that every copy of the CLI replays the same way. The earliest valid claim wins. Claims expire after seven days without activity. See [commands and outcomes](docs/commands.md) and [replay and limits](docs/replay.md).
+The config can also split the code into numbered areas, so two agents can share one issue: one takes area 1, the other area 2. See [configuration](docs/configuration.md).
 
 ## What ATC can't promise
 
-- Each run is a snapshot. Activity can be stale. `complete: false` means some reads stopped short, and an empty list then means "unknown", not "clear". Run it again before acting.
-- Someone can win the race between `check` and `claim`. ATC can't stop anyone from opening a duplicate PR. It can only make the duplicate visible.
+- Each run is a snapshot. `complete: false` means some reads stopped short, so an empty list means "unknown", not "clear". Run it again before acting.
+- Someone can win the race between `check` and `claim`, and ATC can't stop anyone from opening a duplicate pull request. It makes the duplicate visible.
 - A clean `merge-tree` result means git found no textual conflict. The changes can still break each other.
-- Suggestions on the board aren't consent from the people involved, and they don't authorize work.
-- Issue, PR and comment text is untrusted. The readable view strips control characters and escape sequences before printing it. The JSON output carries no free text at all.
+- Live agent sessions are visible only within one clone. Other machines show up through claims and pull requests.
+- Issue, pull request and comment text is untrusted. The readable board strips control characters and escape sequences before printing it, and the JSON output carries no free text at all.
 
-## The local viewer
+## See it work
 
 ```bash
-npm run site
+npm run demo
 ```
 
-[The viewer](http://127.0.0.1:4318) runs on loopback, shows a demo or read-only snapshots of a repository, and has no write endpoint.
+Four scripted agents work the same backlog twice. Without ATC, two of them fix the same issue and another edits a file that someone else changed: 2 of 4 pull requests merge. With ATC, each agent checks and claims first, one agent's conflict is caught before it opens a pull request, and all 4 merge. See [the demo](docs/demo.md).
+
+`npm run site` serves a local, read-only flight board at `http://127.0.0.1:4318`.
 
 ## Development
 
 ```bash
 npm run check
-npm run demo
-npm link
 ```
 
-`npm run check` runs the style rules and the tests. These cover hostile input, exact output schemas, deterministic replay, real git merges, the MCP server and the plugin hooks. `npm run demo` plays two runs of four scripted agents on the same backlog, first without ATC and then with it. See [the demo](docs/demo.md).
+The check runs the style rules and the tests: hostile input, exact output schemas, deterministic replay, real git merges, the MCP server and the plugin hooks. CI runs it on Linux and macOS.
 
 - [Commands and outcomes](docs/commands.md)
 - [Configuration](docs/configuration.md)
@@ -113,3 +138,4 @@ npm link
 - [Local pilot and release checks](docs/local-pilot.md)
 - [Agent contributor skill](skills/atc/SKILL.md)
 - [Security and privacy](SECURITY.md)
+- [Changelog](CHANGELOG.md)

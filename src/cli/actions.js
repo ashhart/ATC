@@ -6,6 +6,9 @@ import { doctor } from './doctor.js';
 import { reportPresence } from './presenceCommand.js';
 import { shareResult } from './presenceShare.js';
 import { publishPresence } from './publicPresence.js';
+import { presencePolicy } from './presencePolicy.js';
+import { clearLocalOnly } from './localPresenceOnly.js';
+import { claimPresence } from './claimPresence.js';
 import { inspectWho } from './who.js';
 import { inspectTraffic } from './traffic.js';
 import { displayResult } from './output.js';
@@ -33,9 +36,11 @@ export async function runCli({ command, rest, flags }, { gh, git, sleep, now = D
   ensure(env.ATC_READ_ONLY === undefined || ['0', '1'].includes(env.ATC_READ_ONLY), 'Invalid ATC_READ_ONLY setting');
   if (['start', 'pulse', 'land'].includes(command)) {
     const repository = () => resolveRepository(gh, flags, env);
-    const local = reportPresence(command, input, { git, now, dryRun: Boolean(flags.dryRun), readOnly: env.ATC_READ_ONLY === '1' });
+    const local = reportPresence(command, input, { git, now, dryRun: Boolean(flags.dryRun), readOnly: env.ATC_READ_ONLY === '1', localOnly: flags.local });
     const result = shareResult(local, { gh, git, now, repository });
-    return displayResult(await publishPresence(result, { command, flags, gh, git, fetcher, repository }));
+    const published = await publishPresence(result, { command, flags, gh, git, fetcher, repository });
+    if (command === 'land' && result.outcome === 'landed') clearLocalOnly(git, result.session);
+    return displayResult(published);
   }
   const repository = resolveRepository(gh, flags, env);
   if (labels) labels.repository = repository;
@@ -49,12 +54,14 @@ export async function runCli({ command, rest, flags }, { gh, git, sleep, now = D
   if (command === 'board') return displayResult(inspectTraffic(context, snapshot), known);
   if (command === 'status') return displayResult(statusView(snapshot, { me: context.me, repository, now: snapshot.now }), known);
   if (command === 'overlap') return displayResult(inspectOverlap(context, snapshot, flags), known);
+  if (command === 'claim' && flags.githubName) ensure(presencePolicy(git)?.repository === repository.toLowerCase(), 'No public board is configured.');
   if (command === 'check' || command === 'claim') {
     const read = issueDetails(context, snapshot, input.issue);
     const view = checkView(read.snapshot, { me: context.me, issue: input.issue, areas, details: read.details });
     if (command === 'check') return displayResult(view, known);
     if (!known.enabled) return displayResult(skipped(view.issue, 'claim', 'notEnabled'), known);
-    return displayResult(await claim(context, snapshot, view, areas), known);
+    const result = await claim(context, snapshot, view, areas);
+    return displayResult(await claimPresence(result, { ...context, flags, repository: () => repository, fetcher }), known);
   }
   if (!known.enabled) return displayResult(skipped(input.issue ?? null, command, 'notEnabled'), known);
   if (snapshot.partial) return displayResult(skipped(input.issue ?? null, command, 'incomplete'));

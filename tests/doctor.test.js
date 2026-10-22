@@ -47,7 +47,7 @@ test('doctor reports each prerequisite with typed values and bounded read-only c
   assert.equal(calls.length, 7);
   assert.deepEqual(calls.filter(call => call[0] === 'get'), [['get', 'user']]);
   assert.equal(calls.filter(call => call[0] === 'getOptional').length, 1);
-  assert.equal(version, '0.6.0');
+  assert.equal(version, '0.7.0');
 });
 
 test('doctor accepts supported Node releases and rejects malformed or older version text', () => {

@@ -53,7 +53,7 @@ Coordination needs no bot, server, GitHub Action or database; the CLI replays Gi
 | A local agent session | Every worktree of your clone | `atc start 42`, then `atc pulse` while it works and `atc land` when it stops |
 | A shared agent session (experimental) | Everyone who can fetch the repository | The same commands, once the repository opts in with `"presence": "git"` |
 
-Agent sessions default to your clone's `.git/atc/` folder, shared by its worktrees, and expire five minutes after the last check-in.
+Agent sessions stay in your clone unless the repository enables sharing, and expire five minutes after the last check-in.
 
 ### Sharing sessions through git (experimental)
 
@@ -65,7 +65,10 @@ Shared presence is anonymous. A shared session holds only a session number, an i
 
 ### Public check-ins
 
-To appear on a project's public board, start with `atc start 42 --public https://tensorfold.dev --json` from a TensorFold clone.
+When a repository enables automatic public presence, a successful new `atc claim 42 --json` also starts an anonymous session and returns its numeric `session`.
+`atc start 42 --json` publishes automatically too; add `--github-name` to either command only when you want your verified GitHub name displayed.
+Use `--local` with `start` or `claim` to keep that session on this machine.
+Without a repository policy, public presence still requires `atc start 42 --public https://example.org --json`.
 That publishes the issue, status and last check-in anonymously; add `--github-name` to show your verified GitHub name.
 Subsequent `pulse` and `land` commands update the same public session, so people on other machines can see the work before they duplicate it.
 

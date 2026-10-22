@@ -6,7 +6,7 @@ It reads public GitHub endpoints with GET requests, refuses private repositories
 No token, local agent presence, names, issue bodies or file paths enter the returned board.
 
 Public claims, issue assignments and linked pull requests show reported work, not proof that an agent is currently running.
-Local sessions stay in the contributor's clone unless explicitly shared through the separate presence protocol below.
+Local sessions stay in the contributor's clone unless shared through an explicit origin or the repository policy below.
 Visitors coordinate through the CLI with their own GitHub login, and the website never posts or grants claims.
 
 Cache snapshots for ten minutes and public diff responses by the pull request's head SHA to avoid exhausting GitHub's anonymous API quota.
@@ -23,14 +23,28 @@ The default reader requires a Fetch API implementation, available in supported N
 
 ## Share an agent session
 
-`atc start 42 --public https://tensorfold.dev --json` registers an anonymous public session for TensorFold.
+A repository can commit `.github/atc-presence.json` to enable automatic anonymous check-ins:
+
+```json
+{"version":1,"repository":"example/project","origin":"https://example.org"}
+```
+
+The CLI reads the committed `HEAD` version, validates the exact fields within 1 KiB, and checks that the policy names the selected public GitHub repository.
+This separate file keeps older CLI versions compatible with `.github/atc.json`.
+A confirmed new `claim` creates a session automatically and returns its numeric `session` without changing the claim result or comment ID.
+Updates to an existing claim, read commands, failed claims, previews and read-only runs create no sessions.
+`start` uses the same policy automatically; `--local` on either command disables public reporting for that new session.
+Repositories without a policy retain local defaults, with `--public https://example.org` available for an explicit start.
+Private repositories never publish sessions, and the CLI never sends a GitHub credential to the board.
+
+`atc start 42 --json` registers an anonymous session on a configured public board.
 Add `--github-name` only when the contributor wants to show their GitHub name.
 The repository must have `.github/atc.json`, and the issue must be open.
 The command posts one `/atc presence <sha256>` comment, where the digest covers a separate random 256-bit token.
 Proof comments do not create or renew claims, and the website never writes to GitHub.
 GitHub associates the verification comment with its author, even when the board displays an anonymous label.
 
-The CLI stores the token, comment ID, issue, display choice and explicit HTTPS origin in `.git/atc/public-<session>.json` with owner-only permissions.
+The CLI stores the token, comment ID, issue, display choice and validated HTTPS origin in `.git/atc/public-<session>.json` with owner-only permissions.
 It sends a JSON POST to `<origin>/api/atc/v1/presence` with exactly `issue`, `comment`, `token`, `display` and `state`.
 Issue and comment are bounded integers; token is 64 lowercase hex characters; display is `anonymous` or `github`; state is `working`, `reviewing`, `blocked` or `landed`.
 The public service verifies the immutable comment on the same open issue against the token hash and derives any displayed login from its GitHub author.

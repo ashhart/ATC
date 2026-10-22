@@ -69,3 +69,19 @@ Comments contain typed commands only. A nonempty `ATC_SIGNATURE` setting is reje
 `--json` forces structured output and `--text` forces the readable view. Without either, a terminal gets text and a pipe gets JSON.
 
 The CLI caches each open pull request's changed-file list in `~/.cache/atc-github/` (or `$XDG_CACHE_HOME/atc-github/`), keyed by the pull request's last update time, so repeated boards only refetch pull requests that changed. Set `ATC_CACHE=0` to turn the cache off. The cache is validated on every read and is never posted.
+
+## Automatic public check-ins
+
+Maintainers can enable a public radar without changing the coordination config by committing `.github/atc-presence.json`:
+
+```json
+{"version":1,"repository":"example/project","origin":"https://example.org"}
+```
+
+All three fields are required, extra fields are rejected, and the file is limited to 1 KiB.
+The origin must be a bare HTTPS hostname, with no path, port, credentials, whitespace or query.
+The repository must match the selected public GitHub repository; private repositories never publish.
+The CLI reads the committed `HEAD` policy, not uncommitted files.
+New confirmed claims and session starts publish anonymously, with `--github-name` as an explicit opt-in and `--local` as an override.
+An automatic claim returns the session number used by later `pulse` and `land` commands.
+Read commands never start or refresh sessions, and check-ins expire after five minutes without a genuine pulse.

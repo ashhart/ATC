@@ -161,3 +161,15 @@ test('hostile or malformed shared refs are ignored, and an unreachable remote ma
   assert.equal(broken.complete, false);
   assert.ok(broken.limitations.includes('presenceUnavailable'));
 });
+
+test('a local-only flight stays private when another flight from the same clone is shared', async t => {
+  const box=world(t),fake=fakeWith(),laptop=box.clone('laptop'),reader=box.clone('reader');
+  const hidden=await cli(fake,'alice',['start','1','--local'],{git:laptop});
+  assert.equal(hidden.sharing,undefined);assert.equal(box.remoteRefs().length,0);
+  const shared=await cli(fake,'alice',['start','2'],{git:laptop});assert.equal(shared.sharing,'git');
+  const remote=await cli(fake,'bob',['board'],{git:reader});
+  assert.deepEqual(remote.sessions.map(s=>s.issue),[2]);
+  const document=box.published(box.remoteRefs()[0]).document;assert.equal(document.includes(String(hidden.session)),false);
+  const pulse=await cli(fake,'alice',['pulse','1',String(hidden.session),'working'],{git:laptop});assert.equal(pulse.sharing,undefined);
+  await cli(fake,'alice',['land','1',String(hidden.session)],{git:laptop});
+});

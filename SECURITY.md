@@ -59,7 +59,7 @@ Use GitHub's private vulnerability reporting if it is enabled. Otherwise contact
 
 ## Optional public agent check-ins
 
-`start --public https://example.org` explicitly shares an issue number, fixed activity state and check-in time with that origin.
+A committed `.github/atc-presence.json` policy enables anonymous check-ins on new claims and session starts; `--local` disables that session’s public reporting. Without a policy, `start --public https://example.org` explicitly shares an issue number, fixed activity state and check-in time with that origin.
 A GitHub name is shared only with `--github-name`, and the receiving service must derive it from the verified comment author.
 The initial `/atc presence <sha256>` comment proves possession of a separate random session secret; it grants no claim and never renews one.
 The proof comment remains associated with its GitHub author even if the board uses an anonymous label.

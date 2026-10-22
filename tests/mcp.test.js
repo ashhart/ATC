@@ -50,9 +50,9 @@ test('tools/list describes every tool with a closed input schema and honest hint
     assert.equal(tool.annotations.destructiveHint, false);
   }
   const hints = Object.fromEntries(result.tools.map(tool => [tool.name, [tool.annotations.readOnlyHint, tool.annotations.openWorldHint]]));
-  assert.deepEqual([hints.atc_board, hints.atc_overlap, hints.atc_who, hints.atc_claim, hints.atc_start], [[true, true], [true, true], [true, false], [false, true], [false, false]]);
+  assert.deepEqual([hints.atc_board, hints.atc_overlap, hints.atc_who, hints.atc_claim, hints.atc_start], [[true, true], [true, true], [true, false], [false, true], [false, true]]);
   assert.match(result.tools.find(tool => tool.name === 'atc_claim').description, /unless dryRun is true/);
-  assert.match(result.tools.find(tool => tool.name === 'atc_pulse').description, /posts nothing to GitHub/);
+  assert.match(result.tools.find(tool => tool.name === 'atc_pulse').description, /update their configured board automatically/);
   toolList()[0].inputSchema.properties.repo.maxLength = 1;
   assert.equal(toolList()[0].inputSchema.properties.repo.maxLength, 140);
 });
@@ -122,6 +122,9 @@ test('unexpected failures inside a tool are reported with a fixed message', asyn
 });
 
 test('presence and file tools map to local CLI commands', () => {
+  assert.deepEqual(toolArgv('atc_start', { issue: 4, githubName: true }), ['start','4','--github-name']);
+  assert.deepEqual(toolArgv('atc_claim', { issue: 4, localOnly: true }), ['claim','4','--local']);
+  assert.throws(() => toolArgv('atc_start', {issue:4,githubName:true,localOnly:true}));
   assert.deepEqual(toolArgv('atc_start', { issue: 4, dryRun: true }), ['start', '4', '--dry-run']);
   assert.deepEqual(toolArgv('atc_pulse', { issue: 4, session: 99, state: 'blocked' }), ['pulse', '4', '99', 'blocked']);
   assert.deepEqual(toolArgv('atc_land', { issue: 4, session: 99 }), ['land', '4', '99']);

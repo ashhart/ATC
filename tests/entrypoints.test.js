@@ -21,7 +21,7 @@ test('the CLI entry point prints help and refuses unknown options without echoin
 
 test('version and help work offline and doctor strict reports a real process exit code', async () => {
   const env = { ...process.env, PATH: '' };
-  assert.equal((await run(process.execPath, ['src/cli/main.js', '--version'], { env })).stdout, '0.6.0\n');
+  assert.equal((await run(process.execPath, ['src/cli/main.js', '--version'], { env })).stdout, '0.7.0\n');
   assert.match((await run(process.execPath, ['src/cli/main.js', '--help'], { env })).stdout, /Agent Traffic Control/);
   const doctor = await run(process.execPath, ['src/cli/main.js', 'doctor', '--strict'], { env }).catch(error => error);
   assert.equal(doctor.code, 2);

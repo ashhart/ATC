@@ -26,7 +26,7 @@ export function writeOutput(value, context) {
   const postedKeys = result.posted ? ['issue', 'command', 'posted', 'comment', 'outcome', 'session', 'state']
     : result.outcome === 'dryRun' ? ['issue', 'command', 'posted', 'outcome', 'areas', 'kind', 'proposal', 'session', 'state']
       : ['issue', 'command', 'posted', 'outcome', 'session', 'state'];
-  rejectUnless(Object.keys(result).every(key => postedKeys.includes(key) || ['publication', 'sharing'].includes(key) && ['flight', 'land'].includes(result.command)));
+  rejectUnless(Object.keys(result).every(key => postedKeys.includes(key) || ['publication', 'sharing'].includes(key) && ['flight', 'land', 'claim'].includes(result.command)));
   rejectUnless((result.posted === true) === Object.hasOwn(result, 'comment'));
   rejectUnless((result.posted === null) === (result.outcome === 'uncertain'));
   rejectUnless(result.issue !== null || ['accept', 'decline', 'withdraw'].includes(result.command));
@@ -34,7 +34,10 @@ export function writeOutput(value, context) {
   rejectUnless(!Object.hasOwn(result, 'areas') || ['claim', 'propose'].includes(result.command));
   rejectUnless(!Object.hasOwn(result, 'kind') || result.command === 'propose');
   rejectUnless(!Object.hasOwn(result, 'proposal') || ['accept', 'decline', 'withdraw'].includes(result.command));
-  rejectUnless(!Object.hasOwn(result, 'session') || ['flight', 'land'].includes(result.command));
+  rejectUnless(!Object.hasOwn(result, 'session') || ['flight', 'land', 'claim'].includes(result.command));
+  rejectUnless(!Object.hasOwn(result, 'publication') || result.command !== 'claim' || result.outcome === 'claimed');
+  rejectUnless(!Object.hasOwn(result, 'session') || result.command !== 'claim' || result.outcome === 'claimed' && Object.hasOwn(result, 'publication'));
+  rejectUnless(!Object.hasOwn(result, 'sharing') || ['flight', 'land'].includes(result.command));
   rejectUnless(!Object.hasOwn(result, 'state') || result.command === 'flight');
   if (result.outcome === 'dryRun') {
     if (result.command === 'claim') rejectUnless(Object.hasOwn(result, 'areas'));

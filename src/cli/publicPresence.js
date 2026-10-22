@@ -5,20 +5,28 @@ import { ensure } from '../core/failure.js';
 import { isId } from '../core/values.js';
 import { readConfig } from '../core/config.js';
 import { createReader } from './reader.js';
+import { isPublicOrigin, presencePolicy } from './presencePolicy.js';
+export { isPublicOrigin } from './presencePolicy.js';
 
 const failure = 'Invalid public presence settings.';
 const tokenPattern = /^[a-f0-9]{64}$/;
 
 export async function publishPresence(result, { command, flags, gh, git, fetcher = fetch, repository }) {
   if (flags.public !== undefined) ensure(isPublicOrigin(flags.public), failure);
-  if (!['checkedIn', 'landed'].includes(result.outcome)) return result;
+  if (!['checkedIn', 'landed'].includes(result.outcome) || flags.local) return result;
   const folder = path.join(git.commonDir(), 'atc');
   const file = path.join(folder, `public-${result.session}.json`);
   let settings = readSettings(file);
-  if (!settings && flags.public === undefined) return result;
+  const policy = command === 'start' ? presencePolicy(git) : null;
+  if (!settings && flags.public === undefined && !policy) {
+    ensure(!flags.githubName, 'No public board is configured. Use --public.');
+    return result;
+  }
   try {
     if (command === 'start') {
       const selected = repository();
+      if (flags.public === undefined && policy?.repository !== selected.toLowerCase()) return result;
+      ensure(gh.get(`repos/${selected}`)?.private === false, failure);
       ensure(readConfig(createReader(gh, selected).config()).enabled, failure);
       const issue = createReader(gh, selected).issue(result.issue);
       ensure(issue?.state === 'open' && !issue.pull_request, failure);
@@ -26,7 +34,7 @@ export async function publishPresence(result, { command, flags, gh, git, fetcher
       const proof = createHash('sha256').update(token).digest('hex');
       const comment = gh.post(`repos/${selected}/issues/${result.issue}/comments`, { body: `/atc presence ${proof}` });
       ensure(isId(comment?.id), failure);
-      settings = { origin: flags.public, issue: result.issue, token, comment: comment.id,
+      settings = { origin: flags.public || policy.origin, issue: result.issue, token, comment: comment.id,
         display: flags.githubName ? 'github' : 'anonymous' };
       fs.mkdirSync(folder, { recursive: true, mode: 0o700 });
       ensure(!fs.lstatSync(folder).isSymbolicLink(), failure);
@@ -42,12 +50,6 @@ export async function publishPresence(result, { command, flags, gh, git, fetcher
     if (command === 'land') fs.unlinkSync(file);
     return { ...result, ...(command === 'start' ? { posted: true, comment: settings.comment } : {}), publication: 'public' };
   } catch { return { ...result, ...(command === 'start' && settings ? { posted: true, comment: settings.comment } : {}), publication: 'unavailable' }; }
-}
-
-export function isPublicOrigin(value) {
-  return typeof value === 'string' && value.length <= 253
-    && !/\s/.test(value)
-    && /^https:\/\/[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/.test(value);
 }
 
 function readSettings(file) {

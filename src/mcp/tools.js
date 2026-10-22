@@ -12,6 +12,10 @@ const fields = {
     description: 'Numeric area references shown by atc_board or atc_status.' },
   value => Array.isArray(value) && value.length <= 8 && new Set(value).size === value.length
     && value.every(area => Number.isSafeInteger(area) && area >= 1 && area <= 24), 'areas must be up to 8 distinct integers from 1 to 24.'],
+  githubName: [{ type: 'boolean', description: 'Explicitly opt in to displaying your verified GitHub name on the configured public board.' },
+    value => typeof value === 'boolean', 'githubName must be a boolean.'],
+  localOnly: [{ type: 'boolean', description: 'Keep this session local even when the repository enables automatic public check-ins.' },
+    value => typeof value === 'boolean', 'localOnly must be a boolean.'],
   dryRun: [{ type: 'boolean', description: 'Preview the write without changing anything.' },
     value => typeof value === 'boolean', 'dryRun must be a boolean.'],
   proposal: [{ type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER, description: 'Proposal id from atc_status.' },
@@ -31,7 +35,6 @@ const fields = {
 
 const reading = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true };
 const writing = { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true };
-const local = { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false };
 const localReading = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
 
 const tools = {
@@ -43,8 +46,8 @@ const tools = {
     reading, ['issue'], ['areas', 'repo'], args => ['check', String(args.issue), ...numbers(args.areas)]],
   atc_overlap: ['Compare your local changes and open pull requests with other contributors\' open pull requests. Never posts.',
     reading, [], ['base', 'repo'], args => ['overlap', ...(args.base === undefined ? [] : ['--base', args.base])]],
-  atc_claim: [`Claim an issue, or update the areas of your existing claim. ${posts}`,
-    writing, ['issue'], ['areas', 'dryRun', 'repo'], args => ['claim', String(args.issue), ...numbers(args.areas)]],
+  atc_claim: [`Claim an issue, or update its areas. A new claim automatically starts an anonymous session when the repository enables public presence. ${posts}`,
+    writing, ['issue'], ['areas', 'dryRun', 'repo', 'githubName', 'localOnly'], args => ['claim', String(args.issue), ...numbers(args.areas)]],
   atc_renew: [`Renew your claim without changing its role or areas. ${posts}`,
     writing, ['issue'], ['dryRun', 'repo'], args => ['renew', String(args.issue)]],
   atc_release: [`Release your work or review claim on an issue. ${posts}`,
@@ -57,12 +60,12 @@ const tools = {
     writing, ['proposal'], ['dryRun', 'repo'], args => ['decline', String(args.proposal)]],
   atc_withdraw: [`Withdraw your own proposal. ${posts}`,
     writing, ['proposal'], ['dryRun', 'repo'], args => ['withdraw', String(args.proposal)]],
-  atc_start: ['Start a local agent session on an issue and return its session number. Local presence only; posts nothing to GitHub.',
-    local, ['issue'], ['dryRun'], args => ['start', String(args.issue)]],
-  atc_pulse: ['Report a local session as working, reviewing or blocked. Check in within five minutes. Local presence only; posts nothing to GitHub.',
-    local, ['issue', 'session', 'state'], ['dryRun'], args => ['pulse', String(args.issue), String(args.session), args.state]],
-  atc_land: ['End a local agent session without releasing the claim. Local presence only; posts nothing to GitHub.',
-    local, ['issue', 'session'], ['dryRun'], args => ['land', String(args.issue), String(args.session)]],
+  atc_start: ['Start an agent session and return its session number. Repositories can enable anonymous public check-ins, which post a verification comment. GitHub names require explicit opt-in.',
+    writing, ['issue'], ['dryRun', 'githubName', 'localOnly'], args => ['start', String(args.issue)]],
+  atc_pulse: ['Report a session as working, reviewing or blocked within five minutes. Public sessions update their configured board automatically; no GitHub credentials are sent.',
+    writing, ['issue', 'session', 'state'], ['dryRun'], args => ['pulse', String(args.issue), String(args.session), args.state]],
+  atc_land: ['End an agent session without releasing the claim, removing its public check-in when configured.',
+    writing, ['issue', 'session'], ['dryRun'], args => ['land', String(args.issue), String(args.session)]],
   atc_who: ['Check whether a file in this clone is also changed by another open pull request or local worktree. Never posts.',
     localReading, ['path'], [], args => ['who', args.path]]
 };
@@ -96,7 +99,8 @@ export function toolArgv(name, args = {}) {
     if (!valid(args[key])) throw new Failure(`Invalid tool arguments: ${message}`);
   }
   if (name === 'atc_propose' && (args.kind === 'split') !== (args.areas?.length > 0)) throw new Failure('A split needs areas; the other kinds take none.');
-  return [...build(args), ...(args.dryRun ? ['--dry-run'] : []), ...(args.repo === undefined ? [] : ['--repo', args.repo])];
+  if (args.githubName && args.localOnly) throw new Failure('Choose local or public presence.');
+  return [...build(args), ...(args.githubName ? ['--github-name'] : []), ...(args.localOnly ? ['--local'] : []), ...(args.dryRun ? ['--dry-run'] : []), ...(args.repo === undefined ? [] : ['--repo', args.repo])];
 }
 
 function numbers(values = []) {

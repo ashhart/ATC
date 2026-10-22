@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.0
+
+Repository-enabled anonymous public check-ins on confirmed new claims and session starts, with explicit GitHub-name opt-in, a local-only override, private-repository refusal and matching MCP controls.
+
 ## Unreleased
 
 - Experimental: agent sessions on other machines. It hasn't been tried on a real team yet, and the ref format or setting may change. A repository that adds `"presence": "git"` to `.github/atc.json` shares each clone's live sessions anonymously through `refs/atc/presence/<random id>` on its remote, pushed with `--force-with-lease`. Shared sessions carry no login, name or file name, only issue numbers, states, check-in times and salted hashes of changed paths. `atc board` shows other clones' sessions with `local: false` and no contributor, and `atc who` reports `agents` for other clones' sessions changing a file.

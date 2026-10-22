@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
+import { isLocalOnly } from './localPresenceOnly.js';
 import { readConfig } from '../core/config.js';
 import { isRef } from './git.js';
 import { createPresence } from './localPresence.js';
@@ -11,7 +12,7 @@ const everyone = '*';
 const peersRefspec = `+refs/atc/presence/${everyone}:refs/atc/peers/${everyone}`;
 
 export function shareResult(result, { git, now, repository }) {
-  if (!['checkedIn', 'landed'].includes(result.outcome) || !gitSharingEnabled(git)) return result;
+  if (!['checkedIn', 'landed'].includes(result.outcome) || isLocalOnly(git, result.session) || !gitSharingEnabled(git)) return result;
   try {
     const presence = createPresence(git, now);
     return { ...result, sharing: sharePresence({ git, remote: git.remoteFor(repository()), list: () => presence.list() }) };
@@ -28,7 +29,7 @@ export function sharePresence({ git, remote, list }) {
   for (let attempt = 0; attempt < 3; attempt += 1) {
     if (!fetchPeers(git, remote)) return 'unavailable';
     const current = readDocument(git, `refs/atc/peers/${origin}`, { shared: true });
-    const sessions = list().map(entry => ({ session: entry.session, issue: entry.issue, state: entry.state, active: entry.active,
+    const sessions = list().filter(entry => !isLocalOnly(git, entry.session)).map(entry => ({ session: entry.session, issue: entry.issue, state: entry.state, active: entry.active,
       fileHashes: [...new Set(entry.files.map(file => hashPath(salt, file)))] }));
     if (!current && sessions.length === 0) return 'git';
     const next = sessions.length ? writeDocument(git, sessions, { shared: true }) : null;

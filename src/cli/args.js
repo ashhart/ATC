@@ -7,7 +7,7 @@ import { isPublicOrigin } from './publicPresence.js';
 
 const numberPattern = /^[1-9][0-9]{0,8}$/;
 const idPattern = /^[1-9][0-9]{0,15}$/;
-const switches = { '--dry-run': 'dryRun', '--strict': 'strict', '--check': 'check', '--json': 'json', '--text': 'text', '--github-name': 'githubName' };
+const switches = { '--dry-run': 'dryRun', '--strict': 'strict', '--check': 'check', '--json': 'json', '--text': 'text', '--github-name': 'githubName', '--local': 'local' };
 const writes = ['claim', 'renew', 'release', 'propose', 'accept', 'decline', 'withdraw', 'start', 'pulse', 'land'];
 
 export function parseCliArgs(argv) {
@@ -35,7 +35,9 @@ export function parseCliArgs(argv) {
   const [command = 'board', ...rest] = positional;
   ensure(flags.public === undefined || command === 'start', '--public is only available for start');
   ensure(flags.public === undefined || isPublicOrigin(flags.public), 'Invalid public presence settings.');
-  ensure(!flags.githubName || flags.public !== undefined, '--github-name requires --public');
+  ensure(!flags.githubName || ['start', 'claim'].includes(command), '--github-name is only available for start or claim');
+  ensure(!flags.local || ['start', 'claim'].includes(command), '--local is only available for start or claim');
+  ensure(!flags.local || flags.public === undefined && !flags.githubName, 'Choose local or public presence.');
   ensure(flags.base === undefined || command === 'overlap', '--base is only available for overlap');
   ensure(!flags.check || command === 'init', '--check is only available for init');
   ensure(!flags.dryRun || writes.includes(command), '--dry-run is only available for coordinating writes');

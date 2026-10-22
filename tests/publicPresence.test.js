@@ -19,7 +19,7 @@ function fixture() {
   const posts = [];
   const gh = { getOptional: target => target.endsWith('atc.json') ? { type: 'file', encoding: 'base64', size: 2, content: 'e30=' }
     : { number: 42, state: 'open', assignees: [] },
-    get: () => ({ number: 42, state: 'open', assignees: [] }), post: (target, fields) => { posts.push({ target, ...fields }); return { id: 123 }; } };
+    get: target => target === 'repos/example/project' ? { private: false } : { number: 42, state: 'open', assignees: [] }, post: (target, fields) => { posts.push({ target, ...fields }); return { id: 123 }; } };
   const fetcher = async (url, options) => { calls.push({ url, ...options }); return Response.json({ outcome: 'published' }); };
   const options = { command: 'start', flags: { public: 'https://example.org' }, gh, git, fetcher, repository: () => 'example/project' };
   const start = reportPresence('start', { issue: 42 }, { git, now: Date.now });
@@ -51,7 +51,8 @@ test('GitHub identity is shared only with explicit opt-in', async () => {
   const f = fixture(); f.options.flags.githubName = true;
   await publishPresence(f.start, f.options);
   assert.equal(JSON.parse(f.calls[0].body).display, 'github');
-  assert.throws(() => parseCliArgs(['start', '42', '--github-name']));
+  assert.equal(parseCliArgs(['start', '42', '--github-name']).flags.githubName, true);
+  assert.throws(() => parseCliArgs(['start', '42', '--local', '--github-name']));
 });
 
 test('private mode, dry runs and read-only mode never post or publish', async () => {

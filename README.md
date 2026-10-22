@@ -32,6 +32,8 @@ You need Node.js 22.16 or later, git 2.38 or later and the GitHub CLI (`gh auth 
 npx atc-github --repo owner/name
 ```
 
+Until the npm package is published, run it from a clone of [ashhart/ATC](https://github.com/ashhart/ATC): `npm link` inside the clone puts `atc` on your path.
+
 Inside a clone, `npx atc-github` picks the repository on its own, using the upstream for a fork. A terminal gets the readable view above. Agents and pipes get strict JSON with `--json`.
 
 ## Several agents on your own repository
@@ -51,7 +53,7 @@ ATC ships as a Claude Code plugin. Its hooks run inside the agent's loop:
 - Before `gh pr create`, ATC runs the conflict check and blocks the command if the PR would conflict.
 
 ```bash
-claude plugin marketplace add OWNER/atc-github
+claude plugin marketplace add ashhart/ATC
 ```
 
 ```bash

@@ -6,12 +6,22 @@
   "author": {
     "name": "Agent Traffic Control contributors"
   },
+  "homepage": "https://github.com/ashhart/ATC",
+  "repository": "https://github.com/ashhart/ATC",
   "license": "Apache-2.0",
-  "keywords": ["github", "coordination", "agents", "pull-requests", "merge-conflicts"],
+  "keywords": [
+    "github",
+    "coordination",
+    "agents",
+    "pull-requests",
+    "merge-conflicts"
+  ],
   "mcpServers": {
     "atc": {
       "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/src/mcp/server.js"]
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/src/mcp/server.js"
+      ]
     }
   }
 }

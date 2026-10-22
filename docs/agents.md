@@ -6,17 +6,17 @@ Every route below needs Node.js 22.16 or later available as `node`, git, and an 
 
 ## Claude Code plugin
 
-This repository is a Claude Code plugin and a one-plugin marketplace. Replace `OWNER/atc-github` with the GitHub repository you install from:
+This repository, [ashhart/ATC](https://github.com/ashhart/ATC), is a Claude Code plugin and a one-plugin marketplace:
 
 ```bash
-claude plugin marketplace add OWNER/atc-github
+claude plugin marketplace add ashhart/ATC
 ```
 
 ```bash
 claude plugin install atc@atc-github
 ```
 
-Inside a session, `/plugin marketplace add OWNER/atc-github` and `/plugin install atc@atc-github` do the same. To use a local checkout, pass its path to `claude plugin marketplace add`. To try the plugin for one session without installing it, start Claude Code with `claude --plugin-dir /path/to/atc-github`.
+Inside a session, `/plugin marketplace add ashhart/ATC` and `/plugin install atc@atc-github` do the same. To use a local checkout, pass its path to `claude plugin marketplace add`. To try the plugin for one session without installing it, start Claude Code with `claude --plugin-dir /path/to/atc-github`.
 
 The plugin adds four things:
 

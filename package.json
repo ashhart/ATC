@@ -12,6 +12,14 @@
     "worktrees",
     "coordination"
   ],
+  "homepage": "https://github.com/ashhart/ATC#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ashhart/ATC.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ashhart/ATC/issues"
+  },
   "type": "module",
   "engines": {
     "node": ">=22.16.0"

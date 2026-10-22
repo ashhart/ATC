@@ -129,7 +129,7 @@ Four scripted agents work the same backlog twice. Without ATC, two of them fix t
 npm run check
 ```
 
-The check runs the style rules and the tests: hostile input, exact output schemas, deterministic replay, real git merges, the MCP server and the plugin hooks. CI runs it on Linux and macOS.
+The check runs the style rules and the tests: hostile input, exact output schemas, deterministic replay, real git merges, the MCP server and the plugin hooks. CI runs it on Linux, macOS and Windows with Node.js 22.16 and 24.
 
 - [Commands and outcomes](docs/commands.md)
 - [Configuration](docs/configuration.md)

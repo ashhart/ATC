@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { canonicalFolder } from '../cli/localPaths.js';
 import { isAbsolutePath } from './hookValues.js';
 
 const githubRemote = /(?:^|\s)(?:https:\/\/github\.com\/|git@github\.com:|ssh:\/\/git@github\.com\/)[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+/m;
@@ -9,8 +10,9 @@ export function readGitContext(cwd, runGit = runGitCommand) {
   if (!isAbsolutePath(cwd)) return null;
   const top = runGit(['-C', cwd, 'rev-parse', '--show-toplevel']);
   if (typeof top !== 'string') return null;
-  const root = top.replace(/\r?\n$/, '');
-  if (!isAbsolutePath(root)) return null;
+  const reported = top.replace(/\r?\n$/, '');
+  if (!isAbsolutePath(reported)) return null;
+  const root = canonicalFolder(reported);
   const remotes = runGit(['-C', root, 'remote', '-v']);
   return { root, github: typeof remotes === 'string' && githubRemote.test(remotes), configured: isRegularFile(path.join(root, '.github', 'atc.json')) };
 }

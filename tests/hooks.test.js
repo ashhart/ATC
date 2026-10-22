@@ -44,7 +44,7 @@ function tempDir() {
 test('edit hook names pull requests and worktrees from a validated who result', () => {
   const context = deps({ complete: true, limitations: [], observedAt: null, pullRequests: [6013, 6012, 6012], worktrees: 1 });
   const output = postEditOutput(edit('lib/router.js'), context);
-  assert.deepEqual(context.calls[0].args, ['who', '/work/repo/lib/router.js', '--json']);
+  assert.deepEqual(context.calls[0].args, ['who', path.resolve('/work/repo', 'lib/router.js'), '--json']);
   assert.equal(output.hookSpecificOutput.hookEventName, 'PostToolUse');
   assert.match(output.hookSpecificOutput.additionalContext, /open pull requests #6013 and #6012 and 1 other local worktree\./);
 });
@@ -173,7 +173,7 @@ test('the CLI runner spawns node without a shell, forces read-only mode and pars
 });
 
 test('git context reads the clone root and GitHub remote from a real repository', () => {
-  const folder = fs.realpathSync(tempDir());
+  const folder = fs.realpathSync.native(tempDir());
   assert.equal(readGitContext(folder), null);
   execFileSync('git', ['init', '-q', folder]);
   assert.deepEqual(readGitContext(folder), { root: folder, github: false, configured: false });

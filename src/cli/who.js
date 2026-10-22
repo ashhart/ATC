@@ -1,7 +1,7 @@
-import fs from 'node:fs';
 import path from 'node:path';
 import { ensure } from '../core/failure.js';
 import { createTrees } from './gitTrees.js';
+import { canonicalFile, canonicalFolder } from './localPaths.js';
 import { isFilePath } from './reader.js';
 import { readTrafficCache } from './trafficCache.js';
 
@@ -12,7 +12,7 @@ export function inspectWho({ git, now, cwd, labels }, rawPath) {
   ensure(typeof rawPath === 'string' && rawPattern.test(rawPath), 'Give a file path inside this clone.');
   const top = git.run(['rev-parse', '--show-toplevel']).replace(/\r?\n$/, '');
   ensure(path.isAbsolute(top) && rawPattern.test(top), 'Run atc inside a clone of the repository.');
-  const relative = path.relative(realFolder(top), realPath(path.resolve(cwd, rawPath))).split(path.sep).join('/');
+  const relative = path.relative(canonicalFolder(top), canonicalFile(path.resolve(cwd, rawPath))).split(path.sep).join('/');
   ensure(isFilePath(relative) && !relative.startsWith('../'), 'Give a file path inside this clone.');
   const time = now();
   const cache = readTrafficCache(git, time);
@@ -27,14 +27,6 @@ export function inspectWho({ git, now, cwd, labels }, rawPath) {
   const limitations = cache ? [] : ['pullFilesUnavailable'];
   return { command: 'who', complete: limitations.length === 0, limitations, observedAt: cache ? new Date(cache.observedAt).toISOString() : null,
     pullRequests, worktrees };
-}
-
-function realFolder(folder) {
-  try { return fs.realpathSync(folder); } catch { return folder; }
-}
-
-function realPath(file) {
-  return path.join(realFolder(path.dirname(file)), path.basename(file));
 }
 
 function currentHead(git) {

@@ -24,10 +24,11 @@ All notable changes to Agent Traffic Control. Versions follow [semantic versioni
 - `atc-mcp`, a local stdio MCP server exposing the commands as tools.
 - `npm run demo`, a scripted four-agent demo of the same backlog with and without ATC.
 - A `timeLimit` limitation. When GitHub reads approach the 30 second cap, the board, overlap and check return a partial result marked incomplete instead of failing. Writes still refuse to post against an incomplete snapshot.
-- CI on Linux and macOS with Node.js 22.16 and 24, plus a non-blocking Windows job.
+- CI on Linux, macOS and Windows with Node.js 22.16 and 24.
 
 ### Changed
 
+- On Windows, `init`, `who` and the Claude Code hooks compare paths after resolving them with the operating system, so git's `C:/Users/...` form and short `RUNNER~1` style names refer to the same folder.
 - Open issues and their first 100 comments are read through GraphQL in batches of 50, and pull request changed files in batches; a repository with 112 open issues and 133 open pull requests needs about 14 requests instead of several hundred.
 - Changed-file lists are cached in `~/.cache/atc-github/`, keyed by each pull request's update time. Set `ATC_CACHE=0` to disable.
 - A posted command is confirmed by rereading only the target issue.

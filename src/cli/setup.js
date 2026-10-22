@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { readConfig } from '../core/config.js';
 import { Failure, ensure } from '../core/failure.js';
+import { canonicalFolder } from './localPaths.js';
 import { appendText, createDirectory, createFile, failed, inspectDirectory, readFile, unsafe } from './safeFiles.js';
 import { contributingStanza, cursorRule } from './setupGuides.js';
 
@@ -77,10 +78,13 @@ function repositoryRoot(cwd) {
     encoding: 'utf8', timeout: 10000, maxBuffer: 8192, env: { ...process.env, GIT_OPTIONAL_LOCKS: '0' }
   });
   ensure(result.status === 0 && typeof result.stdout === 'string', 'Run atc init inside a git repository.');
-  const root = result.stdout.replace(/\r?\n$/, '');
-  ensure(path.isAbsolute(root) && safePath(root), unsafe);
+  const reported = result.stdout.replace(/\r?\n$/, '');
+  ensure(path.isAbsolute(reported) && safePath(reported), unsafe);
+  inspectAncestors(path.resolve(reported));
+  const root = canonicalFolder(reported);
+  ensure(safePath(root), unsafe);
   inspectAncestors(root);
-  const relative = path.relative(root, cwd);
+  const relative = path.relative(root, canonicalFolder(cwd));
   ensure(relative === '' || (!relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative)), unsafe);
   return root;
 }

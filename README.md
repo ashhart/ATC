@@ -58,13 +58,23 @@ Agent sessions stay on your machine in `.git/atc/`, so four agents in four workt
 
 You need Node.js 22.16 or later, git 2.38 or later and the GitHub CLI (`gh auth login`). `atc doctor` checks all three.
 
+Run it straight from GitHub, with nothing to install:
+
 ```bash
-npx atc-github --repo owner/name
+npx github:ashhart/ATC --repo ashhart/ATC
 ```
 
-Until the npm package is published, run it from a clone of this repository: `npm link` inside the clone puts `atc` on your path.
+`--repo` is the repository you want to look at. The example shows ATC's own board; put any `owner/name` there, such as your own project. Inside a clone of that project you can leave `--repo` off, and ATC picks the repository itself, using the upstream for a fork.
 
-Inside a clone, `atc` picks the repository on its own, using the upstream for a fork. A terminal gets the readable board. Agents and scripts get strict JSON with `--json`.
+For a short `atc` command, install it once:
+
+```bash
+npm install -g github:ashhart/ATC
+```
+
+Then run `atc`, `atc check 42` and the rest from any clone. It isn't `npx atc`, because the `atc` name on npm belongs to an unrelated package.
+
+A terminal gets the readable board. Agents and scripts get strict JSON with `--json`.
 
 ## Before, during and after the work
 

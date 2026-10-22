@@ -22,7 +22,8 @@ export function readFile(file, limit) {
     ensure(stat.isFile() && !stat.isSymbolicLink() && stat.nlink === 1n && stat.size <= BigInt(limit), unsafe);
     descriptor = fs.openSync(file, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
     const opened = fs.fstatSync(descriptor, { bigint: true });
-    ensure(opened.ino === stat.ino && (process.platform === 'win32' || opened.dev === stat.dev) && opened.size <= BigInt(limit), unsafe);
+    const sameDevice = opened.dev === stat.dev || (process.platform === 'win32' && stat.dev === 0n);
+    ensure(opened.ino === stat.ino && sameDevice && opened.size <= BigInt(limit), unsafe);
     const content = fs.readFileSync(descriptor, 'utf8');
     ensure(Buffer.byteLength(content) <= limit, unsafe);
     return content;

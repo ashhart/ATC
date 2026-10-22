@@ -12,12 +12,13 @@ export function trafficView({ state, pulls, config, partial, limitations = [], n
     return { contributor: valid ? reference : null, mine: login === me };
   };
   const traffic = pullTraffic(pulls, config, pullFiles, actor, limits);
-  const fresh = presence.filter(flight => flight.active <= now && flight.active + presenceTtlMs > now);
-  const contributors = contributorRows(state.claims, pulls, openIssues, actor, fresh.length ? me : null);
+  const seen = new Set();
+  const fresh = presence.filter(flight => flight.active <= now && flight.active + presenceTtlMs > now && !seen.has(flight.session) && seen.add(flight.session));
+  const contributors = contributorRows(state.claims, pulls, openIssues, actor, [...new Set(fresh.map(flight => flight.login || me))]);
   const issues = issueRows(state.claims, traffic.pullRequests, openIssues, actor);
   const sessions = fresh
-    .map(flight => ({ session: flight.session, contributor: actor(me).contributor, issue: flight.issue, state: flight.state,
-      active: new Date(flight.active).toISOString(), expiresAt: new Date(flight.active + presenceTtlMs).toISOString() }))
+    .map(flight => ({ session: flight.session, contributor: actor(flight.login || me).contributor, issue: flight.issue, state: flight.state,
+      active: new Date(flight.active).toISOString(), expiresAt: new Date(flight.active + presenceTtlMs).toISOString(), local: flight.local !== false }))
     .sort((first, second) => first.session - second.session);
   const proposals = state.proposals.map(proposal => ({ id: proposal.id, issue: proposal.issue, kind: proposal.kind, areas: proposal.areas }));
   const duplicateAttempts = duplicates(issues, pulls);
@@ -60,7 +61,7 @@ function contributorRows(claims, pulls, openIssues, actor, present) {
     row.mine ||= mine;
     if (field) row[field].push(number);
   }
-  if (present) add(present);
+  for (const login of present) add(login);
   for (const claim of claims) add(claim.login, claim.role === 'work' ? 'workingIssues' : 'reviewingIssues', claim.issue);
   for (const issue of openIssues) {
     for (const assignee of issue.assignees) add(assignee.login, 'assignedIssues', issue.number);

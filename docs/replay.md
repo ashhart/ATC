@@ -10,7 +10,7 @@ The board reads ordinary GitHub assignments and open pull requests alongside rep
 
 ATC claims expose `since` and `lastActivity`; pull requests expose `createdAt` and `updatedAt`. These timestamps describe observed artifacts, not someone's current coding session or availability. A recent update can come from automation, and old activity does not establish abandonment. An issue with `state: "unknown"` has no confirmed open state in the returned coverage.
 
-Agent presence is explicit and local. `atc start` and `atc pulse` record a session in the clone's `.git/atc/presence.json`, shared by all worktrees of that clone, and post nothing. A session is fresh for five minutes, and `land` removes it. The board shows these sessions only when it runs inside a clone of the selected repository. `summary.activeAgents` counts fresh working and reviewing sessions, so several sessions can belong to one contributor; blocked sessions are listed but excluded from that count. Presence is not part of the replay and never renews a claim. Earlier versions posted `/atc flight` comments; those no longer parse.
+Agent presence is explicit. `atc start` and `atc pulse` record a session under `refs/atc/presence/local` in the clone's shared git directory and post no comments. A repository that sets `"presence": "git"` also shares each person's sessions through `refs/atc/presence/<login>` on its remote, and the board fetches them; an unreachable remote adds `presenceUnavailable`. A session is fresh for five minutes, and `land` removes it. `summary.activeAgents` counts fresh working and reviewing sessions, so several sessions can belong to one contributor; blocked sessions are listed but excluded from that count. Presence is not part of the replay and never renews a claim. Earlier versions posted `/atc flight` comments; those no longer parse.
 
 `fileOverlaps` counts shared paths between pull requests by different contributors. `areaOverlaps` identifies shared configured areas even when the changed paths differ. Help labels and unassigned issues provide routes to investigate; a potential pair, split, or review is not an accepted agreement.
 
@@ -61,6 +61,7 @@ The `limitations` list contains fixed reason enums:
 | `pullFilesUnavailable` | A board pull request has no inspected file set |
 | `configurationUnpinned` | Configured areas have no explicit stable numeric IDs |
 | `timeLimit` | GitHub reads stopped at the 30 second cap; run again, and the changed-file cache makes the next run faster |
+| `presenceUnavailable` | Sessions shared through git could not be fetched from the remote |
 
 ## Troubleshooting
 

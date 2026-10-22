@@ -4,6 +4,7 @@ import { checkView, statusView } from '../core/view.js';
 import { areaArgs, issueArg, kindArg, presenceArg, proposalArg, sessionArg } from './args.js';
 import { doctor } from './doctor.js';
 import { reportPresence } from './presenceCommand.js';
+import { shareResult } from './presenceShare.js';
 import { publishPresence } from './publicPresence.js';
 import { inspectWho } from './who.js';
 import { inspectTraffic } from './traffic.js';
@@ -31,8 +32,10 @@ export async function runCli({ command, rest, flags }, { gh, git, sleep, now = D
   ensure(!env.ATC_SIGNATURE, 'ATC_SIGNATURE is not supported. Comments contain commands only.');
   ensure(env.ATC_READ_ONLY === undefined || ['0', '1'].includes(env.ATC_READ_ONLY), 'Invalid ATC_READ_ONLY setting');
   if (['start', 'pulse', 'land'].includes(command)) {
-    const result = reportPresence(command, input, { git, now, dryRun: Boolean(flags.dryRun), readOnly: env.ATC_READ_ONLY === '1' });
-    return displayResult(await publishPresence(result, { command, flags, gh, git, fetcher, repository: () => resolveRepository(gh, flags, env) }));
+    const repository = () => resolveRepository(gh, flags, env);
+    const local = reportPresence(command, input, { git, now, dryRun: Boolean(flags.dryRun), readOnly: env.ATC_READ_ONLY === '1' });
+    const result = shareResult(local, { gh, git, now, repository });
+    return displayResult(await publishPresence(result, { command, flags, gh, git, fetcher, repository }));
   }
   const repository = resolveRepository(gh, flags, env);
   if (labels) labels.repository = repository;

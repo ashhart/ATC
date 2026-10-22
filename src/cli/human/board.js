@@ -17,8 +17,10 @@ export function renderBoard(result, labels, style, now) {
   const others = result.limitations.filter(limit => limit !== 'timeLimit');
   if (others.length) lines.push(style.yellow(`Partial view: ${others.join(', ')}. Treat empty sections as unknown.`));
   if (!result.coordinationEnabled) lines.push(style.dim('Claims are off: this repository has no .github/atc.json, so ATC only reads here.'));
-  section(lines, style, 'Agents in flight on this machine', result.sessions.map(session =>
-    `${issueName(session.issue, labels)}  ${stateWord(session.state, style)}  ${style.dim(ago(session.active, now))}`));
+  const elsewhere = result.sessions.some(session => !session.local);
+  section(lines, style, elsewhere ? 'Agents in flight' : 'Agents in flight on this machine', result.sessions.map(session =>
+    `${issueName(session.issue, labels)}  ${stateWord(session.state, style)}  ${style.dim(`${ago(session.active, now)}${elsewhere
+      ? `, ${session.local ? 'this machine' : `${person(session, labels)} elsewhere`}` : ''}`)}`));
   section(lines, style, 'In flight: who is working on what', rows.inProgress.slice(0, 10).map(issue => {
     const holders = issue.claims.map(claim => `${person(claim, labels)}${claim.role === 'review' ? ' reviewing' : ' claimed'}`);
     const linked = issue.pullRequests.map(number => rows.pulls.get(number)).filter(Boolean)

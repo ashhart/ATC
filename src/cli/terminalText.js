@@ -33,5 +33,5 @@ export function fileList(files, maximum = 3) {
 }
 
 export function createLabels() {
-  return { repository: null, titles: new Map(), contributors: new Map(), shared: new Map(), conflicts: new Map(), worktrees: new Map() };
+  return { repository: null, titles: new Map(), contributors: new Map(), shared: new Map(), conflicts: new Map(), worktrees: new Map(), agents: [] };
 }

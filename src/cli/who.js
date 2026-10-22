@@ -2,6 +2,7 @@ import path from 'node:path';
 import { ensure } from '../core/failure.js';
 import { createTrees } from './gitTrees.js';
 import { canonicalFile, canonicalFolder } from './localPaths.js';
+import { readPeers } from './peerPresence.js';
 import { isFilePath } from './reader.js';
 import { readTrafficCache } from './trafficCache.js';
 
@@ -24,9 +25,11 @@ export function inspectWho({ git, now, cwd, labels }, rawPath) {
     worktrees += 1;
     labels?.worktrees.set(worktrees, worktree.branch);
   }
+  const agents = readPeers(git, now).filter(flight => flight.files.includes(relative));
+  for (const flight of agents) labels?.agents.push({ login: flight.login, issue: flight.issue });
   const limitations = cache ? [] : ['pullFilesUnavailable'];
   return { command: 'who', complete: limitations.length === 0, limitations, observedAt: cache ? new Date(cache.observedAt).toISOString() : null,
-    pullRequests, worktrees };
+    pullRequests, worktrees, agents: agents.length };
 }
 
 function currentHead(git) {

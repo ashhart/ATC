@@ -45,11 +45,11 @@ export function createGit(run = runGit) {
       return folder;
     },
     run: call,
-    exec: (args, env) => run(args, env)
+    exec: (args, env, input) => run(args, env, input)
   };
 }
 
-function runGit(args, env) {
-  return spawnSync('git', args, { encoding: 'utf8', timeout: 30000, maxBuffer: 32 * 1024 * 1024,
+function runGit(args, env, input) {
+  return spawnSync('git', args, { encoding: 'utf8', timeout: 30000, maxBuffer: 32 * 1024 * 1024, input,
     env: { ...process.env, GIT_OPTIONAL_LOCKS: '0', ...env } });
 }

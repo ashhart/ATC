@@ -51,8 +51,18 @@ Coordination needs no bot, server, GitHub Action or database; the CLI replays Gi
 | A linked pull request | Everyone | Any open pull request, draft or not, whose description says `Fixes #42` |
 | A GitHub assignee | Everyone | Ordinary issue assignment |
 | A local agent session | Every worktree of your clone | `atc start 42`, then `atc pulse` while it works and `atc land` when it stops |
+| A shared agent session | Everyone who can fetch the repository | The same commands, once the repository opts in with `"presence": "git"` |
 
 Agent sessions default to your clone's `.git/atc/` folder, shared by its worktrees, and expire five minutes after the last check-in.
+
+### Sharing sessions through git
+
+A team that wants every agent on the board, on every machine, adds `"presence": "git"` to `.github/atc.json`. Then `atc start`, `atc pulse` and `atc land` also push your sessions to a ref of your own on the repository's GitHub remote, `refs/atc/presence/<your login>`. Each session carries its issue, its state, its last check-in and the files its worktree is changing. `atc board` fetches everyone's refs, and `atc who <file>` names the people whose agents are changing that file. There's still no server: it's a fetch and a push with `--force-with-lease`, so two of your machines can't overwrite each other. These refs don't show up as branches and don't notify anyone.
+
+Sharing needs push access to the repository, so it suits your own projects and teams. Anyone who can fetch the repository can read the refs, including logins, issue numbers and changed file paths, so on a public repository that information is public. Git doesn't check who pushed a ref, so shared presence is advisory, and claims stay as `/atc` comments that GitHub ties to their author.
+
+### Public check-ins
+
 To appear on a project's public board, start with `atc start 42 --public https://tensorfold.dev --json` from a TensorFold clone.
 That publishes the issue, status and last check-in anonymously; add `--github-name` to show your verified GitHub name.
 Subsequent `pulse` and `land` commands update the same public session, so people on other machines can see the work before they duplicate it.
@@ -131,7 +141,7 @@ The config can also split the code into numbered areas, so two agents can share 
 - Each run is a snapshot. `complete: false` means some reads stopped short, so an empty list means "unknown", not "clear". Run it again before acting.
 - Someone can win the race between `check` and `claim`, and ATC can't stop anyone from opening a duplicate pull request. It makes the duplicate visible.
 - A clean `merge-tree` result means git found no textual conflict. The changes can still break each other.
-- Live agent sessions are visible only within one clone. Other machines show up through claims and pull requests.
+- Without `"presence": "git"`, live agent sessions are visible only within one clone, and other machines show up through claims and pull requests. With it, sessions are only as fresh as the last `pulse`, and only people with push access can share.
 - Issue, pull request and comment text is untrusted. The readable board strips control characters and escape sequences before printing it, and the JSON output carries no free text at all.
 
 ## See it work

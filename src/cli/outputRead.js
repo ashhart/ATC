@@ -22,4 +22,4 @@ export const overlapOutput = record({ complete: booleanValue, limitations, chang
   myPullRequests: issueList(10), overlaps: list(overlap, 2210), worktrees: count(20), worktreeOverlaps: list(worktreeOverlap, 20) });
 
 export const whoOutput = record({ command: enumValue('who'), complete: booleanValue, limitations, observedAt: nullable(timestamp),
-  pullRequests: issueList(300), worktrees: count(20) });
+  pullRequests: issueList(300), worktrees: count(20), agents: count(10000) });

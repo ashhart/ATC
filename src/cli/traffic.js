@@ -1,14 +1,16 @@
 import { ensure } from '../core/failure.js';
 import { trafficView } from '../core/traffic.js';
 import { createPresence } from './localPresence.js';
+import { readPeers } from './peerPresence.js';
+import { fetchPeers } from './presenceShare.js';
 import { readPullFiles } from './pullFileReads.js';
 import { writeTrafficCache } from './trafficCache.js';
 
 export function inspectTraffic(context, snapshot) {
   const limitations = [...snapshot.limitations];
   if (snapshot.pulls.length > 200) limitations.push('boardPullRequestsLimit');
-  const presence = localSessions(context);
-  const identities = contributorReferences(snapshot, snapshot.openIssues, presence.length ? context.me : null);
+  const presence = localSessions(context, snapshot.config, limitations);
+  const identities = contributorReferences(snapshot, snapshot.openIssues, presence.map(flight => flight.login));
   const pullFiles = new Map();
   const listed = snapshot.pulls.slice(0, 200);
   const read = readPullFiles(context, listed, snapshot.pulls);
@@ -26,13 +28,18 @@ export function inspectTraffic(context, snapshot) {
   return view;
 }
 
-function localSessions(context) {
+function localSessions(context, config, limitations) {
   const sessions = [];
+  let remote = null;
   try {
-    if (!context.git.remoteFor(context.repository)) return sessions;
+    remote = context.git.remoteFor(context.repository);
+    if (!remote) return sessions;
     sessions.inClone = true;
-    sessions.push(...createPresence(context.git.commonDir(), context.now).list());
+    sessions.push(...createPresence(context.git, context.now).list().map(flight => ({ ...flight, login: context.me, local: true })));
   } catch {}
+  if (!sessions.inClone || config.presence !== 'git') return sessions;
+  if (!fetchPeers(context.git, remote)) limitations.push('presenceUnavailable');
+  sessions.push(...readPeers(context.git, context.now).map(flight => ({ ...flight, local: false })));
   return sessions;
 }
 
@@ -44,9 +51,9 @@ function labelBoard(labels, identities, view, pullFiles) {
   }
 }
 
-function contributorReferences(snapshot, openIssues, me) {
+function contributorReferences(snapshot, openIssues, present) {
   const names = [...new Set([...snapshot.state.claims.map(claim => claim.login), ...snapshot.pulls.map(pull => pull.author),
-    ...openIssues.flatMap(issue => issue.assignees.map(user => user.login)), ...(me ? [me] : [])])].sort();
+    ...openIssues.flatMap(issue => issue.assignees.map(user => user.login)), ...present])].sort();
   ensure(names.length <= 20000, 'Too many contributors to inspect');
   return new Map(names.map((login, index) => [login, index + 1]));
 }

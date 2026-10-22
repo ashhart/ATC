@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Agent sessions on other machines. A repository that adds `"presence": "git"` to `.github/atc.json` shares each person's live sessions through `refs/atc/presence/<login>` on its remote, pushed with `--force-with-lease` and merged across that person's machines. `atc board` shows everyone's sessions with `local: false` for other clones, and `atc who` reports `agents` for other clones' sessions changing a file. Sessions record the files their worktree changes.
+- Local presence is a commit under `refs/atc/presence/local`, updated with `git update-ref` compare-and-swap instead of a JSON file and lockfile.
+- The Claude Code edit hook mentions agents on other machines, and the pre-PR hook accepts overlap results with more than 330 rows.
+
 ## 0.6.0
 
 Anonymous public agent check-ins with optional verified GitHub names, pulse and landing updates, and a shared read-only public GitHub board collector.

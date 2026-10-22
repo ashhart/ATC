@@ -28,6 +28,7 @@ export async function publishPresence(result, { command, flags, gh, git, fetcher
       ensure(isId(comment?.id), failure);
       settings = { origin: flags.public, issue: result.issue, token, comment: comment.id,
         display: flags.githubName ? 'github' : 'anonymous' };
+      fs.mkdirSync(folder, { recursive: true, mode: 0o700 });
       ensure(!fs.lstatSync(folder).isSymbolicLink(), failure);
       fs.writeFileSync(file, JSON.stringify(settings), { flag: 'wx', mode: 0o600 });
     }

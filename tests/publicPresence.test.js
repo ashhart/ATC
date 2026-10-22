@@ -35,7 +35,7 @@ test('public sessions are anonymous by default, keep the secret local, and publi
   assert.equal(f.posts[0].body, `/atc presence ${createHash('sha256').update(input.token).digest('hex')}`);
   assert.equal(JSON.stringify(result).includes(input.token), false);
   assert.equal(JSON.stringify(f.posts).includes(input.token), false);
-  const file = path.join(f.git.folder, 'atc', `public-${result.session}.json`);
+  const file = path.join(f.git.commonDir(), 'atc', `public-${result.session}.json`);
   if (process.platform !== 'win32') assert.equal(fs.statSync(file).mode & 0o777, 0o600);
   const pulse = { ...f.start, state: 'reviewing' };
   assert.equal((await publishPresence(pulse, { ...f.options, command: 'pulse', flags: {} })).publication, 'public');
@@ -69,7 +69,7 @@ test('invalid origins, hostile local state, missing opt-in and unavailable servi
   f.options.fetcher = async () => new Response('', { status: 503 });
   const result = await publishPresence(f.start, f.options);
   assert.equal(result.publication, 'unavailable'); assert.equal(resultExitCode(result, true), 2);
-  const file = path.join(f.git.folder, 'atc', `public-${result.session}.json`);
+  const file = path.join(f.git.commonDir(), 'atc', `public-${result.session}.json`);
   const settings = JSON.parse(fs.readFileSync(file)); settings.origin += '/hostile'; fs.writeFileSync(file, JSON.stringify(settings));
   assert.equal((await publishPresence(f.start, { ...f.options, command: 'pulse', flags: {} })).publication, undefined);
   const disabled = fixture(); disabled.options.gh.getOptional = () => null;

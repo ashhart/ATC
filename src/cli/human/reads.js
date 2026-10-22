@@ -1,4 +1,4 @@
-import { fileList, plural } from '../terminalText.js';
+import { fileList, plural, safeText } from '../terminalText.js';
 import { branchName, issueName, pullName } from './names.js';
 
 export function renderCheck(result, labels, style) {
@@ -59,7 +59,9 @@ export function renderWho(result, labels, style) {
   const newest = [...result.pullRequests].sort((first, second) => second - first);
   const pulls = newest.length > 8 ? `${plural(newest.length, 'open PR')} (newest ${newest.slice(0, 8).map(n => `#${n}`).join(', ')})`
     : newest.map(number => pullName(number, labels)).join(', ');
-  const places = [...(pulls ? [pulls] : []), ...Array.from({ length: result.worktrees }, (_, index) => branchName(index + 1, labels))];
+  const agents = labels.agents.slice(0, 5).map(agent => `${safeText(agent.login, 39) ? `@${safeText(agent.login, 39)}` : 'someone'}'s agent on #${agent.issue}`);
+  const places = [...(pulls ? [pulls] : []), ...Array.from({ length: result.worktrees }, (_, index) => branchName(index + 1, labels)),
+    ...(agents.length ? agents : result.agents ? [`${plural(result.agents, 'agent')} elsewhere`] : [])];
   const lines = [places.length ? `${style.yellow('Also changed in')} ${places.join(', ')}` : style.green('No one else is changing this file.')];
   if (!result.complete) lines.push(style.dim('  Open PR files unknown: run atc board or atc overlap to refresh.'));
   return lines.join('\n');

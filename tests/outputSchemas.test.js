@@ -101,7 +101,7 @@ test('setup output does not accept enum values belonging to other checks', () =>
 
 test('session data has its own field schema and canonical expiry timestamps', () => {
   const board = outputBoard();
-  board.sessions = [{ session: 12, contributor: 1, issue: 1, state: 'working', active: observedAt, expiresAt: '2026-10-21T12:05:00.000Z' }];
+  board.sessions = [{ session: 12, contributor: 1, issue: 1, state: 'working', active: observedAt, expiresAt: '2026-10-21T12:05:00.000Z', local: true }];
   board.proposals = [];
   board.summary.activeAgents = 1;
   assert.equal(displayResult(board, known).sessions[0].state, 'working');

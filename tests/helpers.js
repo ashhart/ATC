@@ -4,6 +4,8 @@ import path from 'node:path';
 import { runCli } from '../src/cli/actions.js';
 import { parseCliArgs } from '../src/cli/args.js';
 import { createGh } from '../src/cli/gh.js';
+import { createGit } from '../src/cli/git.js';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { createFakeGithub } from './fakeGithub.js';
 
 export const areasConfig = { areaIds: { core: 1, docs: 2, tests: 3 }, areas: { core: ['src/core/'], docs: ['docs/', 'README.md'], tests: ['tests/'] } };
@@ -15,8 +17,10 @@ export function setup(config = areasConfig) {
 }
 
 export function presenceGit(files = []) {
-  const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'atc-presence-'));
-  return { ...stubGit(files), commonDir: () => folder, folder };
+  const folder = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'atc-presence-')));
+  execFileSync('git', ['init', '-q', folder]);
+  const run = (args, env, input) => spawnSync('git', args, { cwd: folder, encoding: 'utf8', input, env: { ...process.env, GIT_OPTIONAL_LOCKS: '0', ...env } });
+  return { ...createGit(run), ...stubGit(files), folder };
 }
 
 export function stubGit(files = []) {

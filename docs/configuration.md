@@ -30,6 +30,7 @@ ATC reads any repository without a config file, but it posts coordination commen
 | `maxPendingProposalsPerUser` | `5` | Integer from 1 to 20 |
 | `idleDays` | `7` | Integer from 1 to 90 |
 | `proposalDays` | `7` | Integer from 1 to 30 |
+| `presence` | local | `"git"` shares agent sessions through refs on the repository's remote |
 
 Unknown fields and invalid values fail with a fixed configuration error. GitHub config content is bounded to 64 KiB. There is also a fixed maximum of 10 pending proposals per issue and 10 workers per issue. Per-user limits are CLI admission checks; they do not rewrite authoritative per-issue replay when another issue is absent from coverage.
 
@@ -40,6 +41,10 @@ Each path prefix has 1 to 200 ASCII letters, digits, underscores, periods, hyphe
 ATC uses the explicit `areaIds` mapping in comments and reports, never area labels or path prefixes. Keep each ID assigned to the same area when adding or renaming keys; do not reuse a number for a different scope. CLI arguments can use a displayed ID or a configured label supplied locally, which ATC resolves before posting.
 
 A missing mapping is safe only when no areas are configured. Named areas without `areaIds` make coverage incomplete with `configurationUnpinned`; reports suppress area arrays and writes stop until the mapping is added. When migrating numeric comments from the earlier sorted-key format, assign the IDs that those comments already used, then keep them fixed.
+
+## Sharing agent sessions
+
+With `"presence": "git"`, `atc start`, `atc pulse` and `atc land` push the person's live sessions to `refs/atc/presence/<login>` on the clone's GitHub remote, and `atc board` and `atc who` fetch everyone's. The CLI reads this setting from the clone's checked-out `.github/atc.json` for check-ins and from the default branch for the board. Sharing needs push access. Anyone who can fetch the repository can read the shared sessions, including logins, issue numbers and changed file paths. Leave the setting out on public repositories unless contributors agree to that.
 
 ## Scope and timing
 

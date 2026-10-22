@@ -18,7 +18,7 @@ const commands = enumValue(...Object.keys(outcomes));
 const state = enumValue('working', 'reviewing', 'blocked');
 const schema = record({ issue: nullable(issueNumber), command: commands, posted: nullable(booleanValue), outcome: value => value },
   { comment: artifactId, areas: areaList, kind: proposalKind, proposal: artifactId, session: sessionId, state,
-    publication: enumValue('public', 'unavailable') });
+    publication: enumValue('public', 'unavailable'), sharing: enumValue('git', 'unavailable') });
 
 export function writeOutput(value, context) {
   const result = schema(value, context);
@@ -26,7 +26,7 @@ export function writeOutput(value, context) {
   const postedKeys = result.posted ? ['issue', 'command', 'posted', 'comment', 'outcome', 'session', 'state']
     : result.outcome === 'dryRun' ? ['issue', 'command', 'posted', 'outcome', 'areas', 'kind', 'proposal', 'session', 'state']
       : ['issue', 'command', 'posted', 'outcome', 'session', 'state'];
-  rejectUnless(Object.keys(result).every(key => postedKeys.includes(key) || key === 'publication' && ['flight', 'land'].includes(result.command)));
+  rejectUnless(Object.keys(result).every(key => postedKeys.includes(key) || ['publication', 'sharing'].includes(key) && ['flight', 'land'].includes(result.command)));
   rejectUnless((result.posted === true) === Object.hasOwn(result, 'comment'));
   rejectUnless((result.posted === null) === (result.outcome === 'uncertain'));
   rejectUnless(result.issue !== null || ['accept', 'decline', 'withdraw'].includes(result.command));

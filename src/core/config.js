@@ -12,11 +12,15 @@ const limits = {
 };
 
 export function readConfig(value) {
-  const config = { areas: {}, areaIds: {}, areasPinned: true, enabled: false };
+  const config = { areas: {}, areaIds: {}, areasPinned: true, enabled: false, presence: 'local' };
   for (const [key, [fallback]] of Object.entries(limits)) config[key] = fallback;
   if (value === null || value === undefined) return config;
-  check(isRecord(value) && Object.keys(value).every(key => ['areas', 'areaIds'].includes(key) || Object.hasOwn(limits, key)));
+  check(isRecord(value) && Object.keys(value).every(key => ['areas', 'areaIds', 'presence'].includes(key) || Object.hasOwn(limits, key)));
   config.enabled = true;
+  if (Object.hasOwn(value, 'presence')) {
+    check(value.presence === 'git');
+    config.presence = 'git';
+  }
   if (Object.hasOwn(value, 'areas')) config.areas = readAreas(value.areas);
   config.areasPinned = Object.keys(config.areas).length === 0;
   if (Object.hasOwn(value, 'areaIds')) {

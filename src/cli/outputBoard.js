@@ -13,7 +13,7 @@ const areaOverlap = record({ pullRequests: pair, areas: areaList });
 const opportunity = record({ issue: issueNumber, reason: enumValue('helpWanted', 'goodFirstIssue', 'unassigned', 'activeClaim'),
   signal: enumValue('request', 'candidate'), actions: list(enumValue('check', 'claim', 'proposePair', 'proposeReview', 'proposeSplit'), 5, 1, true) });
 const session = record({ session: sessionId, contributor: nullable(contributorId), issue: issueNumber,
-  state: enumValue('working', 'reviewing', 'blocked'), active: timestamp, expiresAt: timestamp });
+  state: enumValue('working', 'reviewing', 'blocked'), active: timestamp, expiresAt: timestamp, local: booleanValue });
 const summary = record({ contributors: count(20000), issues: count(7000), openIssues: count(1000), openPullRequests: count(300),
   fileOverlaps: count(19900), opportunities: count(4000), activeAgents: count(60000), duplicateAttempts: count(1000), staleClaims: count(12000) });
 const duplicateAttempt = record({ issue: issueNumber, pullRequests: list(issueNumber, 300, 2, true) });

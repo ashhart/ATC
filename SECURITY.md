@@ -46,6 +46,8 @@ Every board has an observation time. A recent update does not prove that someone
 
 Session check-ins report an agent's stated presence on one clone for five minutes. They are not proof of execution or separate people, and other machines never see them. The active count excludes blocked sessions and never treats contributor accounts or pull request authors as a count of active agents.
 
+With `"presence": "git"`, check-ins push `refs/atc/presence/<login>` to the repository's remote. Each ref holds a commit with one JSON file: session numbers, issue numbers, states, check-in times, a random per-clone identifier, and the repository paths each session's worktree is changing. It never contains tokens, titles, comments or file contents. Anyone who can fetch the repository can read these refs, so on a public repository they are public. Git does not authenticate who pushed a ref, and anyone with push access can write any of them, so shared presence is advisory and can never grant or block a claim. Readers validate every shared document strictly, ignore malformed ones, and accept only lowercase GitHub logins as ref names. Pushes skip local git hooks with `--no-verify`, because they touch only these refs.
+
 ATC reads retained comment history for the inspected current open issues within fixed limits. Deleted comments cannot be recovered, and edits or deletions can change an agreement. Exceeding an open-issue or active comment-read limit makes coverage incomplete and blocks coordination writes. Current issue state, repository configuration, CLI version, and evaluation time also affect results. Pull request metadata provides context; it does not extend claim lifetime.
 
 ## Verification and reporting

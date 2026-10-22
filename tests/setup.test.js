@@ -141,7 +141,7 @@ test('init adds an agent section to an existing CONTRIBUTING guide once and writ
   assert.deepEqual([first.contributing, first.cursor], ['updated', 'created']);
   const guide = fs.readFileSync(path.join(root, '.github/CONTRIBUTING.md'), 'utf8');
   assert.ok(guide.startsWith('# How to help\n\nBe kind.\n'));
-  assert.match(guide, /npx atc-github check <issue>/);
+  assert.match(guide, /npx github:ashhart\/ATC check <issue>/);
   assert.equal(fs.existsSync(path.join(root, 'CONTRIBUTING.md')), false);
   assert.match(fs.readFileSync(path.join(root, '.cursor/rules/atc.mdc'), 'utf8'), /alwaysApply: true/);
   const again = initRepository({ cwd: root });

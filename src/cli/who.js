@@ -18,8 +18,9 @@ export function inspectWho({ git, now, cwd, labels }, rawPath) {
   const cache = readTrafficCache(git, time);
   const pullRequests = cache ? [...cache.pulls].filter(([, files]) => files.has(relative)).map(([number]) => number).sort((a, b) => a - b) : [];
   let worktrees = 0;
-  for (const worktree of createTrees(git)?.worktrees() || []) {
-    if (!worktreeChanges(git, worktree.path).has(relative)) continue;
+  const head = currentHead(git);
+  for (const worktree of head ? createTrees(git)?.worktrees() || [] : []) {
+    if (!worktreeChanges(git, worktree.path, head).has(relative)) continue;
     worktrees += 1;
     labels?.worktrees.set(worktrees, worktree.branch);
   }
@@ -36,10 +37,17 @@ function realPath(file) {
   return path.join(realFolder(path.dirname(file)), path.basename(file));
 }
 
-function worktreeChanges(git, folder) {
+function currentHead(git) {
+  try {
+    const head = git.run(['rev-parse', 'HEAD']).trim();
+    return shaPattern.test(head) ? head : null;
+  } catch { return null; }
+}
+
+function worktreeChanges(git, folder, head) {
   const files = new Set();
   try {
-    const start = git.run(['-C', folder, 'merge-base', 'HEAD', git.run(['rev-parse', 'HEAD']).trim()]).trim();
+    const start = git.run(['-C', folder, 'merge-base', 'HEAD', head]).trim();
     if (!shaPattern.test(start)) return files;
     const changed = git.run(['-C', folder, 'diff', '--no-ext-diff', '--no-textconv', '--no-renames', '--name-only', '-z', start]);
     const added = git.run(['-C', folder, 'ls-files', '--others', '--exclude-standard', '-z']);

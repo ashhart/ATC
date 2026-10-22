@@ -44,21 +44,20 @@ export async function postAndConfirm(context, issue, command) {
   const encoded = command.areas ? { ...command, areas: command.areas.map(area => String(areaReference(context.snapshot.config, area))) } : command;
   const body = commentBody(encoded);
   const preview = previewOutcome(context.snapshot, context.me, issue, command);
-  const presence = command.session ? { session: command.session, ...(command.state ? { state: command.state } : {}) } : {};
-  if (!['claimed', 'claimUpdated', 'renewed', 'released', 'proposed', 'accepted', 'declined', 'withdrawn', 'checkedIn', 'landed'].includes(preview)) {
+  if (!['claimed', 'claimUpdated', 'renewed', 'released', 'proposed', 'accepted', 'declined', 'withdrawn'].includes(preview)) {
     return { issue, command: command.verb, posted: false, outcome: preview };
   }
   if (context.dryRun) return { issue, command: command.verb, posted: false, outcome: 'dryRun',
     ...Object.fromEntries(Object.entries(command).filter(([key]) => key !== 'verb')) };
-  if (context.readOnly) return { issue, command: command.verb, posted: false, outcome: 'readOnly', ...presence };
+  if (context.readOnly) return { issue, command: command.verb, posted: false, outcome: 'readOnly' };
   let created;
   try { created = context.gh.post(`repos/${context.repository}/issues/${issue}/comments`, { body }); }
   catch (error) {
     if (!(error instanceof UncertainWrite)) throw error;
-    return { issue, command: command.verb, posted: null, outcome: 'uncertain', ...presence };
+    return { issue, command: command.verb, posted: null, outcome: 'uncertain' };
   }
-  if (!isId(created?.id)) return { issue, command: command.verb, posted: null, outcome: 'uncertain', ...presence };
-  const reply = { issue, command: command.verb, posted: true, comment: created.id, outcome: 'pending', ...presence };
+  if (!isId(created?.id)) return { issue, command: command.verb, posted: null, outcome: 'uncertain' };
+  const reply = { issue, command: command.verb, posted: true, comment: created.id, outcome: 'pending' };
   let previous = null;
   for (let attempt = 0; attempt < 6; attempt += 1) {
     await context.sleep(attempt === 0 ? 1500 : 3000);

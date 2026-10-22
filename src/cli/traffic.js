@@ -20,7 +20,7 @@ export function inspectTraffic(context, snapshot) {
   }
   const scoped = { ...snapshot, limitations: [...new Set(limitations)].sort(), partial: limitations.length > 0 };
   const view = trafficView(scoped, { me: context.me, repository: context.repository, openIssues: snapshot.openIssues, identities, pullFiles, presence });
-  if (presence.inClone) writeTrafficCache(context.git, snapshot.now, listed.filter(pull => pull.author !== context.me)
+  if (presence.inClone && read.complete && listed.length === snapshot.pulls.length) writeTrafficCache(context.git, snapshot.now, listed.filter(pull => pull.author !== context.me)
     .map(pull => ({ number: pull.number, files: pullFiles.get(pull.number) })));
   if (context.labels) labelBoard(context.labels, identities, view, pullFiles);
   return view;

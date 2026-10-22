@@ -111,12 +111,23 @@ function acquire(lock, now) {
       return;
     } catch (error) {
       if (error.code !== 'EEXIST') throw new Failure(failed);
-      try {
-        if (Date.now() - fs.statSync(lock).mtimeMs > 10000) fs.unlinkSync(lock);
-      } catch {}
+      if (isStale(lock)) clearStale(lock);
       if (now() - started > 3000) break;
       Atomics.wait(pause, 0, 0, 20);
     }
   }
   throw new Failure(failed);
+}
+
+function isStale(file) {
+  try { return Date.now() - fs.statSync(file).mtimeMs > 10000; } catch { return false; }
+}
+
+function clearStale(lock) {
+  const moved = `${lock}.${randomBytes(6).toString('hex')}.stale`;
+  try { fs.renameSync(lock, moved); } catch { return; }
+  if (!isStale(moved)) {
+    try { fs.linkSync(moved, lock); } catch {}
+  }
+  try { fs.unlinkSync(moved); } catch {}
 }

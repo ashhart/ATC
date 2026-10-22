@@ -16,10 +16,9 @@ export function readPullFilesByNumber(gh, repository, numbers) {
     try {
       found = gh.graphql(`query($owner:String!,$name:String!){repository(owner:$owner,name:$name){${fields.join(' ')}}}`, { owner, name })?.data?.repository;
     } catch (error) {
-      if (isTimeLimit(error)) return { sets, timed: true };
-      return { sets, timed: false };
+      return { sets, timed: isTimeLimit(error), failed: !isTimeLimit(error) };
     }
-    if (!found || typeof found !== 'object') return { sets, timed: false };
+    if (!found || typeof found !== 'object') return { sets, timed: false, failed: true };
     for (const number of chunk) {
       const files = readFiles(found[`p${number}`]?.files);
       if (files) sets.set(number, files);

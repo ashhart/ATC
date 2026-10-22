@@ -49,7 +49,7 @@ export function inspectOverlap(context, snapshot, flags) {
     const source = overlap.source === 'workingTree' ? workingTree : myPulls.find(pull => pull.number === overlap.source)?.files;
     context.labels.shared.set(`${overlap.source}:${overlap.pullRequest}`, [...(source || [])].filter(file => theirs.has(file)).sort());
   }
-  if (workingTree) writeTrafficCache(context.git, snapshot.now, otherPulls);
+  if (workingTree && read.complete && otherPulls.length === others.length) writeTrafficCache(context.git, snapshot.now, otherPulls);
   return { ...view, ...local };
 }
 

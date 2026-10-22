@@ -3,7 +3,11 @@ import assert from 'node:assert/strict';
 import { runCli } from '../src/cli/actions.js';
 import { parseCliArgs } from '../src/cli/args.js';
 import { createGh } from '../src/cli/gh.js';
-import { setup, stubGit } from './helpers.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { Failure } from '../src/core/failure.js';
+import { readPullFiles } from '../src/cli/pullFileReads.js';
+import { presenceGit, setup, stubGit } from './helpers.js';
 
 function slowCli(fake, args, stepMs) {
   let clock = 0;
@@ -47,4 +51,24 @@ test('overlap and check degrade to incomplete, and claims never post, when time 
   const claim = await slowCli(fake, ['claim', '1'], 9000);
   assert.deepEqual([claim.outcome, claim.posted], ['incomplete', false]);
   assert.equal(fake.store.calls.some(call => call.includes(' POST ')), false);
+});
+
+test('a failed batched file query degrades to unavailable files instead of failing through a blocked transport', () => {
+  let rest = 0;
+  const context = { cache: false, repository: 'acme/widgets', reader: { pullFiles: () => { rest += 1; throw new Failure('blocked'); } },
+    gh: { graphql: () => { throw new Failure('The GitHub CLI request failed.'); }, timeLeft: () => 30000 } };
+  const open = Array.from({ length: 100 }, (_, index) => ({ number: index + 1, updatedAt: 1 }));
+  const read = readPullFiles(context, open.slice(0, 1), open);
+  assert.deepEqual([read.files.size, read.timed, read.complete, rest], [0, false, false, 0]);
+});
+
+test('a time-limited board does not leave a who cache that claims full coverage', async () => {
+  const git = presenceGit();
+  const fake = busy();
+  let clock = 0;
+  fake.store.cliUser = 'alice';
+  const board = await runCli(parseCliArgs(['board']), { gh: createGh(args => { clock += 4000; return fake.runGh(args); }, { now: () => clock }),
+    git, sleep: async () => {}, now: () => fake.clock.now, env: {} });
+  assert.ok(board.limitations.includes('timeLimit'));
+  assert.equal(fs.existsSync(path.join(git.folder, 'atc', 'traffic.json')), false);
 });

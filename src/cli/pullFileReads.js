@@ -16,14 +16,15 @@ export function readPullFiles(context, wanted, open = wanted) {
   let timed = batched.timed;
   for (const pull of wanted) {
     let result = hit(pull) ? { files: cached.get(pull.number).files, partial: false, invalid: false } : batched.sets.get(pull.number);
-    if (!result && !timed && hasTime(context.gh, 2000)) result = context.reader.pullFiles(pull.number);
+    if (!result && !timed && !batched.failed && hasTime(context.gh, 2000)) result = context.reader.pullFiles(pull.number);
+    else if (!result && !batched.failed) timed = true;
     if (!result || result.timed) {
-      timed = true;
+      timed ||= Boolean(result?.timed);
       continue;
     }
     if (!result.partial && !result.invalid) keep.set(pull.number, { updatedAt: pull.updatedAt, files: result.files });
     files.set(pull.number, result);
   }
   if (cache && missing.length > 0) cache.write(keep);
-  return { files, timed };
+  return { files, timed, complete: files.size === wanted.length };
 }

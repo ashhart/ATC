@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -53,7 +54,7 @@ export function createTrees(git) {
     },
     fetchPull(remote, number) {
       if (!isRef(remote) || !isNumber(number)) return null;
-      const ref = `refs/atc/pull/${number}`;
+      const ref = `refs/atc/${randomBytes(8).toString('hex')}/pull/${number}`;
       if (run(['fetch', '--no-tags', '--quiet', '--no-write-fetch-head', remote, `+refs/pull/${number}/head:${ref}`]) === null) return null;
       const value = sha(['rev-parse', '--verify', `${ref}^{commit}`]);
       run(['update-ref', '-d', ref]);

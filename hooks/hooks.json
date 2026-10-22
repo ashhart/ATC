@@ -31,7 +31,6 @@
         "hooks": [
           {
             "type": "command",
-            "if": "Bash(gh *)",
             "command": "node",
             "args": ["${CLAUDE_PLUGIN_ROOT}/src/hooks/preBash.js"],
             "timeout": 90,

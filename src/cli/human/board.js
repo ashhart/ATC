@@ -20,7 +20,7 @@ export function renderBoard(result, labels, style, now) {
   const elsewhere = result.sessions.some(session => !session.local);
   section(lines, style, elsewhere ? 'Agents in flight' : 'Agents in flight on this machine', result.sessions.map(session =>
     `${issueName(session.issue, labels)}  ${stateWord(session.state, style)}  ${style.dim(`${ago(session.active, now)}${elsewhere
-      ? `, ${session.local ? 'this machine' : `${person(session, labels)} elsewhere`}` : ''}`)}`));
+      ? `, ${session.local ? 'this machine' : 'another machine'}` : ''}`)}`));
   section(lines, style, 'In flight: who is working on what', rows.inProgress.slice(0, 10).map(issue => {
     const holders = issue.claims.map(claim => `${person(claim, labels)}${claim.role === 'review' ? ' reviewing' : ' claimed'}`);
     const linked = issue.pullRequests.map(number => rows.pulls.get(number)).filter(Boolean)

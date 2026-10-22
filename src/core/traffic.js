@@ -14,10 +14,10 @@ export function trafficView({ state, pulls, config, partial, limitations = [], n
   const traffic = pullTraffic(pulls, config, pullFiles, actor, limits);
   const seen = new Set();
   const fresh = presence.filter(flight => flight.active <= now && flight.active + presenceTtlMs > now && !seen.has(flight.session) && seen.add(flight.session));
-  const contributors = contributorRows(state.claims, pulls, openIssues, actor, [...new Set(fresh.map(flight => flight.login || me))]);
+  const contributors = contributorRows(state.claims, pulls, openIssues, actor, fresh.some(flight => flight.local !== false) ? [me] : []);
   const issues = issueRows(state.claims, traffic.pullRequests, openIssues, actor);
   const sessions = fresh
-    .map(flight => ({ session: flight.session, contributor: actor(flight.login || me).contributor, issue: flight.issue, state: flight.state,
+    .map(flight => ({ session: flight.session, contributor: flight.local === false ? null : actor(me).contributor, issue: flight.issue, state: flight.state,
       active: new Date(flight.active).toISOString(), expiresAt: new Date(flight.active + presenceTtlMs).toISOString(), local: flight.local !== false }))
     .sort((first, second) => first.session - second.session);
   const proposals = state.proposals.map(proposal => ({ id: proposal.id, issue: proposal.issue, kind: proposal.kind, areas: proposal.areas }));

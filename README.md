@@ -51,15 +51,17 @@ Coordination needs no bot, server, GitHub Action or database; the CLI replays Gi
 | A linked pull request | Everyone | Any open pull request, draft or not, whose description says `Fixes #42` |
 | A GitHub assignee | Everyone | Ordinary issue assignment |
 | A local agent session | Every worktree of your clone | `atc start 42`, then `atc pulse` while it works and `atc land` when it stops |
-| A shared agent session | Everyone who can fetch the repository | The same commands, once the repository opts in with `"presence": "git"` |
+| A shared agent session (experimental) | Everyone who can fetch the repository | The same commands, once the repository opts in with `"presence": "git"` |
 
 Agent sessions default to your clone's `.git/atc/` folder, shared by its worktrees, and expire five minutes after the last check-in.
 
-### Sharing sessions through git
+### Sharing sessions through git (experimental)
 
-A team that wants every agent on the board, on every machine, adds `"presence": "git"` to `.github/atc.json`. Then `atc start`, `atc pulse` and `atc land` also push your sessions to a ref of your own on the repository's GitHub remote, `refs/atc/presence/<your login>`. Each session carries its issue, its state, its last check-in and the files its worktree is changing. `atc board` fetches everyone's refs, and `atc who <file>` names the people whose agents are changing that file. There's still no server: it's a fetch and a push with `--force-with-lease`, so two of your machines can't overwrite each other. These refs don't show up as branches and don't notify anyone.
+This is experimental. It hasn't been tried on a real team yet, and the ref format or setting may change.
 
-Sharing needs push access to the repository, so it suits your own projects and teams. Anyone who can fetch the repository can read the refs, including logins, issue numbers and changed file paths, so on a public repository that information is public. Git doesn't check who pushed a ref, so shared presence is advisory, and claims stay as `/atc` comments that GitHub ties to their author.
+A team that wants every agent on the board, on every machine, adds `"presence": "git"` to `.github/atc.json`. Then `atc start`, `atc pulse` and `atc land` also push this clone's sessions to the repository's GitHub remote, under a ref named by a random per-clone ID, `refs/atc/presence/<16 hex>`. `atc board` fetches everyone's and shows other clones' agents as "another machine", and `atc who <file>` says how many of them are changing that file. There's still no server: it's a fetch and a push with `--force-with-lease`. These refs don't show up as branches and don't notify anyone.
+
+Shared presence is anonymous. A shared session holds only a session number, an issue number, a state, a check-in time and salted hashes of the file paths its worktree is changing. It holds no GitHub login, name, email, file name, title or token, and its commit carries a fixed author and timestamp, so it reveals no timezone. `who` matches files by hashing its own path the same way. GitHub still knows which account pushed each ref, as it does for any push. Sharing needs push access, so it suits your own projects and teams. Git doesn't check who pushed a ref, so shared presence is advisory, and claims stay as `/atc` comments that GitHub ties to their author.
 
 ### Public check-ins
 

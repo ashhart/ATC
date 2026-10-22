@@ -44,7 +44,7 @@ A missing mapping is safe only when no areas are configured. Named areas without
 
 ## Sharing agent sessions
 
-With `"presence": "git"`, `atc start`, `atc pulse` and `atc land` push the person's live sessions to `refs/atc/presence/<login>` on the clone's GitHub remote, and `atc board` and `atc who` fetch everyone's. The CLI reads this setting from the clone's checked-out `.github/atc.json` for check-ins and from the default branch for the board. Sharing needs push access. Anyone who can fetch the repository can read the shared sessions, including logins, issue numbers and changed file paths. Leave the setting out on public repositories unless contributors agree to that.
+With `"presence": "git"`, `atc start`, `atc pulse` and `atc land` push this clone's live sessions to `refs/atc/presence/<random id>` on the clone's GitHub remote, and `atc board` and `atc who` fetch everyone's. The CLI reads this setting from the clone's checked-out `.github/atc.json` for check-ins and from the default branch for the board. Sharing needs push access. Shared sessions are anonymous: no login or name, and file paths only as salted hashes. See [security and privacy](../SECURITY.md) for the exact contents.
 
 ## Scope and timing
 

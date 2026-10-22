@@ -10,7 +10,7 @@ export function inspectTraffic(context, snapshot) {
   const limitations = [...snapshot.limitations];
   if (snapshot.pulls.length > 200) limitations.push('boardPullRequestsLimit');
   const presence = localSessions(context, snapshot.config, limitations);
-  const identities = contributorReferences(snapshot, snapshot.openIssues, presence.map(flight => flight.login));
+  const identities = contributorReferences(snapshot, snapshot.openIssues, presence.some(flight => flight.local) ? [context.me] : []);
   const pullFiles = new Map();
   const listed = snapshot.pulls.slice(0, 200);
   const read = readPullFiles(context, listed, snapshot.pulls);
@@ -35,7 +35,7 @@ function localSessions(context, config, limitations) {
     remote = context.git.remoteFor(context.repository);
     if (!remote) return sessions;
     sessions.inClone = true;
-    sessions.push(...createPresence(context.git, context.now).list().map(flight => ({ ...flight, login: context.me, local: true })));
+    sessions.push(...createPresence(context.git, context.now).list().map(flight => ({ ...flight, local: true })));
   } catch {}
   if (!sessions.inClone || config.presence !== 'git') return sessions;
   if (!fetchPeers(context.git, remote)) limitations.push('presenceUnavailable');

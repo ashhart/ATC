@@ -40,7 +40,8 @@ export function boardOutput(value, context) {
   rejectUnless(new Set(result.sessions.map(session => session.session)).size === result.sessions.length);
   const contributors = result.contributors.map(row => row.id).filter(id => id !== null);
   rejectUnless(new Set(contributors).size === contributors.length);
-  const references = [...result.pullRequests, ...result.sessions, ...result.staleClaims,
+  rejectUnless(result.sessions.every(session => session.local || session.contributor === null));
+  const references = [...result.pullRequests, ...result.sessions.filter(session => session.local), ...result.staleClaims,
     ...result.issues.flatMap(issue => [...issue.assignees, ...issue.claims])];
   rejectUnless(references.every(row => row.contributor === null ? !result.complete : contributors.includes(row.contributor)));
   for (const session of result.sessions) {

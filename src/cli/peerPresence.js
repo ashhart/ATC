@@ -1,6 +1,5 @@
-import { isLogin } from '../core/values.js';
 import { isFresh, readDocument } from './presenceDocs.js';
-import { presenceOrigin } from './presenceShare.js';
+import { originPattern, presenceOrigin } from './presenceShare.js';
 
 const prefix = 'refs/atc/peers/';
 
@@ -12,11 +11,11 @@ export function readPeers(git, now) {
   const time = now();
   const sessions = [];
   for (const ref of listing.stdout.split('\n').filter(Boolean).slice(0, 200)) {
-    const login = ref.slice(prefix.length);
-    if (!ref.startsWith(prefix) || !isLogin(login) || login !== login.toLowerCase()) continue;
+    const name = ref.slice(prefix.length);
+    if (!ref.startsWith(prefix) || !originPattern.test(name) || name === origin) continue;
     for (const entry of readDocument(git, ref, { shared: true })?.sessions || []) {
-      if (entry.origin === origin || !isFresh(entry, time)) continue;
-      sessions.push({ login, session: entry.session, issue: entry.issue, state: entry.state, active: Math.min(entry.active, time), files: entry.files });
+      if (!isFresh(entry, time)) continue;
+      sessions.push({ session: entry.session, issue: entry.issue, state: entry.state, active: Math.min(entry.active, time), fileHashes: entry.fileHashes });
     }
   }
   return sessions;

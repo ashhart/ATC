@@ -9,6 +9,7 @@ Repository-enabled anonymous public check-ins on confirmed new claims and sessio
 - Experimental: agent sessions on other machines. It hasn't been tried on a real team yet, and the ref format or setting may change. A repository that adds `"presence": "git"` to `.github/atc.json` shares each clone's live sessions anonymously through `refs/atc/presence/<random id>` on its remote, pushed with `--force-with-lease`. Shared sessions carry no login, name or file name, only issue numbers, states, check-in times and salted hashes of changed paths. `atc board` shows other clones' sessions with `local: false` and no contributor, and `atc who` reports `agents` for other clones' sessions changing a file.
 - Local presence is a commit under `refs/atc/presence/local`, updated with `git update-ref` compare-and-swap instead of a JSON file and lockfile.
 - `atc land` deletes the session's `/atc presence` proof comment after the board accepts the landing, so finished public sessions leave no comment on the issue. The CLI first checks that the comment still holds that session's proof on the same issue, and a failed removal returns `publication: unavailable`.
+- A public `start` or claim also deletes the proof comments and session files of up to five earlier sessions in the clone that expired without `land`, so abandoned sessions stop accumulating comments.
 - The Claude Code edit hook mentions agents on other machines, and the pre-PR hook accepts overlap results with more than 330 rows.
 
 ## 0.6.0

@@ -43,7 +43,7 @@ To report what an agent is doing on this machine, run `atc start <issue>` and ke
 
 For a project with a public board, and within the human's authorization to report this work, use the session returned by `atc claim <issue> --json`, or run `atc start <issue> --json` for existing work when a policy is configured. Without a policy, choose an explicit `--public https://example.org` origin.
 The issue, state and last check-in appear anonymously; add `--github-name` only when the human chooses to show their GitHub name.
-Starting a public session posts one verification comment associated with the GitHub account, even when the board hides the name.
+Starting a public session posts one verification comment associated with the GitHub account, even when the board hides the name. `atc land` deletes it, and the next public start in the clone deletes comments left by sessions that expired without landing.
 The returned `publication` must be `public`; `unavailable` means the local session exists but the public update failed, and `--strict` exits 2.
 Later pulses and landing use the locally stored session secret automatically; never print that secret or read it into a prompt.
 A public check-in does not grant a claim, and a missing check-in does not mean an issue is free.

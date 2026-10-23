@@ -63,7 +63,7 @@ A committed `.github/atc-presence.json` policy enables anonymous check-ins on ne
 A GitHub name is shared only with `--github-name`, and the receiving service must derive it from the verified comment author.
 The initial `/atc presence <sha256>` comment proves possession of a separate random session secret; it grants no claim and never renews one.
 The proof comment remains associated with its GitHub author even if the board uses an anonymous label.
-`land` deletes the proof comment after the board accepts the landing, and only when the comment's body still matches that session's proof on the same issue, so a tampered session file cannot delete another comment.
+`land` deletes the proof comment after the board accepts the landing, and only when the comment's body still matches that session's proof on the same issue, so a tampered session file cannot delete another comment. The next public start in the clone applies the same checks to up to five sessions that expired without landing.
 The CLI keeps the 256-bit session secret in an owner-only file under `.git/atc/`, validates it on read, refuses redirects and never sends the GitHub token to the website.
 Treat the session file as a credential; the public service should store only its digest, expire unrefreshed sessions after five minutes and invalidate a landed session.
 Dry runs and read-only launchers do not post the proof or publish check-ins.

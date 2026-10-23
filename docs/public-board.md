@@ -45,7 +45,8 @@ Proof comments do not create or renew claims, and the website never writes to Gi
 GitHub associates the verification comment with its author, even when the board displays an anonymous label.
 After the board accepts a `land`, the CLI deletes the proof comment, but only when GitHub still shows that session's exact proof on the same issue.
 A comment that is already gone counts as removed; any other failure returns `publication: unavailable`.
-A session that expires without `land` keeps its proof comment until someone deletes it.
+The next public `start` or claim in the same clone also deletes the proof comments of up to five of its sessions that expired without `land`, applying the same checks, and removes their session files.
+A session is left alone while it is live or its file is less than five minutes old.
 
 The CLI stores the token, comment ID, issue, display choice and validated HTTPS origin in `.git/atc/public-<session>.json` with owner-only permissions.
 It sends a JSON POST to `<origin>/api/atc/v1/presence` with exactly `issue`, `comment`, `token`, `display` and `state`.

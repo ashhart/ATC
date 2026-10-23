@@ -38,7 +38,7 @@ export async function runCli({ command, rest, flags }, { gh, git, sleep, now = D
     const repository = () => resolveRepository(gh, flags, env);
     const local = reportPresence(command, input, { git, now, dryRun: Boolean(flags.dryRun), readOnly: env.ATC_READ_ONLY === '1', localOnly: flags.local });
     const result = shareResult(local, { gh, git, now, repository });
-    const published = await publishPresence(result, { command, flags, gh, git, fetcher, repository });
+    const published = await publishPresence(result, { command, flags, gh, git, fetcher, repository, now });
     if (command === 'land' && result.outcome === 'landed') clearLocalOnly(git, result.session);
     return displayResult(published);
   }

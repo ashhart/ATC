@@ -7,12 +7,13 @@ import { readConfig } from '../core/config.js';
 import { createReader } from './reader.js';
 import { isPublicOrigin, presencePolicy } from './presencePolicy.js';
 import { proofText, removeProof } from './presenceProof.js';
+import { readSettings } from './publicSettings.js';
+import { sweepProofs } from './presenceSweep.js';
 export { isPublicOrigin } from './presencePolicy.js';
 
 const failure = 'Invalid public presence settings.';
-const tokenPattern = /^[a-f0-9]{64}$/;
 
-export async function publishPresence(result, { command, flags, gh, git, fetcher = fetch, repository }) {
+export async function publishPresence(result, { command, flags, gh, git, fetcher = fetch, repository, now = Date.now }) {
   if (flags.public !== undefined) ensure(isPublicOrigin(flags.public), failure);
   if (!['checkedIn', 'landed'].includes(result.outcome) || flags.local) return result;
   const folder = path.join(git.commonDir(), 'atc');
@@ -51,18 +52,7 @@ export async function publishPresence(result, { command, flags, gh, git, fetcher
       fs.unlinkSync(file);
       removeProof(gh, repository(), settings);
     }
+    if (command === 'start') sweepProofs({ gh, git, now, repository: repository(), keep: result.session });
     return { ...result, ...(command === 'start' ? { posted: true, comment: settings.comment } : {}), publication: 'public' };
   } catch { return { ...result, ...(command === 'start' && settings ? { posted: true, comment: settings.comment } : {}), publication: 'unavailable' }; }
-}
-
-function readSettings(file) {
-  try {
-    const stat = fs.lstatSync(file);
-    if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 1024) return null;
-    const value = JSON.parse(fs.readFileSync(file, 'utf8'));
-    if (!value || Object.keys(value).length !== 5 || !isPublicOrigin(value.origin) || !isId(value.comment)
-      || !Number.isSafeInteger(value.issue) || value.issue < 1 || value.issue > 999999999
-      || typeof value.token !== 'string' || value.token.length !== 64 || !tokenPattern.test(value.token) || !['anonymous', 'github'].includes(value.display)) return null;
-    return { origin: value.origin, issue: value.issue, token: value.token, comment: value.comment, display: value.display };
-  } catch { return null; }
 }

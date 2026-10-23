@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { Failure } from '../core/failure.js';
 import { commandText, isAreaReference, parseCommand } from '../core/commands.js';
-import { isCursor, isNumber, isRecord, isRepository } from '../core/values.js';
+import { isCursor, isId, isNumber, isRecord, isRepository } from '../core/values.js';
 import { createTransport, rateLimited, readHttpResponse, requestFailed, UncertainWrite } from './ghTransport.js';
 
 export { TimeLimit, UncertainWrite } from './ghTransport.js';
@@ -50,6 +50,18 @@ export function createGh(run = runGh, options = {}) {
       if (readOnly) throw new Failure('GitHub writes are disabled in read-only mode.');
       const body = validatePost(path, fields);
       return call(['api', '--method', 'POST', path, '-f', `body=${body}`], true);
+    },
+    deleteComment(repository, id) {
+      if (readOnly) throw new Failure('GitHub writes are disabled in read-only mode.');
+      if (!isRepository(repository) || !isId(id)) throw new Failure('Only ATC presence proofs can be deleted.');
+      const response = transport.request(['api', '--include', '--method', 'DELETE', `repos/${repository}/issues/comments/${id}`], true);
+      let http;
+      try { http = readHttpResponse(response?.stdout); }
+      catch { transport.block(); throw new UncertainWrite(); }
+      if (http.limited) transport.block(rateLimited);
+      if (http.status !== 204 && http.status !== 404) { transport.block(); throw new UncertainWrite(); }
+      transport.finish(true);
+      return http.status === 204;
     },
     repoView: () => call(['repo', 'view', '--json', 'nameWithOwner,isFork,parent']),
     timeLeft: () => transport.timeLeft()

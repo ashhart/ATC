@@ -110,6 +110,24 @@ test('write validation and read-only mode stop execution without consuming the r
   assert.equal(calls, 1);
 });
 
+test('presence proof deletion is a validated write that accepts only removed or missing comments', () => {
+  const seen = [];
+  const reply = { status: 0, stdout: headers(204, '', '') };
+  const gh = createGh(args => { seen.push(args); return reply; }, { now: () => 0, readOnly: false });
+  assert.equal(gh.deleteComment('example/project', 123), true);
+  assert.deepEqual(seen[0], ['api', '--include', '--method', 'DELETE', 'repos/example/project/issues/comments/123']);
+  for (const [repository, id] of [['example/project/issues', 1], ['example/project', '1'], ['example/project', 0], ['../x', 1]]) {
+    assert.throws(() => gh.deleteComment(repository, id), error => error.message === 'Only ATC presence proofs can be deleted.');
+  }
+  assert.equal(seen.length, 1);
+  const missing = createGh(() => ({ status: 1, stdout: headers(404) }), { now: () => 0, readOnly: false });
+  assert.equal(missing.deleteComment('example/project', 123), false);
+  const denied = createGh(() => ({ status: 1, stdout: headers(403) }), { now: () => 0, readOnly: false });
+  assert.throws(() => denied.deleteComment('example/project', 123), error => error instanceof UncertainWrite);
+  const locked = createGh(() => { throw new Error('must not execute'); }, { now: () => 0, readOnly: true });
+  assert.throws(() => locked.deleteComment('example/project', 123), error => error.message === 'GitHub writes are disabled in read-only mode.');
+});
+
 test('the default read-only switch is read from ATC_READ_ONLY', () => {
   const previous = process.env.ATC_READ_ONLY;
   process.env.ATC_READ_ONLY = '1';

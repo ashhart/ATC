@@ -43,6 +43,9 @@ The repository must have `.github/atc.json`, and the issue must be open.
 The command posts one `/atc presence <sha256>` comment, where the digest covers a separate random 256-bit token.
 Proof comments do not create or renew claims, and the website never writes to GitHub.
 GitHub associates the verification comment with its author, even when the board displays an anonymous label.
+After the board accepts a `land`, the CLI deletes the proof comment, but only when GitHub still shows that session's exact proof on the same issue.
+A comment that is already gone counts as removed; any other failure returns `publication: unavailable`.
+A session that expires without `land` keeps its proof comment until someone deletes it.
 
 The CLI stores the token, comment ID, issue, display choice and validated HTTPS origin in `.git/atc/public-<session>.json` with owner-only permissions.
 It sends a JSON POST to `<origin>/api/atc/v1/presence` with exactly `issue`, `comment`, `token`, `display` and `state`.

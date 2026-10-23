@@ -17,13 +17,16 @@ function fixture() {
   const git = presenceGit();
   const calls = [];
   const posts = [];
+  const deletes = [];
+  const proof = { id: 123, issue_url: 'https://api.github.com/repos/Example/Project/issues/42' };
   const gh = { getOptional: target => target.endsWith('atc.json') ? { type: 'file', encoding: 'base64', size: 2, content: 'e30=' }
-    : { number: 42, state: 'open', assignees: [] },
-    get: target => target === 'repos/example/project' ? { private: false } : { number: 42, state: 'open', assignees: [] }, post: (target, fields) => { posts.push({ target, ...fields }); return { id: 123 }; } };
+    : target === 'repos/example/project/issues/comments/123' ? (proof.missing ? null : { body: posts[0]?.body, ...proof }) : { number: 42, state: 'open', assignees: [] },
+    get: target => target === 'repos/example/project' ? { private: false } : { number: 42, state: 'open', assignees: [] }, post: (target, fields) => { posts.push({ target, ...fields }); return { id: 123 }; },
+    deleteComment: (repository, id) => { deletes.push({ repository, id }); return true; } };
   const fetcher = async (url, options) => { calls.push({ url, ...options }); return Response.json({ outcome: 'published' }); };
   const options = { command: 'start', flags: { public: 'https://example.org' }, gh, git, fetcher, repository: () => 'example/project' };
   const start = reportPresence('start', { issue: 42 }, { git, now: Date.now });
-  return { git, calls, posts, options, start };
+  return { git, calls, posts, deletes, proof, options, start };
 }
 
 test('public sessions are anonymous by default, keep the secret local, and publish subsequent pulses and landing', async () => {
@@ -45,6 +48,30 @@ test('public sessions are anonymous by default, keep the secret local, and publi
   assert.equal(JSON.parse(f.calls[2].body).state, 'landed');
   assert.equal(fs.existsSync(file), false);
   assert.equal(f.posts.length, 1);
+  assert.deepEqual(f.deletes, [{ repository: 'example/project', id: 123 }]);
+});
+
+async function landed(f) {
+  const result = await publishPresence(f.start, f.options);
+  const land = { ...f.start, command: 'land', outcome: 'landed' }; delete land.state;
+  return { result, landed: await publishPresence(land, { ...f.options, command: 'land', flags: {} }) };
+}
+
+test('landing removes only the matching proof comment and reports a failed removal', async () => {
+  const gone = fixture(); gone.proof.missing = true;
+  assert.equal((await landed(gone)).landed.publication, 'public'); assert.deepEqual(gone.deletes, []);
+  for (const change of [{ body: '/atc presence ' + 'a'.repeat(64) }, { id: 124 }, { issue_url: 'https://api.github.com/repos/example/project/issues/43' },
+    { issue_url: 'https://api.github.com/repos/other/project/issues/42' }]) {
+    const f = fixture(), read = f.options.gh.getOptional;
+    f.options.gh.getOptional = target => target.includes('/issues/comments/') ? { ...read(target), ...change } : read(target);
+    assert.equal((await landed(f)).landed.publication, 'unavailable'); assert.deepEqual(f.deletes, []);
+  }
+  const failing = fixture(); failing.options.gh.deleteComment = () => { throw new Error('denied'); };
+  const { result, landed: outcome } = await landed(failing);
+  assert.equal(outcome.publication, 'unavailable');
+  assert.equal(fs.existsSync(path.join(failing.git.commonDir(), 'atc', `public-${result.session}.json`)), false);
+  const lost = fixture(); lost.options.fetcher = async () => new Response('', { status: 503 });
+  await landed(lost); assert.deepEqual(lost.deletes, []);
 });
 
 test('GitHub identity is shared only with explicit opt-in', async () => {

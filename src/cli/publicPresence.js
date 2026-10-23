@@ -1,11 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { createHash, randomBytes } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import { ensure } from '../core/failure.js';
 import { isId } from '../core/values.js';
 import { readConfig } from '../core/config.js';
 import { createReader } from './reader.js';
 import { isPublicOrigin, presencePolicy } from './presencePolicy.js';
+import { proofText, removeProof } from './presenceProof.js';
 export { isPublicOrigin } from './presencePolicy.js';
 
 const failure = 'Invalid public presence settings.';
@@ -31,8 +32,7 @@ export async function publishPresence(result, { command, flags, gh, git, fetcher
       const issue = createReader(gh, selected).issue(result.issue);
       ensure(issue?.state === 'open' && !issue.pull_request, failure);
       const token = randomBytes(32).toString('hex');
-      const proof = createHash('sha256').update(token).digest('hex');
-      const comment = gh.post(`repos/${selected}/issues/${result.issue}/comments`, { body: `/atc presence ${proof}` });
+      const comment = gh.post(`repos/${selected}/issues/${result.issue}/comments`, { body: proofText(token) });
       ensure(isId(comment?.id), failure);
       settings = { origin: flags.public || policy.origin, issue: result.issue, token, comment: comment.id,
         display: flags.githubName ? 'github' : 'anonymous' };
@@ -47,7 +47,10 @@ export async function publishPresence(result, { command, flags, gh, git, fetcher
         display: settings.display, state: command === 'land' ? 'landed' : result.state }) });
     await response.body?.cancel();
     ensure(response.status === 200, failure);
-    if (command === 'land') fs.unlinkSync(file);
+    if (command === 'land') {
+      fs.unlinkSync(file);
+      removeProof(gh, repository(), settings);
+    }
     return { ...result, ...(command === 'start' ? { posted: true, comment: settings.comment } : {}), publication: 'public' };
   } catch { return { ...result, ...(command === 'start' && settings ? { posted: true, comment: settings.comment } : {}), publication: 'unavailable' }; }
 }

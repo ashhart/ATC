@@ -1,0 +1,14 @@
+{
+  "name": "tensorfold-atc-exchange",
+  "main": "../../src/exchange/worker.js",
+  "compatibility_date": "2026-09-10",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "upload_source_maps": false,
+  "observability": { "enabled": false },
+  "routes": [{ "pattern": "tensorfold.dev/api/exchange/v1/*", "zone_name": "tensorfold.dev" }],
+  "vars": { "EXCHANGE_REPOSITORY": "ashhart/TensorFold", "EXCHANGE_ORIGIN": "https://tensorfold.dev" },
+  "durable_objects": { "bindings": [{ "name": "EXCHANGE_STORE", "class_name": "ExchangeStore" }] },
+  "migrations": [{ "tag": "exchange-v1", "new_sqlite_classes": ["ExchangeStore"] }]
+}

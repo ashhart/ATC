@@ -204,3 +204,32 @@ then `node scripts/exchangeSimulation.js 4501`. The unavailable variant uses
 Postman is development tooling only and is not required by CI or the package.
 The GitHub mock was written from those documented responses; a provider-owned
 Postman mock was not discovered or downloaded.
+
+## Cloudflare deployment
+
+`src/exchange/worker.js` is the optional Cloudflare adapter. It shares the same
+validation, GitHub proof verification and synchronous request operations with
+the Node service. A dedicated SQLite Durable Object stores bounded metadata
+and evidence, commits each mutation atomically and uses alarms to delete expired
+evidence without requiring incoming traffic. Expired downloads are denied even
+if an alarm is delayed; provider backups and time-travel recovery are separate
+from the live evidence retention window.
+
+The TensorFold configuration in `deploy/tensorfold/wrangler.jsonc` routes only
+`https://tensorfold.dev/api/exchange/v1/*` to `tensorfold-atc-exchange`. It does
+not replace TensorFold's website Worker, existing radar or benchmark storage.
+Deploy from this checkout with an authenticated Wrangler installation:
+
+```sh
+npm run check
+wrangler deploy --dry-run --config deploy/tensorfold/wrangler.jsonc
+wrangler deploy --config deploy/tensorfold/wrangler.jsonc --keep-vars
+```
+
+`GET /api/exchange/v1/health` reports service availability without returning any
+repository data. Enable the repository using the policy described above only
+after the route is live. Public GitHub reads work without a server token, subject
+to GitHub's anonymous rate limit. An operator may configure a dedicated,
+read-only `GITHUB_READ_TOKEN` Worker secret when authenticated reads are needed;
+participant tokens still never leave their local GitHub CLI. No scheduled
+GitHub Action or coordination authority is added by this adapter.

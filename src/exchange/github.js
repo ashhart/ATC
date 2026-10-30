@@ -1,10 +1,9 @@
-import { createGithubRead } from './githubRead.js';
 import { readConfig } from '../core/config.js';
 import { isLogin, readTimestamp } from '../core/values.js';
 import { isHead, isId, isNumber, isOrigin, isPolicy, isRepository, proofFor, requireValue } from './values.js';
 
-export function createExchangeGithub({ repository, origin, ghFactory = createGithubRead }) {
-  requireValue(isRepository(repository) && isOrigin(origin));
+export function createExchangeGithub({ repository, origin, ghFactory }) {
+  requireValue(isRepository(repository) && isOrigin(origin) && typeof ghFactory === 'function');
   repository = repository.toLowerCase();
   const base = `repos/${repository}`;
   return {

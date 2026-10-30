@@ -1,6 +1,7 @@
 import http from 'node:http';
 import { createExchangeStore } from './store.js';
 import { createExchangeGithub } from './github.js';
+import { createGithubRead } from './githubRead.js';
 import { inboxView } from './inbox.js';
 import { readBody, readJson, sendJson, sendError } from './httpIo.js';
 import { digest, isDigest, isHead, isNumber, isOrigin, isPolicy, isRepository, isSessionInput,
@@ -9,7 +10,7 @@ import { digest, isDigest, isHead, isNumber, isOrigin, isPolicy, isRepository, i
 export function createExchangeServer({ folder, repository, origin, now = Date.now, github, store, readOnly = false }) {
   requireValue(isRepository(repository) && isOrigin(origin) && typeof readOnly === 'boolean');
   repository = repository.toLowerCase();
-  github ||= createExchangeGithub({ repository, origin });
+  github ||= createExchangeGithub({ repository, origin, ghFactory: createGithubRead });
   store ||= createExchangeStore({ folder, repository, origin, now });
   const attempts = new Map();
   let active = 0;

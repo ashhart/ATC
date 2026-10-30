@@ -1,7 +1,7 @@
 import { ExchangeError, requireValue } from './values.js';
 
 export const errorCodes = ['invalid', 'notEnabled', 'upstream', 'unauthorized', 'forbidden', 'notFound', 'conflict',
-  'evidenceUnavailable', 'capacity', 'storage', 'closed', 'stale', 'unavailable', 'readOnly'];
+  'evidenceUnavailable', 'capacity', 'storage', 'closed', 'stale', 'unavailable', 'readOnly', 'rateLimited'];
 
 export async function readBody(request, maximum) {
   const chunks = [];

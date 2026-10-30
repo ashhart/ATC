@@ -100,19 +100,22 @@ test('Worker GitHub transport refuses cross-repository reads, redirects, oversiz
     return new Response(null, { status: 302, headers: { location: 'https://attacker.invalid' } });
   } });
   await assert.rejects(redirected.get('repos/example/project'), { code: 'upstream' });
+  const limited = createGithubFetch({ repository, fetcher: async () => new Response(null, { status: 403, headers: { 'x-ratelimit-remaining': '0' } }) });
+  await assert.rejects(limited.get('repos/example/project'), { code: 'rateLimited' });
 });
 
 test('Worker byte readers and GitHub policy parsing work without a global Node Buffer', async () => {
   const script = `
     import assert from 'node:assert/strict';
     import { Buffer as Bytes } from 'node:buffer';
-    globalThis.Buffer = undefined;
     const { readWebJson } = await import('./src/exchange/webIo.js');
     const { decodePolicy } = await import('./src/exchange/github.js');
     const value = { version: 1, origin: 'https://example.org', retentionHours: 24 };
     const bytes = Bytes.from(JSON.stringify(value));
+    const request = new Request('https://example.org', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(value) });
+    globalThis.Buffer = undefined;
     assert.deepEqual(decodePolicy({ type: 'file', encoding: 'base64', size: bytes.length, content: bytes.toString('base64') }), value);
-    assert.deepEqual(await readWebJson(new Request('https://example.org', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(value) })), value);
+    assert.deepEqual(await readWebJson(request), value);
   `;
   await promisify(execFile)(process.execPath, ['--input-type=module', '-e', script]);
 });

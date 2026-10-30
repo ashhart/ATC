@@ -14,9 +14,10 @@ export function createGithubFetch({ repository, fetcher = fetch, token } = {}) {
     try {
       const response = await fetcher(`https://api.github.com/${route}`, { headers, redirect: 'manual', signal: AbortSignal.timeout(10000) });
       if (optional && response.status === 404) { await response.body?.cancel(); return null; }
+      requireValue(response.status !== 429 && !(response.status === 403 && response.headers.get('x-ratelimit-remaining') === '0'), 'rateLimited', 429);
       requireValue(response.status === 200, 'upstream', 502);
       return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(await readWebBytes(response.body, 2 * 1024 * 1024)));
-    } catch { throw new ExchangeError('upstream', 502); }
+    } catch (error) { if (error instanceof ExchangeError && error.code === 'rateLimited') throw error; throw new ExchangeError('upstream', 502); }
   }
   return { get: route => read(route), getOptional: route => read(route, true) };
 }

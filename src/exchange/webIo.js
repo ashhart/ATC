@@ -2,7 +2,7 @@ import { Buffer } from 'node:buffer';
 import { ExchangeError, requireValue } from './values.js';
 
 export const webErrors = ['invalid', 'notEnabled', 'upstream', 'unauthorized', 'forbidden', 'notFound', 'conflict',
-  'evidenceUnavailable', 'capacity', 'storage', 'closed', 'stale', 'unavailable', 'readOnly'];
+  'evidenceUnavailable', 'capacity', 'storage', 'closed', 'stale', 'unavailable', 'readOnly', 'rateLimited'];
 
 export async function readWebBytes(body, maximum) {
   requireValue(body);

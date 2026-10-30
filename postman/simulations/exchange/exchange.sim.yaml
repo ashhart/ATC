@@ -1,0 +1,8 @@
+simulation: exchange
+routing: path
+mocks:
+  - name: GitHub exchange verification
+    routeKey: github
+    origin:
+      - api.github.com
+    path: postman/mocks/exchange-github

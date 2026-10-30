@@ -12,3 +12,4 @@
 - Never echo untrusted text in errors. Error messages are fixed strings.
 - Run `gh` and `git` without a shell, and validate refs and repository names first.
 - Agents working on this repository follow `skills/atc/SKILL.md` like any other contributor.
+- The optional `src/exchange/` companion stores PR review requests and evidence independently of claim coordination; it cannot arbitrate claims, grant GitHub approval or write through the local viewer. Its only GitHub write is a typed `/atc exchange <proof>` authentication comment in an enabled repository. Explicitly selected evidence bytes may travel through its bounded octet-stream endpoints and live in an operator-selected directory outside git; they must never enter commands, replay state, JSON output, errors or automatic agent prompts. Every metadata field still requires an exact schema, a bound and hostile-input tests. Client secrets stay in `.git/atc/exchange/` and never enter output or GitHub comments.

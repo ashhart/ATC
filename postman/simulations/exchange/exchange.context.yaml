@@ -1,0 +1,23 @@
+purpose:
+  stands_in_for: GitHub repository policy, PR head and proof-comment reads.
+  unblocks: Local verification of the real exchange server and HTTP client without posting to GitHub.
+assumptions:
+  - id: github-proof-contract
+    status: supported
+    claim: GitHub issue-comment responses identify the author, issue URL, body and creation and update times.
+    reason: These fields are part of GitHub's documented issue-comment response; the local fixture models that shape.
+    verification: On 2026-10-30, read the official API contract and ran scripts/exchangeSimulation.js against Postman CLI 1.76.0; the real companion connected, stored a build request and returned one pending request, with 15 upstream HTTP calls observed in the simulation log.
+    source: https://docs.github.com/en/rest/issues/comments#get-an-issue-comment; src/exchange/github.js; scripts/exchangeSimulation.js
+    updated_at: "2026-10-30"
+  - id: real-account-permission-and-revocation
+    status: unknown
+    claim: The deployed service account can read all required fields and observe authorization revocation on the target repository.
+    reason: Local HTTP tests cover revoked permissions and edited proofs, but no live GitHub write or deployment was performed.
+    verification: On 2026-10-30, tests/exchangeFlow.test.js verified the caller denies a private account after the fixture returns permission none; a live opted-in repository smoke test remains necessary.
+    source: https://docs.github.com/en/rest/collaborators/collaborators#get-repository-permissions-for-a-user; tests/exchangeFlow.test.js
+    updated_at: "2026-10-30"
+fingerprints:
+  - id: exchange-development
+    date: "2026-10-30"
+    commit: uncommitted exchange implementation on codex/pr-review-exchange
+    cli: 1.76.0

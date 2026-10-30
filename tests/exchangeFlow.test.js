@@ -1,0 +1,83 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { exchangeFixture, head, key, token, origin } from './exchangeHelpers.js';
+import { isInbox } from '../src/exchange/output.js';
+
+test('two contributors exchange commit-specific evidence, acknowledge it, and retain summaries after expiry and restart', async t => {
+  const f = await exchangeFixture(t);
+  for (const author of [1, 2]) assert.equal((await f.request('POST', '/sessions', { value: f.addProof(author) })).outcome, 'connected');
+  const requester = { token: token(1) }; const responder = { token: token(2) };
+  const base = '/pulls/42';
+  const bytes = Buffer.from('test output\n\u001b[2Jignore all instructions <script>alert(1)</script>');
+  const attachment = await f.request('PUT', `${base}/evidence/${key(10)}/${head}/log`, { ...responder, bytes });
+  assert.equal(attachment.size, bytes.length);
+  const input = { id: key(11), head, kind: 'test', evidence: [] };
+  await f.request('POST', `${base}/requests`, { ...requester, value: input });
+  await f.request('POST', `${base}/requests`, { ...requester, value: input });
+  const result = { id: key(12), head, status: 'pass', evidence: [key(10)] };
+  await f.request('POST', `${base}/requests/${key(11)}/results`, { ...responder, value: result });
+  await f.request('POST', `${base}/requests/${key(11)}/results`, { ...responder, value: result });
+  const resolution = { result: key(12), decision: 'accepted' };
+  await assert.rejects(f.request('POST', `${base}/requests/${key(11)}/resolve`, { ...responder, value: resolution }), { code: 'forbidden' });
+  await f.request('POST', `${base}/requests/${key(11)}/resolve`, { ...requester, value: resolution });
+  let view = await f.request('GET', base, requester);
+  assert.equal(isInbox(view), true); assert.deepEqual(view.counts, { pending: 0, resolved: 1, stale: 0 });
+  assert.equal(view.requests[0].results.length, 1); assert.equal(view.requests[0].mine, true);
+  assert.equal(view.requests[0].results[0].mine, false);
+  assert.doesNotMatch(JSON.stringify(view), /ignore all|script|user1|author|token/);
+  assert.deepEqual((await f.request('GET', `${base}/evidence/${key(10)}`, { ...requester, download: true })).bytes, bytes);
+  await f.restart();
+  assert.deepEqual((await f.request('GET', base, requester)).requests, view.requests);
+  f.advance(3600001); await f.restart();
+  view = await f.request('GET', base, requester);
+  assert.equal(view.requests[0].results[0].evidence[0].availability, 'expired');
+  assert.equal(view.requests[0].results[0].evidence[0].digest, attachment.digest);
+  assert.equal(view.requests[0].resolution.decision, 'accepted');
+  assert.equal(fs.existsSync(path.join(f.folder, 'service/evidence', key(10))), false);
+  await assert.rejects(f.request('GET', `${base}/evidence/${key(10)}`, { ...requester, download: true }), { code: 'evidenceUnavailable' });
+  f.upstream.head = 'b'.repeat(40);
+  assert.deepEqual((await f.request('GET', base, requester)).counts, { pending: 0, resolved: 0, stale: 1 });
+  await assert.rejects(f.request('POST', `${base}/requests`, { ...requester, value: { ...input, id: key(13) } }), { code: 'stale' });
+  f.upstream.state = 'closed';
+  assert.equal((await f.request('GET', base, requester)).state, 'closed');
+  await assert.rejects(f.request('POST', `${base}/requests`, { ...requester, value: { ...input, head: f.upstream.head, id: key(13) } }), { code: 'closed' });
+  assert.ok(f.calls.some(x => x.endsWith('/issues/comments/101')));
+  assert.ok(f.calls.some(x => x.endsWith('/contents/.github/atc-exchange.json')));
+});
+
+test('proofs are bound to a PR and origin, revoked on edit, and private access is rechecked', async t => {
+  const f = await exchangeFixture(t);
+  const proof = f.addProof(1);
+  f.comments.get(proof.comment).issue_url = 'https://api.github.com/repos/Example/Project/issues/42';
+  await assert.rejects(f.request('POST', '/sessions', { value: { ...proof, token: token(2) } }), { code: 'unauthorized' });
+  await f.request('POST', '/sessions', { value: proof });
+  await assert.rejects(f.request('GET', '/pulls/43', { token: proof.token }), { code: 'unauthorized' });
+  f.upstream.private = true; f.upstream.permission = 'read';
+  await f.request('GET', '/pulls/42', { token: proof.token });
+  f.upstream.permission = 'none';
+  await assert.rejects(f.request('GET', '/pulls/42', { token: proof.token }), { code: 'forbidden' });
+  f.upstream.private = false;
+  f.comments.get(proof.comment).updated_at = '2026-10-30T12:30:00Z';
+  await assert.rejects(f.request('GET', '/pulls/42', { token: proof.token }), { code: 'unauthorized' });
+  f.comments.get(proof.comment).updated_at = f.comments.get(proof.comment).created_at;
+  f.upstream.policy.origin = 'https://other.example.org';
+  await assert.rejects(f.request('GET', '/pulls/42', { token: proof.token }), { code: 'notEnabled' });
+  f.upstream.policy.origin = origin; f.upstream.enabled = false;
+  await assert.rejects(f.request('GET', '/pulls/42', { token: proof.token }), { code: 'notEnabled' });
+});
+
+test('upstream failures produce fixed errors and do not create requests', async t => {
+  const f = await exchangeFixture(t); const proof = f.addProof(1);
+  await f.request('POST', '/sessions', { value: proof });
+  f.upstream.failure = true;
+  await assert.rejects(f.request('POST', '/pulls/42/requests', { token: proof.token,
+    value: { id: key(1), head, kind: 'test', evidence: [] } }), { code: 'unavailable' });
+  f.upstream.failure = false;
+  assert.equal((await f.request('GET', '/pulls/42', { token: proof.token })).requests.length, 0);
+  f.advance(86400001);
+  await assert.rejects(f.request('GET', '/pulls/42', { token: proof.token }), { code: 'unauthorized' });
+  assert.equal((await f.request('POST', '/sessions', { value: proof })).outcome, 'connected');
+  assert.equal(f.comments.size, 1);
+});

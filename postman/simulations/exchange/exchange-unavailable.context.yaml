@@ -1,0 +1,16 @@
+purpose:
+  stands_in_for: GitHub returning HTTP 503 during proof authentication.
+  unblocks: Failure handling verification without a live GitHub outage.
+assumptions:
+  - id: failed-authentication-does-not-create-session
+    status: supported
+    claim: The exchange caller rejects authentication and stores no session when its GitHub policy read receives HTTP 503 in this scenario.
+    reason: The real companion handled the injected dependency error and its persisted session list remained empty.
+    verification: On 2026-10-30, ran scripts/exchangeSimulation.js with the unavailable scenario against Postman CLI 1.76.0; it observed one upstream HTTP attempt, an unavailable response and zero stored sessions.
+    source: scripts/exchangeSimulation.js; src/exchange/server.js; postman/simulations/exchange/exchange-unavailable.sim.yaml
+    updated_at: "2026-10-30"
+fingerprints:
+  - id: exchange-development
+    date: "2026-10-30"
+    commit: uncommitted exchange implementation on codex/pr-review-exchange
+    cli: 1.76.0

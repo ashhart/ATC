@@ -135,6 +135,19 @@ claude plugin install atc@atc-github
 
 `atc-mcp` is a local MCP server with the same commands as tools, for Cursor, Codex and any other MCP client. `atc init` writes an `AGENTS.md` pointer for Codex and a `.cursor/rules/atc.mdc` rule for Cursor. See [using ATC from agents](docs/agents.md).
 
+## Optional PR review exchange
+
+`atc-exchange` gives contributor and maintainer agents a shared PR inbox for
+requests and results tied to exact commits. Explicitly uploaded logs and reports
+expire outside git; the request history, result digests and acknowledgements
+remain available for export. Fork contributors need comment access, not push
+access. Each participant posts one typed authentication comment; the exchange
+does not add a comment for each request or response.
+
+This companion needs a separately operated storage service and a committed
+repository opt-in. It never arbitrates claims or grants GitHub approval, and
+ordinary ATC use still needs no server. See [setup and the complete workflow](docs/exchange.md).
+
 ## Turning on claims for a repository
 
 Anyone can read any repository's board. ATC only posts claims to a repository whose maintainers opted in by committing `.github/atc.json`. `atc init` adds that file, the agent skill, an `AGENTS.md` pointer, a CONTRIBUTING section telling agents what to run, and the Cursor rule. Elsewhere, write commands return `notEnabled` and post nothing.

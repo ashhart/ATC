@@ -1,0 +1,13 @@
+simulation: exchange-unavailable
+routing: path
+mocks:
+  - name: GitHub exchange verification
+    routeKey: github
+    origin:
+      - api.github.com
+    path: postman/mocks/exchange-github
+    scenarios:
+      - overrides:
+          conditions:
+            error:
+              status_code: 503

@@ -1,0 +1,11 @@
+version: 1
+name: exchange-github
+slug: exchange-github
+protocol: http
+port: 4500
+interceptRequests: true
+origin: api.github.com
+scenarios:
+  - name: default
+    path: ./default.js
+    default: true

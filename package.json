@@ -27,7 +27,8 @@
   "bin": {
     "atc": "./src/cli/main.js",
     "atc-github": "./src/cli/main.js",
-    "atc-mcp": "./src/mcp/server.js"
+    "atc-mcp": "./src/mcp/server.js",
+    "atc-exchange": "./src/exchange/main.js"
   },
   "files": [
     "src/",

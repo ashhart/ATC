@@ -1,5 +1,17 @@
 # Security and privacy
 
+## Optional review evidence companion
+
+The separately operated `atc-exchange` service is opt-in and has no claim or
+merge authority. Its bounded metadata contains fixed enums, commit hashes and
+numeric proof references. Explicit uploads and downloads are the sole raw-byte
+exception to ATC's no-free-text boundary; evidence never enters core JSON,
+comments, the MCP server, hooks or the local viewer. See [the exchange trust and
+retention model](docs/exchange.md) before operating a service or sharing files.
+The operator can read evidence, and participants must treat it as untrusted.
+
+## Core coordination
+
 ATC reads ordinary GitHub work into a contributor board and coordinates agreements through a small command grammar. It uses your existing GitHub CLI credentials and access, with no hosted coordination server, bot, credential store, or shared database of its own.
 
 ## Command and output boundary

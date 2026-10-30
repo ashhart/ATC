@@ -18,7 +18,7 @@ export function parseCommand(body) {
 }
 
 export function commandText(command) {
-  if (command.verb === 'presence') return `/atc presence ${command.proof}`;
+  if (['presence', 'exchange'].includes(command.verb)) return `/atc ${command.verb} ${command.proof}`;
   if (command.verb === 'claim') return ['/atc', 'claim', ...command.areas].join(' ');
   if (['release', 'reset', 'renew'].includes(command.verb)) return `/atc ${command.verb}`;
   if (command.verb === 'propose') return ['/atc', 'propose', command.kind, ...command.areas].join(' ');
@@ -26,7 +26,7 @@ export function commandText(command) {
 }
 
 function readWords([verb, ...rest]) {
-  if (verb === 'presence') return rest.length === 1 && /^[a-f0-9]{64}$/.test(rest[0]) ? { verb, proof: rest[0] } : null;
+  if (['presence', 'exchange'].includes(verb)) return rest.length === 1 && /^[a-f0-9]{64}$/.test(rest[0]) ? { verb, proof: rest[0] } : null;
   if (verb === 'claim') {
     const areas = readAreas(rest);
     return areas && { verb, areas };

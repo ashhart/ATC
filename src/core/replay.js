@@ -22,6 +22,7 @@ function apply(state, event, closed, config) {
   const open = !event.onPull && !closed.has(issue);
   if (command.verb === 'invalid') return 'invalid';
   if (command.verb === 'presence') return 'presenceProof';
+  if (command.verb === 'exchange') return 'exchangeProof';
   if (command.verb === 'claim') return claimIssue(state, { login, issue, areas: command.areas, open }, config, at);
   if (command.verb === 'renew') return renewClaim(state, { login, issue, open }, at);
   if (command.verb === 'release') return releaseClaim(state, { login, issue });

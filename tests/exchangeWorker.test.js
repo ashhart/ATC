@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { createExchangeSqlStore } from '../src/exchange/sqlStore.js';
 import { createExchangeWebHandler } from '../src/exchange/webHandler.js';
 import { createGithubFetch } from '../src/exchange/githubFetch.js';
@@ -84,7 +86,7 @@ test('Worker GitHub transport refuses cross-repository reads, redirects, oversiz
   let calls = 0;
   const gh = createGithubFetch({ repository, fetcher: async (url, options) => {
     calls++; assert.ok(url.startsWith('https://api.github.com/repos/example/project'));
-    assert.equal(options.redirect, 'error'); assert.equal(options.headers.Authorization, undefined);
+    assert.equal(options.redirect, 'manual'); assert.equal(options.headers.Authorization, undefined);
     return Response.json({ private: false });
   } });
   assert.deepEqual(await gh.get('repos/example/project'), { private: false });
@@ -93,4 +95,24 @@ test('Worker GitHub transport refuses cross-repository reads, redirects, oversiz
   await assert.rejects(unavailable.get('repos/example/project'), { code: 'upstream' });
   const huge = createGithubFetch({ repository, fetcher: async () => new Response('x'.repeat(2 * 1024 * 1024 + 1)) });
   await assert.rejects(huge.get('repos/example/project'), { code: 'upstream' });
+  const redirected = createGithubFetch({ repository, fetcher: async (_, options) => {
+    assert.equal(options.redirect, 'manual');
+    return new Response(null, { status: 302, headers: { location: 'https://attacker.invalid' } });
+  } });
+  await assert.rejects(redirected.get('repos/example/project'), { code: 'upstream' });
+});
+
+test('Worker byte readers and GitHub policy parsing work without a global Node Buffer', async () => {
+  const script = `
+    import assert from 'node:assert/strict';
+    import { Buffer as Bytes } from 'node:buffer';
+    globalThis.Buffer = undefined;
+    const { readWebJson } = await import('./src/exchange/webIo.js');
+    const { decodePolicy } = await import('./src/exchange/github.js');
+    const value = { version: 1, origin: 'https://example.org', retentionHours: 24 };
+    const bytes = Bytes.from(JSON.stringify(value));
+    assert.deepEqual(decodePolicy({ type: 'file', encoding: 'base64', size: bytes.length, content: bytes.toString('base64') }), value);
+    assert.deepEqual(await readWebJson(new Request('https://example.org', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(value) })), value);
+  `;
+  await promisify(execFile)(process.execPath, ['--input-type=module', '-e', script]);
 });

@@ -12,7 +12,7 @@ export function createGithubFetch({ repository, fetcher = fetch, token } = {}) {
     const headers = { Accept: 'application/vnd.github+json', 'User-Agent': 'ATC-review-exchange' };
     if (token) headers.Authorization = `Bearer ${token}`;
     try {
-      const response = await fetcher(`https://api.github.com/${route}`, { headers, redirect: 'error', signal: AbortSignal.timeout(10000) });
+      const response = await fetcher(`https://api.github.com/${route}`, { headers, redirect: 'manual', signal: AbortSignal.timeout(10000) });
       if (optional && response.status === 404) { await response.body?.cancel(); return null; }
       requireValue(response.status === 200, 'upstream', 502);
       return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(await readWebBytes(response.body, 2 * 1024 * 1024)));

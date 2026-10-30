@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import { createExchangeOperations } from './operations.js';
 import { validateState } from './stateSchema.js';
 import { exact, isKey, isOrigin, isRepository, iso, maximumEvidence, requireValue } from './values.js';

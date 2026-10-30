@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import { digest, isKey, isNumber, isId, isRequestInput, isResultInput, isResolutionInput,
   isHead, evidenceKinds, maximumEvidence, iso, requireValue } from './values.js';
 

@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import { ExchangeError, requireValue } from './values.js';
 
 export const webErrors = ['invalid', 'notEnabled', 'upstream', 'unauthorized', 'forbidden', 'notFound', 'conflict',

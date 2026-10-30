@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import { readConfig } from '../core/config.js';
 import { isLogin, readTimestamp } from '../core/values.js';
 import { isHead, isId, isNumber, isOrigin, isPolicy, isRepository, proofFor, requireValue } from './values.js';

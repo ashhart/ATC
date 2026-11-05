@@ -60,12 +60,12 @@ test('bounded bot pull authors participate in coordination while bot comments re
 test('pull descriptions never silently drop references beyond supported bounds', () => {
   const fake = setup();
   const pull = fake.addPull({ author: 'helper[bot]' });
-  const references = Array.from({ length: 20 }, (_, index) => `#${index + 1}`).join(' ');
-  assert.equal(readPulls([{ ...pull, body: references }])[0].issues.length, 20);
-  const overflow = `${references} Fixes #21`;
+  const references = Array.from({ length: 6000 }, (_, index) => `#${index + 1}`).join(' ');
+  assert.equal(readPulls([{ ...pull, body: references }])[0].issues.length, 6000);
+  const overflow = `${references} Fixes #6001`;
   assert.equal(referencedIssues(overflow), null);
   assert.deepEqual(readPulls([{ ...pull, body: overflow }]), []);
-  assert.deepEqual(readPulls([{ ...pull, body: `${references} #1` }])[0].issues.length, 20);
+  assert.deepEqual(readPulls([{ ...pull, body: `${references} #1` }])[0].issues.length, 6000);
   assert.equal(referencedIssues('x'.repeat(65537)), null);
   assert.deepEqual(readPulls([{ ...pull, body: `${'x'.repeat(65536)} Fixes #21` }]), []);
   assert.equal(readPulls([{ ...pull, body: null }]).length, 1);

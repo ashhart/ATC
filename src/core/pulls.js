@@ -2,6 +2,7 @@ import { areasForPath } from './config.js';
 import { isActorLogin, isLogin, isNumber, readTimestamp } from './values.js';
 
 const referencePattern = /(?:^|[^A-Za-z0-9_&/#-])#([1-9][0-9]{0,8})(?![0-9A-Za-z_])/g;
+export const maximumPullIssueReferences = 6000;
 
 export function referencedIssues(body) {
   if (typeof body !== 'string') return [];
@@ -9,18 +10,25 @@ export function referencedIssues(body) {
   const found = new Set();
   for (const match of body.matchAll(referencePattern)) {
     found.add(Number(match[1]));
-    if (found.size > 20) return null;
+    if (found.size > maximumPullIssueReferences) return null;
   }
   return [...found];
 }
 
 export function readPulls(items) {
+  let references = 0;
   return items.filter(pull => isNumber(pull?.number) && typeof pull.draft === 'boolean' && (pull.body === null || typeof pull.body === 'string')
     && (pull.user?.type === 'User' && isLogin(pull.user.login)
     || pull.user?.type === 'Bot' && isActorLogin(pull.user.login)))
     .map(pull => ({ number: pull.number, author: pull.user.login.toLowerCase(), draft: pull.draft, createdAt: readTimestamp(pull.created_at),
       updatedAt: readTimestamp(pull.updated_at), issues: referencedIssues(pull.body) }))
-    .filter(pull => pull.createdAt !== null && pull.updatedAt !== null && pull.updatedAt >= pull.createdAt && pull.issues !== null);
+    .filter(pull => pull.createdAt !== null && pull.updatedAt !== null && pull.updatedAt >= pull.createdAt && pull.issues !== null)
+    .sort((first, second) => first.number - second.number)
+    .filter(pull => {
+      if (references + pull.issues.length > maximumPullIssueReferences) return false;
+      references += pull.issues.length;
+      return true;
+    });
 }
 
 export function linkedPulls(state, pulls, claim) {

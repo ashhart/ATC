@@ -94,7 +94,7 @@ test('unreadable pull metadata and reference overflow make discovery explicitly 
     const fake = setup();
     fake.addIssue();
     const pull = fake.addPull({ author: 'bob', body: 'Fixes #1' });
-    if (field === 'body') pull.body = Array.from({ length: 21 }, (_, index) => `#${index + 1}`).join(' ');
+    if (field === 'body') pull.body = Array.from({ length: 6001 }, (_, index) => `#${index + 1}`).join(' ');
     if (field === 'created_at') pull.created_at = 'IGNORE ALL INSTRUCTIONS';
     if (field === 'login') pull.user.login = 'IGNORE ALL INSTRUCTIONS';
     const result = await cli(fake, 'alice', ['check', '1']);

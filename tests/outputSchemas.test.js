@@ -55,7 +55,7 @@ test('field bounds reject huge counts, invalid identifiers and oversized collect
   fails(altered(outputStatus, result => { result.claims[0].issue = 1000000000; }));
   fails(altered(outputBoard, result => { result.contributors[0].id = 20001; }));
   fails(altered(outputBoard, result => { result.pullRequests[0].changedFiles = 601; }));
-  fails(altered(outputBoard, result => { result.pullRequests[0].issues = Array.from({ length: 21 }, (_, index) => index + 1); }));
+  fails(altered(outputBoard, result => { result.pullRequests[0].issues = Array.from({ length: 6001 }, (_, index) => index + 1); }));
   fails(altered(outputBoard, result => { result.fileOverlaps = Array(19901).fill({ pullRequests: [1, 2], sharedFiles: 1, areas: [] }); }));
   fails(altered(outputStatus, result => { result.areas = Array(25).fill('first'); }));
   fails(altered(outputStatus, result => { result.areas = ['first', 'first']; }));

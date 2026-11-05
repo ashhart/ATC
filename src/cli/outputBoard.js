@@ -1,11 +1,12 @@
 import { actor, limitations, proposal, scopedClaim } from './outputRecords.js';
+import { maximumPullIssueReferences } from '../core/pulls.js';
 import { areaList, booleanValue, contributorId, count, enumValue, issueList, issueNumber, list, nullable, numberRange, record, rejectUnless, sessionId, timestamp } from './outputTypes.js';
 
 const contributor = record({ id: nullable(contributorId), mine: booleanValue, workingIssues: issueList(1000), reviewingIssues: issueList(1000),
   assignedIssues: issueList(1000), pullRequests: issueList(300) });
 const issue = record({ issue: issueNumber, state: enumValue('open', 'unknown'), helpWanted: booleanValue, goodFirstIssue: booleanValue,
   assignees: list(record(actor), 100), claims: list(scopedClaim, 3000), pullRequests: issueList(300) });
-const pull = record({ pullRequest: issueNumber, ...actor, draft: booleanValue, issues: issueList(20), areas: areaList,
+const pull = record({ pullRequest: issueNumber, ...actor, draft: booleanValue, issues: issueList(maximumPullIssueReferences), areas: areaList,
   changedFiles: nullable(count(600)), createdAt: timestamp, updatedAt: timestamp });
 const pair = list(issueNumber, 2, 2, true);
 const fileOverlap = record({ pullRequests: pair, sharedFiles: numberRange(1, 600), areas: areaList });
@@ -28,6 +29,7 @@ const boardSchema = record({ repository: enumValue('selected'), observedAt: time
 export function boardOutput(value, context) {
   const result = boardSchema(value, context);
   const { summary } = result;
+  rejectUnless(result.pullRequests.reduce((total, pull) => total + pull.issues.length, 0) <= maximumPullIssueReferences);
   rejectUnless(summary.contributors === result.contributors.length && summary.issues === result.issues.length
     && summary.openIssues === result.issues.filter(issue => issue.state === 'open').length
     && summary.openPullRequests === result.pullRequests.length && summary.fileOverlaps === result.fileOverlaps.length

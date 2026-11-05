@@ -5,8 +5,8 @@ import { doctorOutput, initOutput } from './outputSetup.js';
 import { numberRange, rejectUnless } from './outputTypes.js';
 import { writeOutput } from './outputWrite.js';
 import { validateWorkResult } from './workOutput.js';
-import { displayLanding } from './landing.js';
-import { validateScopedOverlapResult } from './scopedOverlap.js';
+import { displayLanding } from './landingOutput.js';
+import { validateScopedOverlapResult } from './scopedOverlapOutput.js';
 
 export function displayResult(result, knownAreasOrConfig = []) {
   const context = { nodes: 0, area: areaProjector(knownAreasOrConfig), suppressAreas: knownAreasOrConfig?.areasPinned === false };

@@ -11,6 +11,7 @@ import { parseCliArgs } from '../src/cli/args.js';
 import { runCli } from '../src/cli/actions.js';
 import { readWorkTicket, ticketLocation } from '../src/cli/workTicket.js';
 import { planTtlMs } from '../src/core/plans.js';
+import { preEditOutput } from '../src/hooks/workGate.js';
 
 function fixture(t) {
   const folder = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'atc-begin-')));
@@ -168,4 +169,19 @@ test('publication guard detects a real PR merge conflict and refuses untestable 
   f.command(['--git-dir', origin, 'update-ref', '-d', ref]);
   const unknown = await f.run(['guard', '--publish']);
   assert.equal(unknown.ready, false); assert.equal(unknown.outcome, 'incomplete'); assert.equal(unknown.complete, false);
+});
+
+test('pre-edit guard canonicalizes an absolute fixture path against its ticket worktree root', async t => {
+  const f = fixture(t);
+  assert.equal((await f.run(['begin', '1', 'src/a.js', '--base', 'HEAD'])).ready, true);
+  const root = ticketLocation(f.git).root;
+  const file = path.join(f.folder, 'src/a.js');
+  const verified = await f.run(['guard', file, '--json']);
+  assert.equal(verified.ready, true);
+  const calls = [];
+  const output = preEditOutput({ hook_event_name: 'PreToolUse', tool_name: 'Edit', cwd: f.folder,
+    tool_input: { file_path: file } }, { gitContext: () => ({ root, github: true, configured: true }),
+    ticketStatus: () => 'present', run(args, options) { calls.push({ args, options }); return verified; } });
+  assert.equal(output, null);
+  assert.deepEqual(calls.map(call => call.args), [['guard', path.join(root, 'src/a.js'), '--json']]);
 });

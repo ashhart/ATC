@@ -2,6 +2,7 @@ import path from 'node:path';
 import { readGuardResult } from './guardResults.js';
 import { denyOutput } from './hookIo.js';
 import { isAbsolutePath, isPathText, isRecord } from './hookValues.js';
+import { plannedPath } from '../cli/workPaths.js';
 
 const failed = 'ATC could not revalidate this work ticket. Run `atc guard --json` and resolve its result before continuing.';
 const denied = 'ATC requires this work ticket to be refreshed or its scope to be corrected before continuing. Run `atc guard --json` for the fixed outcome.';
@@ -47,8 +48,9 @@ export function preEditOutput(input, deps) {
   if (status === 'absent') return null;
   const raw = input.tool_input.file_path ?? input.tool_input.notebook_path;
   if (!isPathText(raw) || !isAbsolutePath(git.root)) return denyOutput(failed);
-  const file = path.resolve(input.cwd, raw);
-  const relative = path.relative(git.root, file);
-  if (relative === '' || relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) return denyOutput(denied);
+  if (raw.split(/[\\/]/).includes('..')) return denyOutput(denied);
+  let file;
+  try { file = path.join(git.root, plannedPath(git.root, path.resolve(input.cwd, raw))); }
+  catch { return denyOutput(denied); }
   return workGuardOutput([file], input.cwd, deps, status);
 }

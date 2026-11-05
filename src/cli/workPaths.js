@@ -11,7 +11,8 @@ const failure = 'Planned files must be inside this worktree.';
 export function plannedPath(root, value) {
   ensure(typeof value === 'string' && value.length >= 1 && value.length <= 4096 && !/[\u0000-\u001f\u007f]/.test(value), failure);
   ensure(!value.split(/[\\/]/).includes('..'), failure);
-  const full = path.resolve(root, value);
+  const resolved = path.resolve(root, value);
+  const full = process.platform === 'win32' ? windowsWorkPath(root, resolved) : resolved;
   const relative = path.relative(root, full).split(path.sep).join('/');
   ensure(isFilePath(relative) && !relative.split('/').includes('.git'), failure);
   let ancestor = root;
@@ -23,6 +24,19 @@ export function plannedPath(root, value) {
     ensure(!stat.isSymbolicLink() && (index < parts.length - 1 ? stat.isDirectory() : stat.isFile() && stat.nlink === 1), failure);
   }
   return relative;
+}
+
+function windowsWorkPath(root, full) {
+  ensure(path.parse(root).root.toLowerCase() === path.parse(full).root.toLowerCase(), failure);
+  let current = path.parse(full).root;
+  for (const part of full.slice(current.length).split(path.sep).filter(Boolean)) {
+    current = path.join(current, part);
+    try { ensure(!fs.lstatSync(current).isSymbolicLink(), failure); }
+    catch (error) { if (error.code === 'ENOENT') break; throw error; }
+  }
+  let ancestor = full;
+  while (!fs.existsSync(ancestor)) ancestor = path.dirname(ancestor);
+  return path.join(fs.realpathSync.native(ancestor), path.relative(ancestor, full));
 }
 
 export function fileFingerprint(repository, file) {

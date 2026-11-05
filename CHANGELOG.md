@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.1
+
+- Keep the public board dependency graph free of Node-only CLI imports for Worker and browser integrations.
+- Keep pull requests that reference more than 20 issues in complete snapshots, so one long description cannot block unrelated checks and claims.
+- Preserve every linked issue within the existing shared limit of 6,000 PR-to-issue references. Snapshots exceeding that budget still report incomplete coverage and refuse claims.
+
 ## 0.8.0
 
 - Planned file fingerprints and one-hour cooperative edit plans, confirmed with deterministic comment replay across issues and sessions.

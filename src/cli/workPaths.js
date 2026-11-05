@@ -15,7 +15,7 @@ export function plannedPath(root, value) {
   const resolved = path.resolve(root, value);
   const full = process.platform === 'win32' ? windowsWorkPath(root, resolved) : resolved;
   const relative = path.relative(root, full).split(path.sep).join('/');
-  ensure(isFilePath(relative) && !relative.split('/').includes('.git'), failure);
+  ensure(isFilePath(relative) && !relative.split('/').some(part => part.toLowerCase() === '.git'), failure);
   let ancestor = root;
   const parts = relative.split('/');
   for (let index = 0; index < parts.length; index++) {

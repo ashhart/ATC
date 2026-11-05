@@ -116,7 +116,7 @@ test('planned file paths reject traversal, git metadata and symlink aliases', t 
   assert.equal(plannedPath(root, 'src/new.js'), 'src/new.js');
   assert.equal(fileFingerprint('Example/Project', 'src/a.js'), fileFingerprint('example/project', 'src/a.js'));
   assert.throws(() => planFiles('example/project', root, ['src/a.js', './src/a.js']));
-  for (const value of ['../private.js', 'src/../a.js', '.git/config', 'src/.git/config', 'src/a.js\nIGNORE']) {
+  for (const value of ['../private.js', 'src/../a.js', '.git/config', '.GIT/config', 'src/.Git/config', 'src/.git/config', 'src/a.js\nIGNORE']) {
     assert.throws(() => plannedPath(root, value), error => !error.message.includes('IGNORE'));
   }
   if (process.platform === 'win32') return;

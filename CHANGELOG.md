@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.0
+
+- Planned file fingerprints and one-hour cooperative edit plans, confirmed with deterministic comment replay across issues and sessions.
+- `begin`, `plan` and `guard` workflows with worktree-bound tickets, area-scope checks and base revalidation before edits and publication.
+- Pre-edit and pre-publication guards for supported Claude Code tools, plus matching MCP commands.
+- Explicitly selected overlap scans for up to 50 PRs, complete-scope reporting and validated file caches keyed by head and base commits.
+- Typed PR dependencies and deterministic landing advice, including cycles, missing work and abandoned prerequisites.
+- Exchange version 2 receipts retain the tested base and reject acceptance of stale or unknown-base results while preserving legacy record reads.
+
 ## 0.7.0
 
 Repository-enabled anonymous public check-ins on confirmed new claims and session starts, with explicit GitHub-name opt-in, a local-only override, private-repository refusal and matching MCP controls.

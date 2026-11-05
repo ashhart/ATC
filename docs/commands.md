@@ -1,5 +1,12 @@
 # Commands and outcomes
 
+ATC 0.8 adds `begin <issue> <files...>`, `plan <issue> <files...>`,
+`guard [file] [--publish]`, `overlap --pulls 12,34`, `depends <pr> [prNumbers...]`
+and `landing <prNumbers...>`. See [parallel-agent workflows](workflows.md) for
+their exact coverage, readiness and authorization boundaries. Workflow outputs
+carry a validated `ready` boolean and fixed `outcome`; a preview is never ready,
+and `guard` returning `noTicket` means the legacy unticketed workflow applies.
+
 Start with `atc board --repo owner/name` from any directory. The shorter `atc --repo owner/name` runs the same board. A local clone is needed for `overlap`, `who`, agent presence and the offline initializer; repository reads and typed coordination can use `--repo` without one. `atc help` and `atc --help` show usage. `atc --version` prints the CLI version without a GitHub request.
 
 Results have two forms. With `--json`, or whenever standard output is not a terminal, ATC prints validated JSON that contains numeric area references, snapshot-local contributor references, issue and pull request numbers, counts, timestamps, booleans, and fixed enums. The repository output is the fixed value `selected`. In a terminal, or with `--text`, ATC prints a readable view of the same result that adds issue and pull request titles, logins and file paths for the person running the command, after stripping control characters, escape sequences and bidi marks. Agents and scripts should always use `--json`. Do not infer success from an empty list or the process exit code alone.

@@ -1,4 +1,4 @@
-import { inboxView } from './inbox.js';
+import { inboxView, legacyInboxView } from './inbox.js';
 import { isExchangeOutput } from './output.js';
 import { readWebBytes, readWebJson, jsonResponse, errorResponse } from './webIo.js';
 import { isDigest, isHead, isNumber, isOrigin, isPolicy, isSessionInput, isRequestInput,
@@ -12,6 +12,7 @@ export function createExchangeWebHandler({ store, github, origin, now = Date.now
     requireValue(url.origin === origin && !url.search && !/[#%\s]/.test(url.pathname) && url.pathname.length <= 300);
     requireValue(!request.headers.has('origin') || request.headers.get('origin') === origin, 'forbidden', 403);
     requireValue(!request.headers.has('content-encoding'), 'invalid', 415);
+    requireValue(!request.headers.has('x-atc-exchange-receipts') || request.headers.get('x-atc-exchange-receipts') === '2');
     if (request.method === 'POST' && url.pathname === '/api/exchange/v1/sessions') {
       requireValue(!readOnly, 'readOnly', 403);
       const input = await readWebJson(request);
@@ -34,9 +35,12 @@ export function createExchangeWebHandler({ store, github, origin, now = Date.now
     requireValue(isPolicy(policy) && policy.origin === origin, 'notEnabled', 403);
     requireValue(await github.verify({ pull, comment: session.comment, token }) === session.author, 'unauthorized', 401);
     const current = await github.pull(pull);
-    requireValue(isHead(current?.head) && ['open', 'closed'].includes(current.state), 'upstream', 502);
+    requireValue(isHead(current?.head) && isHead(current?.base) && ['open', 'closed'].includes(current.state), 'upstream', 502);
     const tail = match[2];
-    if (request.method === 'GET' && tail === '') return reply(inboxView(store, session, pull, current, now()));
+    if (request.method === 'GET' && tail === '') {
+      const view = inboxView(store, session, pull, current, now());
+      return reply(request.headers.get('x-atc-exchange-receipts') === '2' ? view : legacyInboxView(view));
+    }
     const evidence = tail.match(/^\/evidence\/([a-f0-9]{32})(?:\/([a-f0-9]{40})\/(log|trace|report))?$/);
     if (request.method === 'GET' && evidence && !evidence[2]) {
       const found = store.download(session, pull, evidence[1]);
@@ -55,13 +59,14 @@ export function createExchangeWebHandler({ store, github, origin, now = Date.now
     if (request.method === 'POST' && tail === '/requests') {
       const input = await readWebJson(request);
       requireValue(isRequestInput(input)); requireValue(input.head === current.head, 'stale', 409);
+      requireValue(input.base === undefined || input.base === current.base, 'stale', 409);
       return reply(store.request(session, pull, input));
     }
     const action = tail.match(/^\/requests\/([a-f0-9]{32})\/(results|resolve)$/);
     if (request.method === 'POST' && action) {
       const input = await readWebJson(request);
       requireValue(action[2] === 'results' ? isResultInput(input) : isResolutionInput(input));
-      return reply(action[2] === 'results' ? store.respond(session, pull, action[1], input) : store.resolve(session, pull, action[1], input));
+      return reply(action[2] === 'results' ? store.respond(session, pull, action[1], input) : store.resolve(session, pull, action[1], input, current));
     }
     requireValue(false, 'notFound', 404);
   }

@@ -32,7 +32,8 @@ function observeIssue(context, issue) {
   const { config, events, pulls } = context.snapshot;
   const fresh = readEvents(history.comments, context.repository, config).filter(event => !event.onPull && event.issue === issue);
   const combined = [...events.filter(event => event.issue !== issue), ...fresh].sort((first, second) => first.id - second.id);
-  return { state: replay(combined, { closed: new Set(), pulls }, config, context.now()), evidence: JSON.stringify(fresh) };
+  const now = context.now();
+  return { state: replay(combined, { closed: new Set(), pulls }, config, now), events: combined, now, evidence: JSON.stringify(fresh) };
 }
 
 export function commentBody(command, mentions = [], signature) {
@@ -44,7 +45,7 @@ export async function postAndConfirm(context, issue, command) {
   const encoded = command.areas ? { ...command, areas: command.areas.map(area => String(areaReference(context.snapshot.config, area))) } : command;
   const body = commentBody(encoded);
   const preview = previewOutcome(context.snapshot, context.me, issue, command);
-  if (!['claimed', 'claimUpdated', 'renewed', 'released', 'proposed', 'accepted', 'declined', 'withdrawn'].includes(preview)) {
+  if (!['claimed', 'claimUpdated', 'renewed', 'released', 'proposed', 'accepted', 'declined', 'withdrawn', 'planned', 'planCleared'].includes(preview)) {
     return { issue, command: command.verb, posted: false, outcome: preview };
   }
   if (context.dryRun) return { issue, command: command.verb, posted: false, outcome: 'dryRun',
@@ -66,7 +67,10 @@ export async function postAndConfirm(context, issue, command) {
     if (!observed) return reply;
     const outcome = observed.state.outcomes.get(created.id);
     const current = outcome ? `${outcome}:${observed.evidence}` : null;
-    if (current && current === previous) return { ...reply, outcome };
+    if (current && current === previous) {
+      context.snapshot = { ...context.snapshot, state: observed.state, events: observed.events, now: observed.now };
+      return { ...reply, outcome };
+    }
     previous = current;
   }
   return reply;

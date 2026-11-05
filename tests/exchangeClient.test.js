@@ -28,6 +28,12 @@ test('client commands connect once, share files explicitly, export receipts and 
   await invoke(['request', '42', 'review', '--id', key(2), '--head', head, '--evidence', key(1)]);
   const view = await invoke(['inbox', '42']);
   assert.equal(view.requests[0].evidence[0].id, key(1)); assert.equal(view.counts.pending, 1);
+  const legacyView = await invoke(['inbox', '42'], { fetcher: (url, options) => {
+    const headers = { ...options.headers }; delete headers['X-ATC-Exchange-Receipts'];
+    return f.fetcher(url, { ...options, headers });
+  } });
+  assert.equal(legacyView.version, 2); assert.equal(legacyView.requests[0].freshness, 'unknownBase');
+  assert.equal(legacyView.requests[0].stale, true);
   const output = path.join(f.folder, 'download.txt');
   await invoke(['download', '42', key(1), '--output', output]);
   assert.equal(fs.readFileSync(output, 'utf8'), 'untrusted context\n');

@@ -7,7 +7,7 @@ export function createExchangeTransport(origin, { fetcher = fetch } = {}) {
   return async function request(method, route, { token, value, bytes, download = false } = {}) {
     requireValue(['GET', 'POST', 'PUT'].includes(method) && /^\/[a-z0-9/-]{1,250}$/.test(route)
       && !/[\r\n]/.test(route) && (token === undefined || isDigest(token)));
-    const headers = { Accept: download ? 'application/octet-stream' : 'application/json' };
+    const headers = { Accept: download ? 'application/octet-stream' : 'application/json', 'X-ATC-Exchange-Receipts': '2' };
     if (token) headers.Authorization = `Bearer ${token}`;
     if (bytes) headers['Content-Type'] = 'application/octet-stream';
     if (value) headers['Content-Type'] = 'application/json';

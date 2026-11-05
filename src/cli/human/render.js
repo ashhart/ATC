@@ -3,10 +3,13 @@ import { renderBoard } from './board.js';
 import { boardNumbers } from './boardRows.js';
 import { renderCheck, renderOverlap, renderStatus, renderWho } from './reads.js';
 import { renderDoctor, renderInit, renderWrite } from './writes.js';
+import { renderWork, renderLanding } from './work.js';
 
 export function renderHuman(result, labels, { color = false, now = Date.now() } = {}) {
   const style = createStyle(color);
   const command = result.command;
+  if (['begin', 'plan', 'guard'].includes(command)) return renderWork(result, style);
+  if (['depends', 'landing'].includes(command)) return renderLanding(result, style);
   if (command === 'init') return renderInit(result, style);
   if (command === 'doctor') return renderDoctor(result, style);
   if (command === 'who') return renderWho(result, labels, style);
@@ -20,6 +23,7 @@ export function renderHuman(result, labels, { color = false, now = Date.now() } 
 export function referencedNumbers(result, labels = createLabels()) {
   const numbers = new Set();
   const add = value => { if (Number.isSafeInteger(value) && value > 0) numbers.add(value); };
+  if (['begin', 'plan', 'guard', 'depends', 'landing'].includes(result.command)) return [];
   if (Object.hasOwn(result, 'observedAt')) return boardNumbers(result, labels);
   for (const pull of result.pullRequests || []) add(pull);
   for (const overlap of result.overlaps || []) add(overlap.pullRequest);

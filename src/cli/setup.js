@@ -8,7 +8,7 @@ import { canonicalFolder } from './localPaths.js';
 import { appendText, createDirectory, createFile, failed, inspectDirectory, readFile, unsafe } from './safeFiles.js';
 import { contributingStanza, cursorRule } from './setupGuides.js';
 
-const stanza = '\n## Agent Traffic Control\n\nBefore starting or resuming an issue, or opening, updating or reviewing a pull request, follow [the ATC contributor skill](skills/atc/SKILL.md).\nRead `atc board --json` and `atc status --json`, then check the issue and confirm your claim before implementation; run `atc overlap --json` before publishing PR changes.\n';
+const stanza = '\n## Agent Traffic Control\n\nBefore starting or resuming an issue, or opening, updating or reviewing a pull request, follow [the ATC contributor skill](skills/atc/SKILL.md).\nRead `atc board --json` and `atc status --json`, then check the issue and confirm your claim before implementation; with ATC 0.8, use `atc begin <issue> <files...> --json` and require work-ticket guard readiness before edits and publication.\n';
 const defaults = { areaIds: { code: 1, docs: 2, tests: 3 }, areas: { code: ['src/'], docs: ['docs/', 'README.md'], tests: ['tests/', 'test/'] } };
 const packageSkill = fileURLToPath(new URL('../../skills/atc/SKILL.md', import.meta.url));
 

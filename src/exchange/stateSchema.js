@@ -1,12 +1,12 @@
 import { exact, isDigest, isHead, isId, isKey, isNumber, isOrigin, isRepository, isTime,
-  kinds, statuses, decisions, evidenceKinds, maximumEvidence, requireValue, isEvidenceIds } from './values.js';
+  kinds, statuses, decisions, evidenceKinds, maximumEvidence, requireValue, isEvidenceIds, withOptionalBase } from './values.js';
 
 const size = value => Number.isInteger(value) && value > 0 && value <= maximumEvidence;
 const resultFields = { id: isKey, author: isId, proof: isId, head: isHead, status: x => statuses.includes(x), createdAt: isTime,
   evidence: x => Array.isArray(x) && x.length <= 8 && x.every(isKey) && new Set(x).size === x.length };
 const requestFields = { id: isKey, pull: isNumber, author: isId, proof: isId, head: isHead, kind: x => kinds.includes(x), createdAt: isTime,
   evidence: isEvidenceIds,
-  results: x => Array.isArray(x) && x.length <= 20 && x.every(v => exact(v, resultFields)),
+  results: x => Array.isArray(x) && x.length <= 20 && x.every(v => withOptionalBase(v, resultFields)),
   resolution: x => x === null || exact(x, { result: isKey, decision: x => decisions.includes(x), createdAt: isTime }) };
 const evidenceFields = { id: isKey, pull: isNumber, author: isId, head: isHead, kind: x => evidenceKinds.includes(x),
   digest: isDigest, size, createdAt: isTime, expiresAt: isTime };
@@ -15,7 +15,7 @@ const sessionFields = { hash: isDigest, pull: isNumber, author: isId, comment: i
 export function validateState(state) {
   requireValue(exact(state, { version: x => x === 1, repository: isRepository, origin: isOrigin,
     sessions: x => Array.isArray(x) && x.length <= 500 && x.every(v => exact(v, sessionFields)),
-    requests: x => Array.isArray(x) && x.length <= 1000 && x.every(v => exact(v, requestFields)),
+    requests: x => Array.isArray(x) && x.length <= 1000 && x.every(v => withOptionalBase(v, requestFields)),
     evidence: x => Array.isArray(x) && x.length <= 4000 && x.every(v => exact(v, evidenceFields)) }), 'storage', 503);
   for (const [records, key] of [[state.sessions, 'hash'], [state.requests, 'id'], [state.evidence, 'id']]) {
     requireValue(new Set(records.map(x => x[key])).size === records.length, 'storage', 503);
@@ -26,6 +26,7 @@ export function validateState(state) {
       && item.head === request.head && item.author === request.author))
       && new Set(request.results.map(x => x.id)).size === request.results.length
       && request.results.every(result => result.head === request.head && result.createdAt >= request.createdAt
+        && (request.base === undefined || result.base === undefined || request.base === result.base)
         && result.evidence.every(id => state.evidence.some(item => item.id === id && item.pull === request.pull
           && item.head === request.head && item.author === result.author)))
       && (request.resolution === null || request.results.some(result => result.id === request.resolution.result

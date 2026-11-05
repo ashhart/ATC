@@ -1,6 +1,6 @@
 ---
 name: atc
-description: Use Agent Traffic Control in repositories that have adopted ATC when starting or resuming an issue, opening or updating a pull request, or coordinating a review; inspect ownership, confirm claims and check conflicts before editing or publishing changes.
+description: Use Agent Traffic Control in adopted repositories to begin or resume issue work, declare planned files, guard edits and pushes, inspect scoped PR conflicts and coordinate dependencies and reviews.
 ---
 
 # Coordinate with Agent Traffic Control
@@ -23,6 +23,14 @@ atc status --json
 Inside a fork, ATC normally selects the upstream repository. Pass `--repo owner/name` when selection is ambiguous, and use that same repository for subsequent commands. Inspect existing claims, your open PRs and pending proposals before choosing work or resuming an interrupted task. Resolve missing coverage needed for that work instead of treating incomplete results as empty.
 
 For issue implementation, follow the check-and-claim sequence below before editing. For an existing PR, first inspect its linked issues and current head through GitHub, then follow the relevant PR section. Core `check`, `claim` and `propose` commands take issue numbers; the optional `atc-exchange` commands take PR numbers.
+
+Use ATC 0.8 or later and a separate clone or worktree for each concurrent agent.
+Once the intended files are known, prefer `atc begin <issue> <files...> --json`
+to confirm ownership, start the session and reserve their fingerprints together.
+If triage is needed to identify files, use the ordinary claim workflow first,
+then run `begin` before editing. Keep the returned session and plan numbers.
+For an existing worktree, `guard` reporting `noTicket` means no reservation has
+been inspected; run `begin` before relying on edit protection.
 
 ## Inspect a repository
 
@@ -52,6 +60,7 @@ Use `--dry-run` to preview a write without posting. A preview is not a claim. `-
 - Run `atc status --json` to see your claims, `refreshDue`, `proposalsForMe` and `myProposals`. Explain offers to the human and use `atc accept <id>` or `atc decline <id>` within their authorization. A proposer can use `atc withdraw <id>`.
 - If a write returns `pending`, read `atc status` again and confirm the agreement before acting. Do not assume posting means the replay accepted the command.
 - Do not edit a posted command to change an agreement; use the next typed command.
+- With a work ticket, run `atc guard <file> --json` before editing and `atc guard --publish --json` before publishing. Continue only on `ready: true`; refresh an expired or changed plan with `atc begin` or `atc plan <issue> <files...> --json` before expanding scope. A dry run never grants readiness. Plans last one hour and respect existing area splits; another session's overlapping plan returns `scopeTaken`, including sessions using the same GitHub account.
 
 ## Opening or updating your pull request
 
@@ -59,6 +68,15 @@ Use `--dry-run` to preview a write without posting. A preview is not a claim. `-
 2. Run `atc overlap --json` before opening the PR or pushing a substantial update. Resolve `conflicts` first; investigate `unknown` results for affected work, and report incomplete coverage instead of calling it clear. Recheck after rebasing or changing the overlapping files.
 3. Include `Fixes #<issue>` in the description when the PR fixes that issue. A linked open PR counts as its author's claim, so read `myPullRequests` before opening another attempt at the same issue.
 4. Keep review findings and test results tied to the head that was actually inspected. After a new push, previous results do not establish coverage of the new head; use the optional exchange below when the repository has enabled it.
+
+For a large repository, `atc overlap --pulls 123,124 --json` inspects only the
+explicitly selected PRs. Read `coverage.requested`, `coverage.inspected` and
+`coverage.repositoryComplete`; selected completeness is never repository-wide
+clearance and does not waive complete claim-history checks.
+Declare prerequisites with `atc depends <pr> <prNumbers...> --json`, and inspect
+`atc landing <prNumbers...> --json` for dependency order, cycles and blocked work.
+An empty dependency list clears the declaration. Landing readiness is advisory;
+GitHub reviews and required checks still govern merging.
 
 ## Reviewing someone else's pull request
 
@@ -98,6 +116,11 @@ for safe retries; old-head results
 are stale and cannot establish coverage of new changes. A result is reported
 evidence, not independent verification or GitHub approval. Acknowledgement can
 only come from the requester's account and does not alter ATC claims.
+
+Responses also require `--base <tested-sha>` naming the base actually tested;
+do not substitute the latest base for an older run. A changed head or base makes
+that evidence stale, and legacy records without a known base cannot establish
+coverage of the current change.
 
 Upload only explicitly selected files the human has authorized sharing with
 everyone who can join that PR exchange. Never automatically upload workspace

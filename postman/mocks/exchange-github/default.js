@@ -18,7 +18,7 @@ http.createServer((request, response) => {
   }
   if (request.method === 'GET' && request.url === base) value = { private: false };
   if (request.method === 'GET' && request.url === `${base}/pulls/42`) {
-    value = { number: 42, head: { sha: 'a'.repeat(40) }, state: 'open', base: { repo: { full_name: repository } } };
+    value = { number: 42, head: { sha: 'a'.repeat(40) }, state: 'open', base: { sha: 'c'.repeat(40), repo: { full_name: repository } } };
   }
   if (request.method === 'GET' && request.url === `${base}/issues/comments/101`) {
     value = { id: 101, issue_url: `https://api.github.com${base}/issues/42`, body: `/atc exchange ${proof}`,

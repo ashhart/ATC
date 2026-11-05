@@ -1,6 +1,7 @@
 import { readOverlapResult } from './cliResults.js';
 import { contextOutput, denyOutput } from './hookIo.js';
 import { isAbsolutePath, isRecord, issueList, plural } from './hookValues.js';
+import { hookTicketStatus, isPublishCommand, workGuardOutput } from './workGate.js';
 
 const createPattern = /(?:^|[\s;&|(`$])gh(?:\s+(?:-R|--repo)(?:\s+|=)[^\s;&|]+)*\s+pr\s+(?:create|new)(?=$|[\s;&|)`])/;
 const unchecked = 'ATC could not check this pull request for overlapping work.';
@@ -11,8 +12,11 @@ export function isPullRequestCreate(command) {
 
 export function preBashOutput(input, deps) {
   if (!isRecord(input) || input.hook_event_name !== 'PreToolUse' || input.tool_name !== 'Bash'
-    || !isAbsolutePath(input.cwd) || !isRecord(input.tool_input) || !isPullRequestCreate(input.tool_input.command)) return null;
+    || !isAbsolutePath(input.cwd) || !isRecord(input.tool_input) || !isPublishCommand(input.tool_input.command)) return null;
   if (!deps.gitContext(input.cwd)) return null;
+  const status = hookTicketStatus(input.cwd, deps);
+  if (status !== 'absent') return workGuardOutput(['--publish'], input.cwd, deps, status);
+  if (!isPullRequestCreate(input.tool_input.command)) return null;
   const result = readOverlapResult(deps.run(['overlap', '--json'], { cwd: input.cwd, timeout: 75000 }));
   if (!result) return contextOutput('PreToolUse', unchecked);
   const pullConflicts = result.pulls.filter(row => row.conflict === 'conflicts');

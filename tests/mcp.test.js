@@ -42,7 +42,8 @@ test('tools/list describes every tool with a closed input schema and honest hint
   const { result } = await handleMessage({ jsonrpc: '2.0', id: 3, method: 'tools/list' });
   const names = result.tools.map(tool => tool.name);
   assert.deepEqual(names, ['atc_board', 'atc_status', 'atc_check', 'atc_overlap', 'atc_claim', 'atc_renew', 'atc_release', 'atc_propose',
-    'atc_accept', 'atc_decline', 'atc_withdraw', 'atc_start', 'atc_pulse', 'atc_land', 'atc_who']);
+    'atc_accept', 'atc_decline', 'atc_withdraw', 'atc_start', 'atc_pulse', 'atc_land', 'atc_who',
+    'atc_begin', 'atc_plan', 'atc_guard', 'atc_depends', 'atc_landing']);
   for (const tool of result.tools) {
     assert.equal(tool.inputSchema.type, 'object');
     assert.equal(tool.inputSchema.additionalProperties, false);

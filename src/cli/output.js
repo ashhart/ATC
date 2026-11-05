@@ -4,11 +4,14 @@ import { checkOutput, overlapOutput, statusOutput, whoOutput } from './outputRea
 import { doctorOutput, initOutput } from './outputSetup.js';
 import { numberRange, rejectUnless } from './outputTypes.js';
 import { writeOutput } from './outputWrite.js';
+import { validateWorkResult } from './workOutput.js';
+import { displayLanding } from './landing.js';
+import { validateScopedOverlapResult } from './scopedOverlap.js';
 
 export function displayResult(result, knownAreasOrConfig = []) {
   const context = { nodes: 0, area: areaProjector(knownAreasOrConfig), suppressAreas: knownAreasOrConfig?.areasPinned === false };
   const resultValue = projectResult(result, context);
-  if (context.suppressAreas) rejectUnless(resultValue.complete === false && resultValue.limitations.includes('configurationUnpinned')
+  if (context.suppressAreas) rejectUnless(resultValue.complete === false && resultValue.limitations?.includes('configurationUnpinned')
     || ['configurationUnpinned', 'incomplete'].includes(resultValue.outcome));
   return resultValue;
 }
@@ -21,6 +24,9 @@ function projectResult(result, context) {
   rejectUnless(result !== null && typeof result === 'object' && !Array.isArray(result));
   const field = key => Object.getOwnPropertyDescriptor(result, key)?.value;
   const command = field('command');
+  if (['begin', 'plan', 'guard'].includes(command)) return validateWorkResult(result);
+  if (['depends', 'landing'].includes(command)) return displayLanding(result);
+  if (field('coverage') !== undefined) return validateScopedOverlapResult(result);
   const validator = command === 'init' ? initOutput : command === 'doctor' ? doctorOutput : command === 'who' ? whoOutput
     : command !== undefined ? writeOutput
     : Object.hasOwn(result, 'observedAt') ? boardOutput : Object.hasOwn(result, 'advice') ? checkOutput

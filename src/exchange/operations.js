@@ -33,7 +33,7 @@ export function createExchangeOperations({ read, save, putBytes, readBytes, now 
       const previous = state.requests.find(x => x.id === input.id);
       if (previous) {
         requireValue(previous.pull === pull && previous.author === session.author && previous.head === input.head
-          && previous.kind === input.kind && JSON.stringify(previous.evidence) === JSON.stringify(input.evidence), 'conflict', 409);
+          && previous.base === input.base && previous.kind === input.kind && JSON.stringify(previous.evidence) === JSON.stringify(input.evidence), 'conflict', 409);
         return { outcome: 'requested', id: input.id };
       }
       requireValue(state.requests.length < 1000 && state.requests.filter(x => x.pull === pull).length < 100, 'capacity', 429);
@@ -49,11 +49,12 @@ export function createExchangeOperations({ read, save, putBytes, readBytes, now 
       const request = findRequest(state, pull, id);
       const previous = request.results.find(x => x.id === input.id);
       if (previous) {
-        requireValue(previous.author === session.author && previous.head === input.head && previous.status === input.status
+        requireValue(previous.author === session.author && previous.head === input.head && previous.base === input.base && previous.status === input.status
           && JSON.stringify(previous.evidence) === JSON.stringify(input.evidence), 'conflict', 409);
         return { outcome: 'responded', id: input.id };
       }
       requireValue(request.resolution === null && request.head === input.head, 'conflict', 409);
+      requireValue(request.base === undefined || input.base === undefined || request.base === input.base, 'conflict', 409);
       requireValue(request.results.length < 20, 'capacity', 429);
       requireValue(input.evidence.every(key => state.evidence.some(item => item.id === key && item.pull === pull
         && item.head === input.head && item.author === session.author && item.expiresAt > iso(now()))), 'evidenceUnavailable', 409);
@@ -61,12 +62,16 @@ export function createExchangeOperations({ read, save, putBytes, readBytes, now 
       save(state);
       return { outcome: 'responded', id: input.id };
     },
-    resolve(session, pull, id, input) {
+    resolve(session, pull, id, input, current) {
       authorize(session, pull); requireValue(isKey(id) && isResolutionInput(input));
       const state = read();
       const request = findRequest(state, pull, id);
       requireValue(request.author === session.author, 'forbidden', 403);
-      requireValue(request.results.some(x => x.id === input.result), 'notFound', 404);
+      const result = request.results.find(x => x.id === input.result);
+      requireValue(result, 'notFound', 404);
+      if (input.decision === 'accepted') requireValue(isHead(current?.head) && isHead(current?.base)
+        && request.head === current.head && result.head === current.head
+        && request.base === current.base && result.base === current.base, 'stale', 409);
       if (request.resolution) requireValue(request.resolution.result === input.result
         && request.resolution.decision === input.decision, 'conflict', 409);
       else { request.resolution = { ...input, createdAt: iso(now()) }; save(state); }

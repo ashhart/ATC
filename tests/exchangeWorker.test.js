@@ -6,7 +6,7 @@ import { promisify } from 'node:util';
 import { createExchangeSqlStore } from '../src/exchange/sqlStore.js';
 import { createExchangeWebHandler } from '../src/exchange/webHandler.js';
 import { createGithubFetch } from '../src/exchange/githubFetch.js';
-import { exchangeFixture, head, key, token, origin, repository } from './exchangeHelpers.js';
+import { exchangeFixture, head, base, key, token, origin, repository } from './exchangeHelpers.js';
 
 function sqlStorage(t) {
   const db = new DatabaseSync(':memory:');
@@ -39,10 +39,10 @@ test('Worker Web API uses the shared store through a complete request, evidence,
   for (const author of [1, 2]) assert.equal((await request('POST', '/sessions', null, f.addProof(author))).status, 200);
   const bytes = Buffer.from('Build log: test-only evidence.');
   assert.equal((await request('PUT', `/pulls/42/evidence/${key(10)}/${head}/log`, 2, null, bytes)).status, 200);
-  const input = { id: key(11), head, kind: 'build', evidence: [] };
+  const input = { id: key(11), head, base, kind: 'build', evidence: [] };
   assert.equal((await request('POST', '/pulls/42/requests', 1, input)).status, 200);
   assert.equal((await request('POST', `/pulls/42/requests/${key(11)}/results`, 2,
-    { id: key(12), head, status: 'pass', evidence: [key(10)] })).status, 200);
+    { id: key(12), head, base, status: 'pass', evidence: [key(10)] })).status, 200);
   assert.equal((await request('POST', `/pulls/42/requests/${key(11)}/resolve`, 2, { result: key(12), decision: 'accepted' })).status, 403);
   assert.equal((await request('POST', `/pulls/42/requests/${key(11)}/resolve`, 1, { result: key(12), decision: 'accepted' })).status, 200);
   assert.deepEqual(Buffer.from(await (await request('GET', `/pulls/42/evidence/${key(10)}`, 1)).arrayBuffer()), bytes);

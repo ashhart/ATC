@@ -3,12 +3,14 @@ import { fileURLToPath } from 'node:url';
 import { markRefreshing, readSummary, refreshDue } from './boardSummary.js';
 import { cliPath, createCliRunner } from './cliRunner.js';
 import { readGitContext } from './gitContext.js';
+import { workTicketStatus } from '../cli/workTicket.js';
 
 const refreshScript = fileURLToPath(new URL('./refreshBoard.js', import.meta.url));
 
 export function hookDeps(env = process.env) {
   return { gitContext: cwd => readGitContext(cwd), run: createCliRunner({ env }), dataDir: env.CLAUDE_PLUGIN_DATA,
-    readSummary, refreshDue, startRefresh: (root, file) => startRefresh(root, file, env), now: Date.now, cliPath };
+    readSummary, refreshDue, startRefresh: (root, file) => startRefresh(root, file, env), now: Date.now, cliPath,
+    ticketStatus: workTicketStatus };
 }
 
 function startRefresh(root, file, env) {

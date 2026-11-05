@@ -187,7 +187,7 @@ test('git context reads the clone root and GitHub remote from a real repository'
 
 test('hook entry scripts exit cleanly and print nothing for bad input or a folder outside git', () => {
   const folder = tempDir();
-  for (const script of ['sessionStart.js', 'postEdit.js', 'preBash.js']) {
+  for (const script of ['sessionStart.js', 'postEdit.js', 'preBash.js', 'preEdit.js']) {
     for (const input of ['not json', JSON.stringify(edit('a.js', { cwd: folder })), JSON.stringify({ ...bash('gh pr create'), cwd: folder })]) {
       const result = spawnSync(process.execPath, [path.join(root, 'src/hooks', script)], { input, cwd: folder, encoding: 'utf8', timeout: 20000 });
       assert.equal(result.status, 0, script);
@@ -206,7 +206,7 @@ test('plugin manifests point at files that exist and match the package version',
   assert.deepEqual(marketplace.plugins.map(entry => [entry.name, entry.source]), [['atc', './']]);
   const hooks = read('hooks/hooks.json').hooks;
   const scripts = Object.values(hooks).flat().flatMap(group => group.hooks).map(hook => hook.args[0]);
-  assert.equal(scripts.length, 3);
+  assert.equal(scripts.length, 4);
   for (const script of scripts) assert.ok(fs.existsSync(script.replace('${CLAUDE_PLUGIN_ROOT}', root)), script);
   assert.ok(fs.existsSync(path.join(root, 'skills/atc/SKILL.md')));
 });

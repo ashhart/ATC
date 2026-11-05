@@ -2,7 +2,7 @@ import http from 'node:http';
 import { createExchangeStore } from './store.js';
 import { createExchangeGithub } from './github.js';
 import { createGithubRead } from './githubRead.js';
-import { inboxView } from './inbox.js';
+import { inboxView, legacyInboxView } from './inbox.js';
 import { readBody, readJson, sendJson, sendError } from './httpIo.js';
 import { digest, isDigest, isHead, isNumber, isOrigin, isPolicy, isRepository, isSessionInput,
   isRequestInput, isResultInput, isResolutionInput, maximumEvidence, requireValue } from './values.js';
@@ -27,6 +27,7 @@ export function createExchangeServer({ folder, repository, origin, now = Date.no
     requireValue(!storageFailed, 'storage', 503);
     requireValue(!request.headers.origin || request.headers.origin === origin, 'forbidden', 403);
     requireValue(!request.headers['content-encoding'], 'invalid', 415);
+    requireValue(request.headers['x-atc-exchange-receipts'] === undefined || request.headers['x-atc-exchange-receipts'] === '2');
     rateLimit('all');
     const url = request.url;
     requireValue(typeof url === 'string' && url.length <= 300 && !/[?%#\s]/.test(url));
@@ -55,9 +56,12 @@ export function createExchangeServer({ folder, repository, origin, now = Date.no
     const author = await github.verify({ pull, comment: session.comment, token });
     requireValue(author === session.author, 'unauthorized', 401);
     const current = await github.pull(pull);
-    requireValue(isHead(current?.head) && ['open', 'closed'].includes(current.state), 'upstream', 502);
+    requireValue(isHead(current?.head) && isHead(current?.base) && ['open', 'closed'].includes(current.state), 'upstream', 502);
     const tail = match[2];
-    if (request.method === 'GET' && tail === '') return sendJson(response, 200, inboxView(store, session, pull, current, now()));
+    if (request.method === 'GET' && tail === '') {
+      const view = inboxView(store, session, pull, current, now());
+      return sendJson(response, 200, request.headers['x-atc-exchange-receipts'] === '2' ? view : legacyInboxView(view));
+    }
     const evidence = tail.match(/^\/evidence\/([a-f0-9]{32})(?:\/([a-f0-9]{40})\/(log|trace|report))?$/);
     if (request.method === 'GET' && evidence && !evidence[2]) {
       const found = store.download(session, pull, evidence[1]);
@@ -78,13 +82,14 @@ export function createExchangeServer({ folder, repository, origin, now = Date.no
       const input = await readJson(request);
       requireValue(isRequestInput(input));
       requireValue(input.head === current.head, 'stale', 409);
+      requireValue(input.base === undefined || input.base === current.base, 'stale', 409);
       return sendJson(response, 200, store.request(session, pull, input));
     }
     const action = tail.match(/^\/requests\/([a-f0-9]{32})\/(results|resolve)$/);
     if (request.method === 'POST' && action) {
       const input = await readJson(request);
       requireValue(action[2] === 'results' ? isResultInput(input) : isResolutionInput(input));
-      const result = action[2] === 'results' ? store.respond(session, pull, action[1], input) : store.resolve(session, pull, action[1], input);
+      const result = action[2] === 'results' ? store.respond(session, pull, action[1], input) : store.resolve(session, pull, action[1], input, current);
       return sendJson(response, 200, result);
     }
     requireValue(false, 'notFound', 404);

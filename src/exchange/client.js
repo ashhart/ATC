@@ -8,7 +8,8 @@ import { createExchangeTransport } from './clientTransport.js';
 import { clientSession } from './clientSession.js';
 import { readPrivate } from './disk.js';
 import { digest, isKey, isHead, maximumEvidence, requireValue } from './values.js';
-import { renderInbox } from './inbox.js';
+import { renderInbox, upgradeLegacyInbox } from './inbox.js';
+import { isInbox } from './output.js';
 
 export async function runExchangeClient({ command, flags, rest }, { gh = createGh(), git = createGit(), fetcher = fetch,
   github, env = process.env } = {}) {
@@ -33,8 +34,10 @@ export async function runExchangeClient({ command, flags, rest }, { gh = createG
   const token = settings.token;
   const base = `/pulls/${pull}`;
   if (command === 'inbox' || command === 'export') {
-    const view = await request('GET', base, { token });
+    let view = await request('GET', base, { token });
     requireValue(view.pull === pull && isHead(view.head), 'unavailable', 503);
+    if (view.version === 1) view = upgradeLegacyInbox(view, await gateway.pull(pull));
+    requireValue(isInbox(view), 'unavailable', 503);
     if (command === 'inbox') return view;
     fs.writeFileSync(path.resolve(flags.output), flags.text ? `${renderInbox(view)}\n` : `${JSON.stringify(view, null, 2)}\n`, { flag: 'wx', mode: 0o600 });
     return { outcome: 'exported', pull };
@@ -51,11 +54,13 @@ export async function runExchangeClient({ command, flags, rest }, { gh = createG
     result = await request('PUT', `${base}/evidence/${flags.id}/${flags.head}/${rest[1]}`, { token, bytes });
     requireValue(result.outcome === 'uploaded' && result.digest === digest(bytes) && result.size === bytes.length, 'unavailable', 503);
   } else if (command === 'request') {
+    const testedBase = flags.base || (await gateway.pull(pull)).base;
+    requireValue(isHead(testedBase), 'upstream', 502);
     result = await request('POST', `${base}/requests`, { token,
-      value: { id: flags.id, head: flags.head, kind: rest[1], evidence: flags.evidence } });
+      value: { id: flags.id, head: flags.head, base: testedBase, kind: rest[1], evidence: flags.evidence } });
   } else if (command === 'respond') {
     result = await request('POST', `${base}/requests/${rest[1]}/results`, { token,
-      value: { id: flags.id, head: flags.head, status: rest[2], evidence: flags.evidence } });
+      value: { id: flags.id, head: flags.head, base: flags.base, status: rest[2], evidence: flags.evidence } });
   } else if (command === 'resolve') {
     result = await request('POST', `${base}/requests/${rest[1]}/resolve`, { token, value: { result: rest[2], decision: rest[3] } });
   }

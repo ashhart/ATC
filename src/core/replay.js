@@ -1,9 +1,10 @@
 import { claimIssue, decideProposal, dropIssue, proposeWork, releaseClaim, renewClaim, resetIssue, tidy } from './rules.js';
+import { applyPlan, expirePlans } from './plans.js';
 
 const activityOutcomes = ['claimed', 'claimUpdated', 'renewed', 'released', 'reset', 'proposed', 'withdrawn', 'declined', 'accepted'];
 
 export function replay(events, { closed }, config, now) {
-  const state = { claims: [], proposals: [], outcomes: new Map() };
+  const state = { claims: [], proposals: [], plans: [], outcomes: new Map() };
   for (const event of events) {
     if (event.at > now) continue;
     expire(state, event.at, config);
@@ -14,6 +15,7 @@ export function replay(events, { closed }, config, now) {
   }
   expire(state, now, config);
   for (const issue of closed) dropIssue(state, issue);
+  expirePlans(state, now);
   return state;
 }
 
@@ -23,6 +25,8 @@ function apply(state, event, closed, config) {
   if (command.verb === 'invalid') return 'invalid';
   if (command.verb === 'presence') return 'presenceProof';
   if (command.verb === 'exchange') return 'exchangeProof';
+  if (command.verb === 'depends') return 'dependencyDeclaration';
+  if (command.verb === 'plan') return applyPlan(state, event, open);
   if (command.verb === 'claim') return claimIssue(state, { login, issue, areas: command.areas, open }, config, at);
   if (command.verb === 'renew') return renewClaim(state, { login, issue, open }, at);
   if (command.verb === 'release') return releaseClaim(state, { login, issue });
@@ -37,4 +41,5 @@ function expire(state, time, config) {
   state.claims = state.claims.filter(claim => claim.active >= time - idle);
   state.proposals = state.proposals.filter(proposal => proposal.at >= time - config.proposalDays * 86400000);
   for (const issue of before) tidy(state, issue);
+  expirePlans(state, time);
 }

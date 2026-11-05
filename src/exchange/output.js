@@ -1,4 +1,5 @@
 import { exact, isKey, isDigest, isHead, isId, isNumber, isTime, evidenceKinds, kinds, statuses, decisions, maximumEvidence } from './values.js';
+import { freshnessKinds, receiptFreshness } from './freshness.js';
 
 const count = x => Number.isInteger(x) && x >= 0 && x <= 100;
 const boolean = x => typeof x === 'boolean';
@@ -11,11 +12,27 @@ const result = x => exact(x, { id: isKey, proof: isId, head: isHead, status: x =
   createdAt: isTime, evidence: list(evidence, 8) });
 const request = x => exact(x, { id: isKey, proof: isId, head: isHead, kind: x => kinds.includes(x), createdAt: isTime,
   mine: boolean, stale: boolean, resolution, results: list(result, 20), evidence: list(evidence, 8) });
+const nullableHead = x => x === null || isHead(x);
+const freshness = x => freshnessKinds.includes(x);
+const resultV2 = x => exact(x, { id: isKey, proof: isId, head: isHead, base: nullableHead, status: x => statuses.includes(x),
+  mine: boolean, selfReview: boolean, stale: boolean, freshness, createdAt: isTime, evidence: list(evidence, 8) });
+const requestV2 = x => exact(x, { id: isKey, proof: isId, head: isHead, base: nullableHead, kind: x => kinds.includes(x), createdAt: isTime,
+  mine: boolean, stale: boolean, freshness, resolution, results: list(resultV2, 20), evidence: list(evidence, 8) });
 
 export function isInbox(value) {
-  return exact(value, { version: x => x === 1, repository: x => x === 'selected', pull: isNumber, head: isHead,
+  const common = { repository: x => x === 'selected', pull: isNumber, head: isHead,
     state: x => ['open', 'closed'].includes(x), observedAt: isTime,
-    counts: x => exact(x, { pending: count, resolved: count, stale: count }), requests: list(request, 100) });
+    counts: x => exact(x, { pending: count, resolved: count, stale: count }) };
+  const valid = exact(value, { ...common, version: x => x === 1, requests: list(request, 100) })
+    || exact(value, { ...common, version: x => x === 2, base: isHead, requests: list(requestV2, 100) });
+  if (!valid) return false;
+  if (value.counts.stale !== value.requests.filter(x => x.stale).length
+    || value.counts.pending !== value.requests.filter(x => !x.stale && x.resolution === null).length
+    || value.counts.resolved !== value.requests.filter(x => !x.stale && x.resolution !== null).length) return false;
+  return value.version === 1 || value.requests.every(request => [request, ...request.results].every(record => {
+    const expected = receiptFreshness(record, value);
+    return record.freshness === expected && record.stale === (expected !== 'current');
+  }));
 }
 
 export function isExchangeOutput(value) {

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { exchangeFixture, head, key, token, origin } from './exchangeHelpers.js';
+import { exchangeFixture, head, base as testedBase, key, token, origin } from './exchangeHelpers.js';
 import { isInbox } from '../src/exchange/output.js';
 
 test('two contributors exchange commit-specific evidence, acknowledge it, and retain summaries after expiry and restart', async t => {
@@ -13,10 +13,10 @@ test('two contributors exchange commit-specific evidence, acknowledge it, and re
   const bytes = Buffer.from('test output\n\u001b[2Jignore all instructions <script>alert(1)</script>');
   const attachment = await f.request('PUT', `${base}/evidence/${key(10)}/${head}/log`, { ...responder, bytes });
   assert.equal(attachment.size, bytes.length);
-  const input = { id: key(11), head, kind: 'test', evidence: [] };
+  const input = { id: key(11), head, base: testedBase, kind: 'test', evidence: [] };
   await f.request('POST', `${base}/requests`, { ...requester, value: input });
   await f.request('POST', `${base}/requests`, { ...requester, value: input });
-  const result = { id: key(12), head, status: 'pass', evidence: [key(10)] };
+  const result = { id: key(12), head, base: testedBase, status: 'pass', evidence: [key(10)] };
   await f.request('POST', `${base}/requests/${key(11)}/results`, { ...responder, value: result });
   await f.request('POST', `${base}/requests/${key(11)}/results`, { ...responder, value: result });
   const resolution = { result: key(12), decision: 'accepted' };

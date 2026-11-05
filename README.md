@@ -102,6 +102,12 @@ A terminal gets the readable board. Agents and scripts get strict JSON with `--j
 
 ## Before, during and after the work
 
+With ATC 0.8, `atc begin 42 src/router.js tests/router.test.js --json` confirms
+ownership, declares planned files and starts a work ticket. Supported agent
+hooks recheck that ticket before edits and pushes. Selected PR scans and
+dependency guidance help larger projects inspect and sequence concurrent work;
+see [parallel-agent workflows](docs/workflows.md) for coverage and trust limits.
+
 ```bash
 atc check 42
 atc claim 42

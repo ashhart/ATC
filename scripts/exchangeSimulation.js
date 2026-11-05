@@ -35,7 +35,7 @@ try {
   } else {
     assert.equal((await connect()).outcome, 'connected');
     await request('POST', '/pulls/42/requests', { token,
-      value: { id: '2'.padStart(32, '0'), head: 'a'.repeat(40), kind: 'build', evidence: [] } });
+      value: { id: '2'.padStart(32, '0'), head: 'a'.repeat(40), base: 'c'.repeat(40), kind: 'build', evidence: [] } });
     assert.equal((await request('GET', '/pulls/42', { token })).counts.pending, 1);
   }
   assert.ok(calls > 0);

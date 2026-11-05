@@ -24,8 +24,8 @@ account IDs, filenames, comment bodies, supplied error text or evidence text.
 | --- | --- | --- |
 | POST `/sessions` | `{pull, comment, token}` | Session expiry |
 | GET `/pulls/:pull` | Bearer secret | Current head and complete inbox |
-| POST `/pulls/:pull/requests` | `{id, head, kind, evidence}` | Request identifier |
-| POST `/pulls/:pull/requests/:id/results` | `{id, head, status, evidence}` | Result identifier |
+| POST `/pulls/:pull/requests` | `{id, head, base, kind, evidence}` | Request identifier |
+| POST `/pulls/:pull/requests/:id/results` | `{id, head, base, status, evidence}` | Result identifier |
 | POST `/pulls/:pull/requests/:id/resolve` | `{result, decision}` | Acknowledgement |
 | PUT `/pulls/:pull/evidence/:id/:head/:kind` | Octet-stream bytes | Digest, size and expiry |
 | GET `/pulls/:pull/evidence/:id` | Bearer secret | Download-only octet stream |
@@ -36,6 +36,14 @@ Requests use `review`, `build`, `test`, `benchmark` or `reproduce`; responses us
 `dismissed`. Acknowledgement is a record of that person's decision, never
 GitHub approval. A changed head marks older records stale instead of carrying
 their results forward. Each response must name the request's original head.
+
+Version 2 receipts also retain the tested base SHA. New requests capture the
+current base by default, while responses require an explicit `--base` for the
+run being reported. `freshness` becomes `baseChanged`, `headChanged` or
+`unknownBase` when coverage cannot apply to the current PR; stale evidence cannot
+be accepted as current. New clients negotiate version 2 and old clients retain
+the exact version 1 inbox shape. See [parallel-agent workflows](workflows.md)
+for legacy-record and server-downgrade behavior.
 
 Authentication proves control of a GitHub account through one immutable typed
 PR comment, `/atc exchange <proof>`. The proof hashes a random client secret
@@ -125,7 +133,7 @@ review loop, and treats an empty inbox only as the current snapshot.
 atc-exchange connect 42 --repo example/project --origin https://exchange.example.org
 atc-exchange inbox 42 --repo example/project --origin https://exchange.example.org
 atc-exchange upload 42 log --id 22222222222222222222222222222222 --head aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa --file build.log --repo example/project --origin https://exchange.example.org
-atc-exchange respond 42 11111111111111111111111111111111 pass --id 33333333333333333333333333333333 --head aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa --evidence 22222222222222222222222222222222 --repo example/project --origin https://exchange.example.org
+atc-exchange respond 42 11111111111111111111111111111111 pass --id 33333333333333333333333333333333 --head aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa --base bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb --evidence 22222222222222222222222222222222 --repo example/project --origin https://exchange.example.org
 ```
 
 Requests also accept `--evidence` for context or reproduction reports. No agent

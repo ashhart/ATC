@@ -1,4 +1,5 @@
 import { isArea } from './values.js';
+import { isCommit, isPlanHash, isPlanSession } from './plans.js';
 
 export const proposalKinds = ['split', 'pair', 'takeover', 'review'];
 const idPattern = /^[1-9][0-9]{0,15}$/;
@@ -13,11 +14,13 @@ export function parseCommand(body) {
   const line = body.split(/\r?\n/, 1)[0].trim();
   const words = line.split(/\s+/);
   if (words[0] !== '/atc') return null;
-  if (line.length > 200) return { verb: 'invalid' };
+  if (line.length > (words[1] === 'plan' ? 1200 : 200)) return { verb: 'invalid' };
   return readWords(words.slice(1)) || { verb: 'invalid' };
 }
 
 export function commandText(command) {
+  if (command.verb === 'plan') return ['/atc', 'plan', command.session, command.base, command.selector, ...command.files].join(' ');
+  if (command.verb === 'depends') return ['/atc', 'depends', ...command.pulls].join(' ');
   if (['presence', 'exchange'].includes(command.verb)) return `/atc ${command.verb} ${command.proof}`;
   if (command.verb === 'claim') return ['/atc', 'claim', ...command.areas].join(' ');
   if (['release', 'reset', 'renew'].includes(command.verb)) return `/atc ${command.verb}`;
@@ -26,6 +29,15 @@ export function commandText(command) {
 }
 
 function readWords([verb, ...rest]) {
+  if (verb === 'plan') {
+    const [session, base, selector, ...files] = rest;
+    return session && /^[1-9][0-9]{0,14}$/.test(session) && isPlanSession(Number(session)) && isCommit(base)
+      && isPlanHash(selector)
+      && files.length <= 32 && files.every(isPlanHash) && new Set(files).size === files.length
+      ? { verb, session: Number(session), base, selector, files: [...files].sort() } : null;
+  }
+  if (verb === 'depends') return rest.length <= 16 && rest.every(value => /^[1-9][0-9]{0,8}$/.test(value))
+    && new Set(rest).size === rest.length ? { verb, pulls: rest.map(Number).sort((a, b) => a - b) } : null;
   if (['presence', 'exchange'].includes(verb)) return rest.length === 1 && /^[a-f0-9]{64}$/.test(rest[0]) ? { verb, proof: rest[0] } : null;
   if (verb === 'claim') {
     const areas = readAreas(rest);

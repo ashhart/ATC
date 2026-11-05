@@ -25,6 +25,7 @@ export function renderCheck(result, labels, style) {
 
 export function renderOverlap(result, labels, style) {
   const lines = [style.bold('Overlap check')];
+  if (result.coverage) lines.push(style.dim(`  Selected PR scope only: ${result.coverage.inspected.length}/${result.coverage.requested.length} inspected; other PRs are uninspected.`));
   if (result.changedFiles === null) lines.push(style.yellow('  Could not read your working tree. Run inside the clone or pass --base.'));
   else lines.push(style.dim(`  ${plural(result.changedFiles, 'changed file')} on your side`));
   const rank = { conflicts: 0, clean: 1, unknown: 2 };
@@ -39,7 +40,7 @@ export function renderOverlap(result, labels, style) {
   if (rest.length) lines.push(style.dim(`  and ${plural(rest.length, 'more open PR')} sharing files (${clean} merge cleanly, ${rest.length - clean} not test-merged): `
     + `${rest.slice(0, 12).map(entry => `#${entry.overlap.pullRequest}`).join(', ')}${rest.length > 12 ? ', …' : ''}`));
   if (result.overlaps.length === 0 && result.worktreeOverlaps.length === 0) {
-    lines.push(`  ${style.green('Clear.')} No shared files with other people's open PRs${result.worktrees ? ` or ${plural(result.worktrees, 'other local worktree')}` : ''}.`);
+    lines.push(`  ${style.green('Clear in inspected scope.')} No shared files in the inspected PRs${result.worktrees ? ` or ${plural(result.worktrees, 'other local worktree')}` : ''}.`);
   }
   if (!result.complete) lines.push(style.yellow(`  Partial check: ${result.limitations.join(', ')}.`));
   return lines.join('\n');

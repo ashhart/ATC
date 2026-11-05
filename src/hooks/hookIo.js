@@ -33,13 +33,13 @@ export function readHookInput(stream = process.stdin, timeoutMs = 5000) {
   });
 }
 
-export async function runHook(handler, deps, { stdin = process.stdin, stdout = process.stdout } = {}) {
+export async function runHook(handler, deps, { stdin = process.stdin, stdout = process.stdout, onFailure = () => null } = {}) {
   let output = null;
   try {
     const input = await readHookInput(stdin);
-    output = input === null ? null : handler(input, deps);
+    output = input === null ? onFailure() : handler(input, deps);
   } catch {
-    output = null;
+    try { output = onFailure(); } catch { output = null; }
   }
   if (output) stdout.write(`${JSON.stringify(output)}\n`);
   return output;

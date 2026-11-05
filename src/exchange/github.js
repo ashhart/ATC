@@ -18,9 +18,9 @@ export function createExchangeGithub({ repository, origin, ghFactory }) {
     async pull(number) {
       requireValue(isNumber(number));
       const value = await ghFactory().get(`${base}/pulls/${number}`);
-      requireValue(value?.number === number && isHead(value.head?.sha) && ['open', 'closed'].includes(value.state)
+      requireValue(value?.number === number && isHead(value.head?.sha) && isHead(value.base?.sha) && ['open', 'closed'].includes(value.state)
         && isRepository(value.base?.repo?.full_name) && value.base.repo.full_name.toLowerCase() === repository, 'upstream', 502);
-      return { head: value.head.sha, state: value.state };
+      return { head: value.head.sha, base: value.base.sha, state: value.state };
     },
     async verify({ pull, comment, token }) {
       requireValue(isNumber(pull) && isId(comment));

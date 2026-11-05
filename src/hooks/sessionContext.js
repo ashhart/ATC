@@ -18,6 +18,9 @@ export function sessionStartOutput(input, deps) {
       '`atc check <issue>` reports whether an issue already has an assignee or a linked pull request.'];
   lines.push('`atc overlap` compares local changes with other open pull requests and local worktrees, and reports merge conflicts.',
     '`atc board` lists current work, pull requests that share files, and open issues that need help.');
+  if (git.configured) lines.push('Use `atc begin <issue> <files...> --json` once the intended files are known; it confirms ownership, starts a session and records an edit plan.',
+    'Require `atc guard <file> --json` readiness before editing and `atc guard --publish --json` before publishing; active work tickets are rechecked by the hooks.',
+    '`atc overlap --pulls 12,34 --json` reports only selected PR coverage; `atc depends` and `atc landing` describe prerequisites without granting merge approval.');
   if (isAbsolutePath(deps.cliPath)) lines.push(`When \`atc\` is not on PATH, the same CLI runs as \`node "${deps.cliPath}"\`.`);
   const line = summaryLine(summary, deps.now());
   if (line) lines.push(line);

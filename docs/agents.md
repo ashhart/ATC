@@ -49,6 +49,12 @@ The hooks run the CLI with `ATC_READ_ONLY=1`, so they never post to GitHub. When
 
 The plugin also registers the ATC MCP server from `src/mcp/server.js`.
 
+ATC 0.8 adds a pre-edit work-ticket guard and rechecks active tickets before
+explicit pushes and PR publication. Start with `atc begin ISSUE FILES --json`
+to opt a worktree into those checks. The MCP server exposes the same `begin`,
+`plan`, `guard`, scoped `overlap`, `depends` and `landing` commands; see
+[parallel-agent workflows](workflows.md).
+
 ## Codex
 
 Codex reads `AGENTS.md`. `atc init` adds a section there that points agents at `skills/atc/SKILL.md`, so Codex follows the same workflow as other contributors.

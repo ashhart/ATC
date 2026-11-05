@@ -43,8 +43,9 @@ export const isPolicy = value => exact(value, { version: x => x === 1, origin: i
   retentionHours: x => Number.isInteger(x) && x >= 1 && x <= 720 });
 export const isSessionInput = value => exact(value, { pull: isNumber, comment: isId, token: isDigest });
 export const isEvidenceIds = x => Array.isArray(x) && x.length <= 8 && x.every(isKey) && new Set(x).size === x.length;
-export const isRequestInput = value => exact(value, { id: isKey, head: isHead, kind: x => kinds.includes(x), evidence: isEvidenceIds });
-export const isResultInput = value => exact(value, { id: isKey, head: isHead, status: x => statuses.includes(x),
+export const withOptionalBase = (value, fields) => exact(value, fields) || exact(value, { ...fields, base: isHead });
+export const isRequestInput = value => withOptionalBase(value, { id: isKey, head: isHead, kind: x => kinds.includes(x), evidence: isEvidenceIds });
+export const isResultInput = value => withOptionalBase(value, { id: isKey, head: isHead, status: x => statuses.includes(x),
   evidence: isEvidenceIds });
 export const isResolutionInput = value => exact(value, { result: isKey, decision: x => decisions.includes(x) });
 

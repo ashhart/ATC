@@ -17,6 +17,11 @@ import { createReader } from './reader.js';
 import { initRepository } from './setup.js';
 import { postAndConfirm, takeSnapshot } from './snapshot.js';
 import { isTimeLimit } from './timeBudget.js';
+import { beginWork, guardWork } from './workflow.js';
+import { readWorkTicket } from './workTicket.js';
+import { workResult } from './workOutput.js';
+import { inspectScopedOverlap } from './scopedOverlap.js';
+import { runLanding } from './landing.js';
 
 export { helpText } from './help.js';
 
@@ -24,16 +29,22 @@ const arity = { board: count => count === 0, status: count => count === 0, check
   renew: count => count === 1, release: count => count === 1, propose: count => count >= 2 && count <= 10,
   accept: count => count === 1, decline: count => count === 1, withdraw: count => count === 1,
   overlap: count => count === 0, doctor: count => count === 0, init: count => count === 0,
-  start: count => count === 1, pulse: count => count === 3, land: count => count === 2, who: count => count === 1 };
+  start: count => count === 1, pulse: count => count === 3, land: count => count === 2, who: count => count === 1,
+  begin: count => count >= 2 && count <= 33, plan: count => count >= 2 && count <= 33, guard: count => count <= 1,
+  depends: count => count >= 1 && count <= 17, landing: count => count >= 1 && count <= 16 };
 
-export async function runCli({ command, rest, flags }, { gh, git, sleep, now = Date.now, env = {}, cwd = process.cwd(), labels, cache = false, fetcher = fetch } = {}) {
+export async function runCli({ command, rest, flags }, { gh, git, sleep, now = Date.now, env = {}, cwd = process.cwd(), labels, cache = false, fetcher = fetch, doctorCheck = doctor } = {}) {
   ensure(Object.hasOwn(arity, command) && arity[command](rest.length), 'Unknown command or wrong number of arguments. Run atc help.');
   if (command === 'init') return displayResult(initRepository({ cwd, check: Boolean(flags.check) }));
   if (command === 'doctor') return displayResult(doctor({ gh, git, flags, env, cwd }));
   if (command === 'who') return displayResult(inspectWho({ git, now, cwd, labels }, rest[0]));
+  const ticket = command === 'guard' ? readWorkTicket(git) : null;
+  if (command === 'guard' && ticket === null) return workResult('guard', { outcome: 'noTicket' });
   const input = readInput(command, rest);
   ensure(!env.ATC_SIGNATURE, 'ATC_SIGNATURE is not supported. Comments contain commands only.');
   ensure(env.ATC_READ_ONLY === undefined || ['0', '1'].includes(env.ATC_READ_ONLY), 'Invalid ATC_READ_ONLY setting');
+  if (command === 'begin' && !doctorCheck({ gh, git, flags, env, cwd }).ready) return workResult(command,
+    { issue: input.issue, ready: false, outcome: 'prerequisitesUnavailable' });
   if (['start', 'pulse', 'land'].includes(command)) {
     const repository = () => resolveRepository(gh, flags, env);
     const local = reportPresence(command, input, { git, now, dryRun: Boolean(flags.dryRun), readOnly: env.ATC_READ_ONLY === '1', localOnly: flags.local });
@@ -47,10 +58,14 @@ export async function runCli({ command, rest, flags }, { gh, git, sleep, now = D
   const context = { gh, git, sleep, now, env, repository, labels, cache: cache === true, dryRun: Boolean(flags.dryRun), readOnly: env.ATC_READ_ONLY === '1',
     reader: createReader(gh, repository) };
   context.me = currentUser(gh);
+  if (['depends', 'landing'].includes(command)) return runLanding(command, rest, context);
+  if (command === 'overlap' && flags.pulls !== undefined) return inspectScopedOverlap(context, flags);
   const snapshot = takeSnapshot(context);
   context.snapshot = snapshot;
   const known = snapshot.config;
   const areas = areaArgs(input.areas || [], known);
+  if (command === 'begin' || command === 'plan') return beginWork(command, rest, flags, context, { claim, fetcher });
+  if (command === 'guard') return guardWork(rest, flags, context, ticket);
   if (command === 'board') return displayResult(inspectTraffic(context, snapshot), known);
   if (command === 'status') return displayResult(statusView(snapshot, { me: context.me, repository, now: snapshot.now }), known);
   if (command === 'overlap') return displayResult(inspectOverlap(context, snapshot, flags), known);
@@ -72,6 +87,7 @@ export async function runCli({ command, rest, flags }, { gh, git, sleep, now = D
 }
 
 function readInput(command, rest) {
+  if (['begin', 'plan'].includes(command)) return { issue: issueArg(rest[0]) };
   if (['start', 'pulse', 'land'].includes(command)) return { issue: issueArg(rest[0]),
     ...(command === 'start' ? {} : { session: sessionArg(rest[1]) }),
     ...(command === 'pulse' ? { state: presenceArg(rest[2]) } : {}) };

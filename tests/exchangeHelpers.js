@@ -9,6 +9,7 @@ import { createExchangeTransport } from '../src/exchange/clientTransport.js';
 import { proofFor } from '../src/exchange/values.js';
 
 export const head = 'a'.repeat(40);
+export const base = 'c'.repeat(40);
 export const key = number => number.toString(16).padStart(32, '0');
 export const token = number => number.toString(16).padStart(64, '0');
 export const origin = 'https://exchange.example.org';
@@ -19,7 +20,7 @@ export async function exchangeFixture(t, { readOnly = false } = {}) {
   const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'atc-exchange-'));
   const comments = new Map();
   const calls = [];
-  const upstream = { head, state: 'open', private: false, permission: 'read', enabled: true, failure: false,
+  const upstream = { head, base, state: 'open', private: false, permission: 'read', enabled: true, failure: false,
     policy: { version: 1, origin, retentionHours: 1 } };
   let clock = Date.parse('2026-10-30T12:00:00.000Z');
   function addProof(author, pull = 42, secret = token(author)) {
@@ -37,7 +38,7 @@ export async function exchangeFixture(t, { readOnly = false } = {}) {
     if (request.url === `${base}/contents/.github/atc.json`) data = upstream.enabled ? encodeFile({}) : null;
     if (request.url === `${base}/contents/.github/atc-exchange.json`) data = encodeFile(upstream.policy);
     if (/\/pulls\/[0-9]+$/.test(request.url)) data = { number: Number(request.url.split('/').at(-1)), state: upstream.state,
-      head: { sha: upstream.head }, base: { repo: { full_name: repository } } };
+      head: { sha: upstream.head }, base: { sha: upstream.base, repo: { full_name: repository } } };
     if (/\/issues\/comments\/[0-9]+$/.test(request.url)) data = comments.get(Number(request.url.split('/').at(-1))) || null;
     const permission = request.url.match(/\/collaborators\/user([0-9]+)\/permission$/);
     if (permission) data = { permission: upstream.permission, user: { id: Number(permission[1]) } };

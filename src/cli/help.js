@@ -4,8 +4,14 @@ See who is working on what, and catch conflicting changes before they happen.
 
 Start here
   atc [--repo owner/name]             the traffic board: work, collisions, duplicates, open issues
+  atc begin <issue> <files...>        confirm a claim, declare planned files and start a work ticket
+  atc plan <issue> <files...>         refresh planned files for work you already hold
+  atc guard [file] [--publish]        recheck the ticket before editing or publishing
   atc overlap [--base <ref>]          test-merge your changes against open PRs and local worktrees
+  atc overlap --pulls <numbers>       inspect only named PRs and report selected coverage
   atc who <file>                      which open PRs and local worktrees also change a file
+  atc depends <pr> [prNumbers...]     declare or clear a PR's prerequisites
+  atc landing <prNumbers...>          dependency order and advisory landing readiness
 
 Setup
   atc init [--check]                  add config, the agent skill, a CONTRIBUTING section and a Cursor rule
@@ -31,6 +37,8 @@ Agents in flight (anonymous public check-ins when enabled by the repository)
 Options
   --repo owner/name                   choose the repository, or set ATC_REPO
   --local                             keep a start or claim session on this machine
+  --pulls 12,34                        explicitly select up to fifty PRs for overlap
+  --publish                           make guard also check PR and worktree merge conflicts
   --github-name                       opt in to showing your GitHub name with start or claim
   --json                              structured output for agents and scripts
   --text                              readable output even when piped

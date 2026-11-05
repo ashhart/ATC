@@ -2,7 +2,7 @@ import { isHead, isKey, isNumber, isOrigin, isRepository, kinds, statuses, decis
 
 const options = {
   serve: ['repo', 'origin', 'data', 'port'], connect: ['repo', 'origin'], inbox: ['repo', 'origin', 'text', 'json'],
-  request: ['repo', 'origin', 'id', 'head', 'evidence'], respond: ['repo', 'origin', 'id', 'head', 'evidence'],
+  request: ['repo', 'origin', 'id', 'head', 'base', 'evidence'], respond: ['repo', 'origin', 'id', 'head', 'base', 'evidence'],
   resolve: ['repo', 'origin'], upload: ['repo', 'origin', 'id', 'head', 'file'], download: ['repo', 'origin', 'output'],
   export: ['repo', 'origin', 'output', 'text'], id: [], help: []
 };
@@ -34,7 +34,8 @@ export function parseExchangeArgs(args) {
   } else requireValue(/^[1-9][0-9]{0,8}$/.test(rest[0]) && isNumber(Number(rest[0])));
   if (['request', 'respond', 'upload'].includes(command)) requireValue(isKey(flags.id) && isHead(flags.head));
   if (command === 'request') requireValue(kinds.includes(rest[1]));
-  if (command === 'respond') requireValue(isKey(rest[1]) && statuses.includes(rest[2]));
+  if (flags.base !== undefined) requireValue(isHead(flags.base));
+  if (command === 'respond') requireValue(isKey(rest[1]) && statuses.includes(rest[2]) && isHead(flags.base));
   if (command === 'resolve') requireValue(isKey(rest[1]) && isKey(rest[2]) && decisions.includes(rest[3]));
   if (command === 'upload') requireValue(evidenceKinds.includes(rest[1]) && isPath(flags.file));
   if (command === 'download') requireValue(isKey(rest[1]));

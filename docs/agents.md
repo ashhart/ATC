@@ -4,6 +4,26 @@ ATC works from any agent that can run a command. The Claude Code plugin goes fur
 
 Every route below needs Node.js 22.16 or later available as `node`, git, and an authenticated GitHub CLI (`gh auth status`).
 
+## The contributor skill
+
+[skills/atc/SKILL.md](../skills/atc/SKILL.md) is the shared workflow for starting or
+resuming issues, opening or updating PRs, reviewing other contributors' work and
+handing off a session. It also explains the optional PR exchange when enabled.
+Agents read the board and their status first, confirm issue ownership before
+implementation and check conflicts before publishing PR changes.
+
+For a newly adopting repository, `atc init` copies this skill and adds pointers in
+`AGENTS.md`, the contribution guide and Cursor's always-applied rule. For an
+existing adoption, keep its established skill path and project-specific rules:
+compare its copy with the current skill and merge the relevant updates through
+the repository's normal workflow. Running `atc init` or upgrading the CLI does
+not overwrite an existing skill or instruction file.
+
+Repositories using another path, such as `docs/atc/SKILL.md`, should point their
+`AGENTS.md` at that file. The pointer should tell agents to read it before issue
+implementation and PR work; the presence of `.github/atc.json` alone does not
+ensure every agent will discover the skill.
+
 ## Claude Code plugin
 
 This repository, [ashhart/ATC](https://github.com/ashhart/ATC), is a Claude Code plugin and a one-plugin marketplace:

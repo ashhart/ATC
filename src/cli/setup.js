@@ -8,7 +8,7 @@ import { canonicalFolder } from './localPaths.js';
 import { appendText, createDirectory, createFile, failed, inspectDirectory, readFile, unsafe } from './safeFiles.js';
 import { contributingStanza, cursorRule } from './setupGuides.js';
 
-const stanza = '\n## Agent Traffic Control\n\nBefore working on an issue, follow [the ATC contributor skill](skills/atc/SKILL.md).\n';
+const stanza = '\n## Agent Traffic Control\n\nBefore starting or resuming an issue, or opening, updating or reviewing a pull request, follow [the ATC contributor skill](skills/atc/SKILL.md).\nRead `atc board --json` and `atc status --json`, then check the issue and confirm your claim before implementation; run `atc overlap --json` before publishing PR changes.\n';
 const defaults = { areaIds: { code: 1, docs: 2, tests: 3 }, areas: { code: ['src/'], docs: ['docs/', 'README.md'], tests: ['tests/', 'test/'] } };
 const packageSkill = fileURLToPath(new URL('../../skills/atc/SKILL.md', import.meta.url));
 
@@ -30,6 +30,7 @@ export function initRepository({ cwd = process.cwd(), check = false } = {}) {
     const skill = readFile(files.skill, 65536);
     const agents = readText(files.agents);
     const contributing = readText(files.contributing);
+    const guide = contributingStanza(path.dirname(files.contributing) === path.join(root, '.github'));
     const cursor = readFile(files.cursor, 65536);
     const linked = agents?.includes('skills/atc/SKILL.md') === true;
     const guided = contributing?.includes('Agent Traffic Control') === true;
@@ -50,8 +51,8 @@ export function initRepository({ cwd = process.cwd(), check = false } = {}) {
     if (skill === null) createFile(files.skill, skillContent, created);
     if (!linked && agents === null) createFile(files.agents, `# Contributor instructions\n${stanza}`, created);
     else if (!linked) appendText(files.agents, agents, stanza);
-    if (!guided && contributing === null) createFile(files.contributing, `# Contributing\n${contributingStanza}`, created);
-    else if (!guided) appendText(files.contributing, contributing, contributingStanza);
+    if (!guided && contributing === null) createFile(files.contributing, `# Contributing\n${guide}`, created);
+    else if (!guided) appendText(files.contributing, contributing, guide);
     if (cursor === null) {
       for (const relative of ['.cursor', '.cursor/rules']) createDirectory(path.join(root, relative), created);
       createFile(files.cursor, cursorRule, created);

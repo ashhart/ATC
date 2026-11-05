@@ -142,6 +142,9 @@ test('init adds an agent section to an existing CONTRIBUTING guide once and writ
   const guide = fs.readFileSync(path.join(root, '.github/CONTRIBUTING.md'), 'utf8');
   assert.ok(guide.startsWith('# How to help\n\nBe kind.\n'));
   assert.match(guide, /npx github:ashhart\/ATC check <issue>/);
+  const skillLink = guide.match(/\[the ATC contributor skill\]\(([^)]+)\)/)?.[1];
+  assert.ok(skillLink);
+  assert.equal(fs.realpathSync(path.resolve(root, '.github', skillLink)), fs.realpathSync(path.join(root, 'skills/atc/SKILL.md')));
   assert.equal(fs.existsSync(path.join(root, 'CONTRIBUTING.md')), false);
   assert.match(fs.readFileSync(path.join(root, '.cursor/rules/atc.mdc'), 'utf8'), /alwaysApply: true/);
   const again = initRepository({ cwd: root });

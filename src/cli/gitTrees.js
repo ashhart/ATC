@@ -36,7 +36,11 @@ export function createTrees(git) {
       const env = { GIT_INDEX_FILE: path.join(folder, 'index') };
       try {
         const current = run([...prefix, 'rev-parse', '--path-format=absolute', '--git-path', 'index'])?.replace(/\r?\n$/, '');
-        if (current && path.isAbsolute(current) && pathPattern.test(current) && fs.existsSync(current)) fs.copyFileSync(current, env.GIT_INDEX_FILE);
+        if (current && path.isAbsolute(current) && pathPattern.test(current) && fs.existsSync(current)) {
+          const stat = fs.statSync(current);
+          fs.copyFileSync(current, env.GIT_INDEX_FILE);
+          fs.utimesSync(env.GIT_INDEX_FILE, stat.atime, stat.mtime);
+        }
         else if (run([...prefix, 'read-tree', head], env) === null) return null;
         if (run([...prefix, 'add', '-A', '--', ':/'], env) === null) return null;
         const tree = sha([...prefix, 'write-tree'], env);

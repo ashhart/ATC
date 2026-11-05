@@ -1,6 +1,8 @@
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import fs from 'node:fs';
+import os from 'node:os';
 import { PassThrough } from 'node:stream';
 import { readGuardResult } from '../src/hooks/guardResults.js';
 import { isPublishCommand, preEditOutput } from '../src/hooks/workGate.js';
@@ -9,7 +11,8 @@ import { toolArgv, toolList } from '../src/mcp/tools.js';
 import { runHook } from '../src/hooks/hookIo.js';
 import { guardFailureOutput } from '../src/hooks/workGate.js';
 
-const cwd = path.resolve('/work/repo');
+const cwd = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'atc-hook-guard-')));
+after(() => fs.rmSync(cwd, { recursive: true, force: true }));
 const ready = { command: 'guard', issue: 42, complete: true, outcome: 'ready', ready: true,
   session: 100, plan: 101, base: 'a'.repeat(40), files: 1, conflicts: [] };
 const absent = { command: 'guard', issue: null, complete: true, outcome: 'noTicket', ready: true,

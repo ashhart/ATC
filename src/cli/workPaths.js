@@ -11,6 +11,7 @@ const failure = 'Planned files must be inside this worktree.';
 export function plannedPath(root, value) {
   ensure(typeof value === 'string' && value.length >= 1 && value.length <= 4096 && !/[\u0000-\u001f\u007f]/.test(value), failure);
   ensure(!value.split(/[\\/]/).includes('..'), failure);
+  if (process.platform === 'win32') root = fs.realpathSync.native(root);
   const resolved = path.resolve(root, value);
   const full = process.platform === 'win32' ? windowsWorkPath(root, resolved) : resolved;
   const relative = path.relative(root, full).split(path.sep).join('/');

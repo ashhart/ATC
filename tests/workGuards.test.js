@@ -61,10 +61,12 @@ test('invalid file paths cannot bypass an active ticket or escape its worktree',
 
 test('publication guard detects explicit pushes and PR publication through ordinary wrappers and compound commands', () => {
   for (const command of ['git push origin HEAD', 'git -C sub push', 'env X=1 command git push', '/usr/bin/git push',
+    String.raw`C:\Tools\Git\bin\git.exe push`, String.raw`"C:\Program Files\Git\bin\git.exe" push`,
+    String.raw`C:\Tools\gh.exe pr create`, 'C:/Tools/Git/bin/git.exe push', 'GIT.EXE push',
     'npm test && gh pr create --fill', 'gh --repo acme/widgets pr edit 42 --body-file summary', 'gh pr --repo acme/widgets create',
     'git \\\n push origin main', 'cd sub; git push', 'echo ok\ngh pr create']) assert.equal(isPublishCommand(command), true, command);
   for (const command of ['git status', 'gh pr view 42', 'npm test', 'mygit push', 42, 'git push'.padEnd(100001)]) assert.equal(isPublishCommand(command), false);
-  for (const command of ['git push', 'gh pr edit 42', 'gh pr create']) {
+  for (const command of ['git push', 'gh pr edit 42', 'gh pr create', String.raw`C:\Tools\Git\bin\git.exe push`, String.raw`C:\Tools\gh.exe pr create`]) {
     const context = deps({ ...ready, ready: false, outcome: 'baseChanged' });
     const output = preBashOutput(bash(command), context).hookSpecificOutput;
     assert.equal(output.permissionDecision, 'deny');

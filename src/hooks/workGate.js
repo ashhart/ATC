@@ -7,8 +7,8 @@ import { plannedPath } from '../cli/workPaths.js';
 const failed = 'ATC could not revalidate this work ticket. Run `atc guard --json` and resolve its result before continuing.';
 const denied = 'ATC requires this work ticket to be refreshed or its scope to be corrected before continuing. Run `atc guard --json` for the fixed outcome.';
 const editTools = ['Edit', 'Write', 'MultiEdit', 'NotebookEdit'];
-const gitPush = /(?:^|[\s;&|(`$"'])(?:[A-Za-z0-9_./-]+\/)?git\b[^;&|`\n]*?\bpush(?=$|[\s;&|)`"'])/;
-const prPublish = /(?:^|[\s;&|(`$"'])(?:[A-Za-z0-9_./-]+\/)?gh\b[^;&|`\n]*?\bpr\b[^;&|`\n]*?\b(?:create|new|edit)(?=$|[\s;&|)`"'])/;
+const gitPush = /(?:^|[\s;&|(`$"'\\/])git\b[^;&|`\n]*?\bpush(?=$|[\s;&|)`"'])/i;
+const prPublish = /(?:^|[\s;&|(`$"'\\/])gh\b[^;&|`\n]*?\bpr\b[^;&|`\n]*?\b(?:create|new|edit)(?=$|[\s;&|)`"'])/i;
 
 export function isPublishCommand(command) {
   if (typeof command !== 'string' || command.length > 100000) return false;

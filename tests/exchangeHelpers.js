@@ -20,7 +20,7 @@ export async function exchangeFixture(t, { readOnly = false } = {}) {
   const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'atc-exchange-'));
   const comments = new Map();
   const calls = [];
-  const upstream = { head, base, state: 'open', private: false, permission: 'read', enabled: true, failure: false,
+  const upstream = { head, base, baseRef: 'main', baseTip: null, missingBase: false, state: 'open', private: false, permission: 'read', enabled: true, failure: false,
     reviews: [], reviewComments: [], discussion: [], policy: { version: 1, origin, retentionHours: 1 } };
   let clock = Date.parse('2026-10-30T12:00:00.000Z');
   function addProof(author, pull = 42, secret = token(author)) {
@@ -38,7 +38,9 @@ export async function exchangeFixture(t, { readOnly = false } = {}) {
     if (request.url === `${base}/contents/.github/atc.json`) data = upstream.enabled ? encodeFile({}) : null;
     if (request.url === `${base}/contents/.github/atc-exchange.json`) data = encodeFile(upstream.policy);
     if (/\/pulls\/[0-9]+$/.test(request.url)) data = { number: Number(request.url.split('/').at(-1)), state: upstream.state,
-      user: { id: 1, type: 'User', login: 'user1' }, head: { sha: upstream.head }, base: { sha: upstream.base, repo: { full_name: repository } } };
+      user: { id: 1, type: 'User', login: 'user1' }, head: { sha: upstream.head }, base: { sha: upstream.base, ref: upstream.baseRef, repo: { full_name: repository } } };
+    if (request.url === `${base}/git/ref/heads/${upstream.baseRef}`) data = upstream.missingBase ? null
+      : { ref: `refs/heads/${upstream.baseRef}`, object: { type: 'commit', sha: upstream.baseTip || upstream.base } };
     if (/\/issues\/comments\/[0-9]+$/.test(request.url)) data = comments.get(Number(request.url.split('/').at(-1))) || null;
     if (/\/pulls\/[0-9]+\/reviews\?/.test(request.url)) data = upstream.reviews;
     if (/\/pulls\/[0-9]+\/comments\?/.test(request.url)) data = upstream.reviewComments;
@@ -66,6 +68,7 @@ export async function exchangeFixture(t, { readOnly = false } = {}) {
   const request = createExchangeTransport(origin, { fetcher });
   async function stop() { const done = once(server, 'close'); server.close(); server.closeAllConnections(); await done; }
   t.after(async () => { await stop(); const done = once(mock, 'close'); mock.close(); mock.closeAllConnections(); await done; fs.rmSync(folder, { recursive: true, force: true }); });
-  return { folder, comments, calls, upstream, addProof, request, fetcher, gateway, now: () => clock,
+  const githubFetcher = (url, options) => fetch(url.replace('https://api.github.com', `http://127.0.0.1:${mock.address().port}`), options);
+  return { folder, comments, calls, upstream, addProof, request, fetcher, githubFetcher, gateway, now: () => clock,
     advance: ms => { clock += ms; }, restart: async () => { await stop(); await start(); } };
 }

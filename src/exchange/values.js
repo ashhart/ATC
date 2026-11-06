@@ -11,6 +11,8 @@ export const decisions = ['accepted', 'dismissed'];
 export const isKey = value => matches(value, /^[a-f0-9]{32}$/);
 export const isDigest = value => matches(value, /^[a-f0-9]{64}$/);
 export const isHead = value => matches(value, /^[a-f0-9]{40}$/);
+export const isBranch = value => matches(value, /^(?!-)(?!.*\.\.)(?!.*\/\/)[A-Za-z0-9._/-]{1,200}$/)
+  && value.split('/').every(part => part.length > 0 && !part.startsWith('.') && !part.endsWith('.') && !part.endsWith('.lock'));
 export const isTime = value => readTimestamp(value) !== null && value.length === 24;
 export const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 export const iso = now => new Date(now).toISOString();

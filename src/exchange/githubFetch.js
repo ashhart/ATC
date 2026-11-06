@@ -1,15 +1,17 @@
 import { readWebBytes } from './webIo.js';
-import { isRepository, requireValue, ExchangeError } from './values.js';
+import { isBranch, isRepository, requireValue, ExchangeError } from './values.js';
 
 export function createGithubFetch({ repository, fetcher = fetch, token } = {}) {
   requireValue(isRepository(repository));
   requireValue(token === undefined || typeof token === 'string' && /^[A-Za-z0-9_]{20,255}$/.test(token));
   const base = `repos/${repository.toLowerCase()}`;
+  const branch = `${base}/git/ref/heads/`;
   async function read(route, optional = false) {
-    requireValue(typeof route === 'string' && route.length <= 300 && !/[\r\n]/.test(route)
+    requireValue(typeof route === 'string' && route.length <= 400 && !/[\r\n]/.test(route)
       && (route === base || route.startsWith(`${base}/`))
       && (/^(?:|\/contents\/\.github\/atc(?:-exchange)?\.json|\/pulls\/[1-9][0-9]{0,8}|\/issues\/comments\/[1-9][0-9]{0,15}|\/collaborators\/[A-Za-z0-9-]{1,39}\/permission)$/.test(route.slice(base.length))
-        || /^(?:\/pulls\/[1-9][0-9]{0,8}\/(?:reviews|comments)|\/issues\/[1-9][0-9]{0,8}\/comments)\?per_page=100&page=[1-6]$/.test(route.slice(base.length))));
+        || /^(?:\/pulls\/[1-9][0-9]{0,8}\/(?:reviews|comments)|\/issues\/[1-9][0-9]{0,8}\/comments)\?per_page=100&page=[1-6]$/.test(route.slice(base.length))
+        || route.startsWith(branch) && isBranch(route.slice(branch.length))));
     const headers = { Accept: 'application/vnd.github+json', 'User-Agent': 'ATC-review-exchange' };
     if (token) headers.Authorization = `Bearer ${token}`;
     try {

@@ -7,7 +7,8 @@ and GitHub merge requirements keep their existing authority.
 
 Upgrade the exchange server before its clients, back up its external data directory
 or Durable Object storage, and use ATC 0.9.1 together. Version 0.9.1 fixes Worker
-catch-up reads of GitHub reviews and discussions. Old clients retain their
+catch-up reads of GitHub reviews and discussions, and resolves the current base
+branch tip rather than trusting an older base SHA in PR metadata. Old clients retain their
 exact version 1 and version 2 inbox formats. Older servers cannot read collaboration
 records after new clients write them; export records and retain a backup before
 downgrading. No destructive migration runs.

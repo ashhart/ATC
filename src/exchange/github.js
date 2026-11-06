@@ -2,7 +2,7 @@ import { observePull } from './observations.js';
 import { Buffer } from 'node:buffer';
 import { readConfig } from '../core/config.js';
 import { isLogin, readTimestamp } from '../core/values.js';
-import { isHead, isId, isNumber, isOrigin, isPolicy, isRepository, proofFor, requireValue } from './values.js';
+import { isBranch, isHead, isId, isNumber, isOrigin, isPolicy, isRepository, proofFor, requireValue } from './values.js';
 
 export function createExchangeGithub({ repository, origin, ghFactory }) {
   requireValue(isRepository(repository) && isOrigin(origin) && typeof ghFactory === 'function');
@@ -44,8 +44,12 @@ export function createExchangeGithub({ repository, origin, ghFactory }) {
       requireValue(isNumber(number));
       const value = await ghFactory().get(`${base}/pulls/${number}`);
       requireValue(value?.number === number && isHead(value.head?.sha) && isHead(value.base?.sha) && ['open', 'closed'].includes(value.state)
-        && isRepository(value.base?.repo?.full_name) && value.base.repo.full_name.toLowerCase() === repository, 'upstream', 502);
-      return { head: value.head.sha, base: value.base.sha, state: value.state };
+        && isRepository(value.base?.repo?.full_name) && value.base.repo.full_name.toLowerCase() === repository
+        && isBranch(value.base.ref), 'upstream', 502);
+      const branch = await ghFactory().getOptional(`${base}/git/ref/heads/${value.base.ref}`);
+      requireValue(branch === null && value.state === 'closed' || branch?.ref === `refs/heads/${value.base.ref}`
+        && branch.object?.type === 'commit' && isHead(branch.object.sha), 'upstream', 502);
+      return { head: value.head.sha, base: branch?.object.sha || value.base.sha, state: value.state };
     },
     async verify({ pull, comment, token }) {
       requireValue(isNumber(pull) && isId(comment));

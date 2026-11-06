@@ -3,6 +3,7 @@
 ## 0.9.1
 
 - Fix catch-up on the Cloudflare exchange by allowing its bounded GitHub review and discussion reads through the restricted transport.
+- Resolve the current base branch tip explicitly so an advanced base invalidates old receipts and handoffs even when GitHub's PR metadata still contains an older SHA.
 - Exercise the actual Worker GitHub transport in the catch-up and acknowledgement regression, including rejected paths and pagination bounds.
 
 ## 0.9.0

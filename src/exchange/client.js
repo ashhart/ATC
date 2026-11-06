@@ -1,3 +1,4 @@
+import { collaborationCommands, collaborationWrites, runCollaborationClient } from './collaborationClient.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
@@ -16,7 +17,7 @@ export async function runExchangeClient({ command, flags, rest }, { gh = createG
   if (command === 'id') return { id: randomBytes(16).toString('hex') };
   requireValue(env.ATC_READ_ONLY === undefined || ['0', '1'].includes(env.ATC_READ_ONLY));
   requireValue(!env.ATC_SIGNATURE);
-  const writes = ['connect', 'request', 'respond', 'resolve', 'upload'];
+  const writes = ['connect', 'request', 'respond', 'resolve', 'upload', ...collaborationWrites];
   requireValue(env.ATC_READ_ONLY !== '1' || !writes.includes(command), 'readOnly', 403);
   const repository = flags.repo;
   const origin = flags.origin;
@@ -32,6 +33,11 @@ export async function runExchangeClient({ command, flags, rest }, { gh = createG
   const settings = sessions.read();
   requireValue(settings?.comment, 'unauthorized', 401);
   const token = settings.token;
+  if (command === 'identity') {
+    await request('GET', `/pulls/${pull}`, { token });
+    return { type: 'collaboration', outcome: 'identity', pull, proof: settings.comment };
+  }
+  if (collaborationCommands.includes(command)) return runCollaborationClient({ command, flags, rest }, { request, token, git });
   const base = `/pulls/${pull}`;
   if (command === 'inbox' || command === 'export') {
     let view = await request('GET', base, { token });

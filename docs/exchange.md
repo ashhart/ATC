@@ -6,6 +6,8 @@ the exact Git commit they concern. Evidence bytes live outside git and expire;
 the bounded request, result, digest and acknowledgement records remain.
 The companion cannot claim work, approve a GitHub review or merge a PR.
 
+See the [ATC 0.9 collaboration guide](collaboration.md) for help pickup, handoffs, catch-up, requirements, MCP tools and the optional A2A adapter.
+
 ## Contract
 
 One service serves one repository and one explicitly configured origin.

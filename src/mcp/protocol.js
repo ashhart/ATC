@@ -1,3 +1,5 @@
+import { isExchangeToolName, exchangeToolArgs } from './exchangeTools.js';
+import { runExchangeClient } from '../exchange/client.js';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { runCli } from '../cli/actions.js';
 import { parseCliArgs } from '../cli/args.js';
@@ -56,8 +58,9 @@ async function callTool(id, params, cliDeps) {
   const args = params.arguments === undefined ? {} : params.arguments;
   if (!isPlainObject(args)) return rpcError(id, rpcCodes.params, 'Tool arguments must be an object.');
   try {
-    const argv = toolArgv(params.name, args);
-    const result = await runCli(parseCliArgs(argv), cliDeps());
+    const result = isExchangeToolName(params.name)
+      ? await runExchangeClient(exchangeToolArgs(params.name, args), cliDeps())
+      : await runCli(parseCliArgs(toolArgv(params.name, args)), cliDeps());
     if (!isPlainObject(result)) return reply(id, toolError(unexpected));
     return reply(id, { content: [{ type: 'text', text: JSON.stringify(result) }], structuredContent: result, isError: false });
   } catch (error) {

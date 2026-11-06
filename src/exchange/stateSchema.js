@@ -1,3 +1,4 @@
+import { isCollaborationState } from './collaborationSchema.js';
 import { exact, isDigest, isHead, isId, isKey, isNumber, isOrigin, isRepository, isTime,
   kinds, statuses, decisions, evidenceKinds, maximumEvidence, requireValue, isEvidenceIds, withOptionalBase } from './values.js';
 
@@ -13,10 +14,16 @@ const evidenceFields = { id: isKey, pull: isNumber, author: isId, head: isHead, 
 const sessionFields = { hash: isDigest, pull: isNumber, author: isId, comment: isId, expiresAt: isTime };
 
 export function validateState(state) {
-  requireValue(exact(state, { version: x => x === 1, repository: isRepository, origin: isOrigin,
+  const fields = { version: x => x === 1, repository: isRepository, origin: isOrigin,
     sessions: x => Array.isArray(x) && x.length <= 500 && x.every(v => exact(v, sessionFields)),
     requests: x => Array.isArray(x) && x.length <= 1000 && x.every(v => withOptionalBase(v, requestFields)),
-    evidence: x => Array.isArray(x) && x.length <= 4000 && x.every(v => exact(v, evidenceFields)) }), 'storage', 503);
+    evidence: x => Array.isArray(x) && x.length <= 4000 && x.every(v => exact(v, evidenceFields)) };
+  requireValue(exact(state, fields) || exact(state, { ...fields, collaboration: isCollaborationState }), 'storage', 503);
+  if (state.collaboration) {
+    const { offers, leases, handoffs } = state.collaboration;
+    requireValue([...offers, ...leases].every(x => state.requests.some(r => r.id === x.id))
+      && handoffs.every(x => x.decision === null || x.decision.at >= x.createdAt), 'storage', 503);
+  }
   for (const [records, key] of [[state.sessions, 'hash'], [state.requests, 'id'], [state.evidence, 'id']]) {
     requireValue(new Set(records.map(x => x[key])).size === records.length, 'storage', 503);
   }

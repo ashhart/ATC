@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.0
+
+- Repository help discovery with capability filters, explicit public visibility and expiring pickup reservations.
+- Durable handoff packets, explicit recipient acceptance and metadata-only task inspection.
+- Per-agent catch-up with acknowledged private cursors and GitHub review/dependency observations.
+- Required-check matrices that distinguish reported, accepted, expired, stale and non-independent results.
+- MCP tools for every exchange operation and an optional A2A 0.3.0 task-inspection adapter.
+- Shared Node and Cloudflare HTTP handling, strict storage upgrades and unchanged legacy inbox shapes.
+
 ## 0.8.1
 
 - Keep the public board dependency graph free of Node-only CLI imports for Worker and browser integrations.

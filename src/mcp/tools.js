@@ -1,3 +1,4 @@
+import { isExchangeToolName, exchangeToolList } from './exchangeTools.js';
 import { Failure } from '../core/failure.js';
 import { isRepository } from '../core/values.js';
 import { isRef } from '../cli/git.js';
@@ -96,7 +97,7 @@ const tools = {
 };
 
 export function isToolName(name) {
-  return typeof name === 'string' && Object.hasOwn(tools, name);
+  return typeof name === 'string' && (Object.hasOwn(tools, name) || isExchangeToolName(name));
 }
 
 export function toolList() {
@@ -104,7 +105,7 @@ export function toolList() {
     name, description, annotations: { ...annotations },
     inputSchema: { type: 'object', additionalProperties: false, required: [...required],
       properties: Object.fromEntries([...required, ...optional].map(key => [key, structuredClone(fields[key][0])])) }
-  }));
+  })).concat(exchangeToolList());
 }
 
 export function toolArgv(name, args = {}) {

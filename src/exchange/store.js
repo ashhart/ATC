@@ -10,13 +10,15 @@ export function createExchangeStore({ folder, repository, origin, now = Date.now
   privateDirectory(folder);
   const blobs = path.join(folder, 'evidence');
   privateDirectory(blobs);
+  const packets = path.join(folder, 'handoffs');
+  privateDirectory(packets);
   const lock = path.join(folder, 'lock');
   const handle = fs.openSync(lock, 'wx', 0o600);
   const file = path.join(folder, 'state.json');
   let closed = false;
   function read() {
     requireValue(!closed, 'storage', 503);
-    privateDirectory(folder); privateDirectory(blobs);
+    privateDirectory(folder); privateDirectory(blobs); privateDirectory(packets);
     const state = validateState(JSON.parse(readPrivate(file, 16 * 1024 * 1024)));
     requireValue(state.repository === repository && state.origin === origin, 'storage', 503);
     return state;
@@ -40,7 +42,9 @@ export function createExchangeStore({ folder, repository, origin, now = Date.now
   return {
     ...createExchangeOperations({ read, save, now,
       putBytes: (id, bytes) => atomicWrite(path.join(blobs, id), bytes),
-      readBytes: id => readPrivate(path.join(blobs, id), maximumEvidence) }),
+      readBytes: id => readPrivate(path.join(blobs, id), maximumEvidence),
+      putPacket: (id, bytes) => atomicWrite(path.join(packets, id), bytes),
+      readPacket: id => readPrivate(path.join(packets, id), maximumEvidence) }),
     close() { if (!closed) { closed = true; fs.closeSync(handle); fs.unlinkSync(lock); } },
     sweep
   };

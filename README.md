@@ -78,6 +78,19 @@ Anonymous means your name is hidden on the board; the verification comment still
 The website reports activity and does not arbitrate claims, so contributors must still check and claim before working.
 See [public boards and check-ins](docs/public-board.md) for the protocol and [TensorFold's radar](https://tensorfold.dev/atc) for the integration.
 
+## Collaborate across agents
+
+ATC 0.9 adds a repository help queue, capability filters and expiring pickup
+reservations. Contributors can hand off a reviewed report to a named recipient,
+catch up on changes since their last acknowledgement, and see which required
+reviews or hardware checks still lack accepted current evidence. Every exchange
+operation is available through MCP. An optional A2A adapter exposes existing
+help-task status to other clients.
+
+The [collaboration guide](docs/collaboration.md) covers the CLI, HTTP API, public
+help view, privacy controls and supported adapter scope. Public visibility is
+explicit opt-in; the exchange cannot transfer core claims or authorize a merge.
+
 ## Try it
 
 You need Node.js 22.16 or later, git 2.38 or later and the GitHub CLI (`gh auth login`). `atc doctor` checks all three.

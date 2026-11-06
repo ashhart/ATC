@@ -21,7 +21,7 @@ export async function exchangeFixture(t, { readOnly = false } = {}) {
   const comments = new Map();
   const calls = [];
   const upstream = { head, base, state: 'open', private: false, permission: 'read', enabled: true, failure: false,
-    policy: { version: 1, origin, retentionHours: 1 } };
+    reviews: [], reviewComments: [], discussion: [], policy: { version: 1, origin, retentionHours: 1 } };
   let clock = Date.parse('2026-10-30T12:00:00.000Z');
   function addProof(author, pull = 42, secret = token(author)) {
     const id = 100 + author;
@@ -38,8 +38,11 @@ export async function exchangeFixture(t, { readOnly = false } = {}) {
     if (request.url === `${base}/contents/.github/atc.json`) data = upstream.enabled ? encodeFile({}) : null;
     if (request.url === `${base}/contents/.github/atc-exchange.json`) data = encodeFile(upstream.policy);
     if (/\/pulls\/[0-9]+$/.test(request.url)) data = { number: Number(request.url.split('/').at(-1)), state: upstream.state,
-      head: { sha: upstream.head }, base: { sha: upstream.base, repo: { full_name: repository } } };
+      user: { id: 1, type: 'User', login: 'user1' }, head: { sha: upstream.head }, base: { sha: upstream.base, repo: { full_name: repository } } };
     if (/\/issues\/comments\/[0-9]+$/.test(request.url)) data = comments.get(Number(request.url.split('/').at(-1))) || null;
+    if (/\/pulls\/[0-9]+\/reviews\?/.test(request.url)) data = upstream.reviews;
+    if (/\/pulls\/[0-9]+\/comments\?/.test(request.url)) data = upstream.reviewComments;
+    if (/\/issues\/[0-9]+\/comments\?/.test(request.url)) data = upstream.discussion;
     const permission = request.url.match(/\/collaborators\/user([0-9]+)\/permission$/);
     if (permission) data = { permission: upstream.permission, user: { id: Number(permission[1]) } };
     response.writeHead(upstream.failure ? 503 : data === undefined ? 501 : data === null ? 404 : 200, { 'Content-Type': 'application/json' });

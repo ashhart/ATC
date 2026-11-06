@@ -1,3 +1,5 @@
+import { agentCard, a2aTask } from './a2a.js';
+import { createCollaborationRoutes } from './collaborationRoutes.js';
 import { inboxView, legacyInboxView } from './inbox.js';
 import { isExchangeOutput } from './output.js';
 import { readWebBytes, readWebJson, jsonResponse, errorResponse } from './webIo.js';
@@ -6,6 +8,8 @@ import { isDigest, isHead, isNumber, isOrigin, isPolicy, isSessionInput, isReque
 
 export function createExchangeWebHandler({ store, github, origin, now = Date.now, readOnly = false }) {
   requireValue(isOrigin(origin) && typeof readOnly === 'boolean');
+  let cardCache;
+  const collaboration = createCollaborationRoutes({ store, github, now, readOnly });
   function reply(value) { requireValue(isExchangeOutput(value), 'storage', 503); return jsonResponse(value); }
   async function route(request) {
     const url = new URL(request.url);
@@ -23,17 +27,35 @@ export function createExchangeWebHandler({ store, github, origin, now = Date.now
       await github.pull(input.pull);
       return reply(store.connect(input, author));
     }
+    if (request.method === 'GET' && url.pathname === '/api/exchange/v1/a2a/agent-card.json') {
+      if (!cardCache || now() - cardCache.at >= 15000) {
+        const response = (async () => {
+          await github.policy();
+          requireValue(await github.publicRepository(), 'forbidden', 403);
+          return jsonResponse(agentCard(origin));
+        })();
+        cardCache = { at: now(), response };
+      }
+      return (await cardCache.response).clone();
+    }
+    const publicResult = await collaboration(request);
+    if (publicResult) return publicResult;
     const bearer = request.headers.get('authorization');
     requireValue(bearer?.startsWith('Bearer ') && isDigest(bearer.slice(7)), 'unauthorized', 401);
     const token = bearer.slice(7);
     const session = store.session(token);
+    const enabled = await github.policy();
+    requireValue(isPolicy(enabled) && enabled.origin === origin, 'notEnabled', 403);
+    requireValue(await github.verify({ pull: session.pull, comment: session.comment, token }) === session.author, 'unauthorized', 401);
+    if (request.method === 'POST' && url.pathname === '/api/exchange/v1/a2a') return a2aTask(request, { session, store, github, now });
+    if (request.method !== 'GET' && url.pathname !== '/api/exchange/v1/queue') collaboration.invalidate();
+    const collaborationResult = await collaboration(request, session);
+    if (collaborationResult) return collaborationResult;
     const match = url.pathname.match(/^\/api\/exchange\/v1\/pulls\/([1-9][0-9]{0,8})(.*)$/);
     requireValue(match && isNumber(Number(match[1])), 'notFound', 404);
     const pull = Number(match[1]);
     requireValue(session.pull === pull, 'unauthorized', 401);
-    const policy = await github.policy();
-    requireValue(isPolicy(policy) && policy.origin === origin, 'notEnabled', 403);
-    requireValue(await github.verify({ pull, comment: session.comment, token }) === session.author, 'unauthorized', 401);
+    const policy = enabled;
     const current = await github.pull(pull);
     requireValue(isHead(current?.head) && isHead(current?.base) && ['open', 'closed'].includes(current.state), 'upstream', 502);
     const tail = match[2];

@@ -31,7 +31,8 @@ export class ExchangeStore {
       const url = new URL(request.url);
       requireValue(url.origin === this.origin && url.pathname.startsWith('/api/exchange/v1/') && !url.search, 'notFound', 404);
       requireValue(this.active < 8, 'capacity', 429);
-      this.store.rateLimit();
+      this.store.rateLimit(url.pathname.startsWith('/api/exchange/v1/help')
+        || url.pathname === '/api/exchange/v1/a2a/agent-card.json' || url.pathname === '/api/exchange/v1/health');
       if (request.method === 'GET' && url.pathname === '/api/exchange/v1/health') {
         return jsonResponse({ version: 1, status: 'ready' });
       }

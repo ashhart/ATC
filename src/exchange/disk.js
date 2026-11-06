@@ -9,7 +9,7 @@ export function requireOutsideCheckout(folder) {
   requireValue(current !== path.parse(current).root, 'storage', 503);
   if (fs.existsSync(current)) {
     requireValue(fs.lstatSync(current).isDirectory() && !fs.lstatSync(current).isSymbolicLink(), 'storage', 503);
-    requireValue(fs.readdirSync(current).every(name => ['evidence', 'state.json', 'lock'].includes(name)
+    requireValue(fs.readdirSync(current).every(name => ['evidence', 'handoffs', 'state.json', 'lock'].includes(name)
       || /^state\.json\.[a-f0-9]{16}\.tmp$/.test(name)), 'storage', 503);
   }
   while (true) {

@@ -1,5 +1,6 @@
 import { ensure } from '../core/failure.js';
 import { overlapView } from '../core/view.js';
+import { comparisonBase } from './conflictAttribution.js';
 import { checkConflicts } from './conflicts.js';
 import { createTrees } from './gitTrees.js';
 import { readPullFiles } from './pullFileReads.js';
@@ -41,7 +42,7 @@ export function inspectOverlap(context, snapshot, flags) {
   const otherPulls = withFiles(others.slice(0, 200));
   const view = overlapView({ workingTree, myPulls, otherPulls, limitations }, snapshot.config);
   const remote = workingTree ? safeRemote(context) : null;
-  const local = checkConflicts({ trees: workingTree ? createTrees(context.git) : null, remote, base: workingTree ? base : null,
+  const local = checkConflicts({ trees: workingTree ? createTrees(context.git) : null, remote, base: workingTree ? base : null, comparison: comparisonBase(context, flags),
     overlaps: view.overlaps, workingFiles: workingTree, sourceFiles: new Map(myPulls.map(pull => [pull.number, pull.files])),
     config: snapshot.config, labels: context.labels });
   if (context.labels) for (const overlap of view.overlaps) {

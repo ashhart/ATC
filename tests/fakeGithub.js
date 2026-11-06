@@ -46,6 +46,7 @@ export function createFakeGithub({ repository = 'acme/widgets' } = {}) {
     if (!url.pathname.startsWith(`${base}/`)) return [404, { message: 'Not Found' }];
     const path = url.pathname.slice(base.length);
     let match;
+    if (path === '/commits/main' && method === 'GET' && store.tip) return [200, { sha: store.tip }];
     if (path === '/contents/.github/atc.json' && method === 'GET') {
       if (store.config === null) return [404, { message: 'Not Found' }];
       const text = typeof store.config === 'string' ? store.config : JSON.stringify(store.config);

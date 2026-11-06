@@ -1,3 +1,4 @@
+import { observePull } from './observations.js';
 import { Buffer } from 'node:buffer';
 import { readConfig } from '../core/config.js';
 import { isLogin, readTimestamp } from '../core/values.js';
@@ -8,6 +9,30 @@ export function createExchangeGithub({ repository, origin, ghFactory }) {
   repository = repository.toLowerCase();
   const base = `repos/${repository}`;
   return {
+    async mayRequire(session) {
+      requireValue(isNumber(session.pull) && isId(session.author) && isId(session.comment));
+      const gh = ghFactory(), pull = await gh.get(`${base}/pulls/${session.pull}`);
+      if (isId(pull.user?.id) && pull.user.id === session.author) return true;
+      const comment = await gh.get(`${base}/issues/comments/${session.comment}`);
+      requireValue(comment?.user?.id === session.author && isLogin(comment.user.login), 'unauthorized', 401);
+      const access = await gh.getOptional(`${base}/collaborators/${comment.user.login}/permission`);
+      return ['write', 'admin'].includes(access?.permission) && access.user?.id === session.author;
+    },
+    async publicRepository() {
+      const value = await ghFactory().get(base);
+      requireValue(typeof value?.private === 'boolean', 'upstream', 502);
+      return !value.private;
+    },
+    observation(pull) { requireValue(isNumber(pull)); return observePull(ghFactory(), repository, pull); },
+    async participant(pull, comment) {
+      requireValue(isNumber(pull) && isId(comment));
+      const value = await ghFactory().get(`${base}/issues/comments/${comment}`);
+      requireValue(value?.id === comment && value.issue_url?.toLowerCase() === `https://api.github.com/${base}/issues/${pull}`
+        && typeof value.body === 'string' && /^\/atc exchange [a-f0-9]{64}$/.test(value.body)
+        && value.body.length === 78 && readTimestamp(value.created_at) !== null && value.created_at === value.updated_at
+        && value.user?.type === 'User' && isId(value.user.id), 'unauthorized', 401);
+      return value.user.id;
+    },
     async policy() {
       const gh = ghFactory();
       requireValue(readConfig(decodeFile(await gh.getOptional(`${base}/contents/.github/atc.json`), 65536)).enabled, 'notEnabled', 403);

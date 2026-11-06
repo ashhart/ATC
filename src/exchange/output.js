@@ -1,3 +1,4 @@
+import { isCollaborationOutput } from './collaborationOutput.js';
 import { exact, isKey, isDigest, isHead, isId, isNumber, isTime, evidenceKinds, kinds, statuses, decisions, maximumEvidence } from './values.js';
 import { freshnessKinds, receiptFreshness } from './freshness.js';
 
@@ -36,7 +37,7 @@ export function isInbox(value) {
 }
 
 export function isExchangeOutput(value) {
-  if (isInbox(value)) return true;
+  if (isInbox(value) || isCollaborationOutput(value)) return true;
   if (value?.outcome === 'connected') return exact(value, { outcome: x => x === 'connected', expiresAt: isTime });
   if (['requested', 'responded', 'resolved'].includes(value?.outcome)) {
     return exact(value, { outcome: x => ['requested', 'responded', 'resolved'].includes(x), id: isKey });

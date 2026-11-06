@@ -43,7 +43,11 @@ test('tools/list describes every tool with a closed input schema and honest hint
   const names = result.tools.map(tool => tool.name);
   assert.deepEqual(names, ['atc_board', 'atc_status', 'atc_check', 'atc_overlap', 'atc_claim', 'atc_renew', 'atc_release', 'atc_propose',
     'atc_accept', 'atc_decline', 'atc_withdraw', 'atc_start', 'atc_pulse', 'atc_land', 'atc_who',
-    'atc_begin', 'atc_plan', 'atc_guard', 'atc_depends', 'atc_landing']);
+    'atc_begin', 'atc_plan', 'atc_guard', 'atc_depends', 'atc_landing',
+    'atc_exchange_id', 'atc_exchange_connect', 'atc_exchange_identity', 'atc_exchange_inbox', 'atc_exchange_request', 'atc_exchange_respond',
+    'atc_exchange_resolve', 'atc_exchange_upload', 'atc_exchange_download', 'atc_exchange_export', 'atc_exchange_help_queue',
+    'atc_exchange_offer', 'atc_exchange_take', 'atc_exchange_help_release', 'atc_exchange_matrix', 'atc_exchange_handoff',
+    'atc_exchange_handoff_decide', 'atc_exchange_handoff_export', 'atc_exchange_catchup', 'atc_exchange_ack']);
   for (const tool of result.tools) {
     assert.equal(tool.inputSchema.type, 'object');
     assert.equal(tool.inputSchema.additionalProperties, false);

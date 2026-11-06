@@ -1,8 +1,9 @@
+import { createCollaborationOperations } from './collaborationOperations.js';
 import { Buffer } from 'node:buffer';
 import { digest, isKey, isNumber, isId, isRequestInput, isResultInput, isResolutionInput,
   isHead, evidenceKinds, maximumEvidence, iso, requireValue } from './values.js';
 
-export function createExchangeOperations({ read, save, putBytes, readBytes, now = Date.now }) {
+export function createExchangeOperations({ read, save, putBytes, readBytes, putPacket, readPacket, now = Date.now }) {
   function findRequest(state, pull, id) {
     const request = state.requests.find(x => x.id === id && x.pull === pull);
     requireValue(request, 'notFound', 404);
@@ -10,6 +11,7 @@ export function createExchangeOperations({ read, save, putBytes, readBytes, now 
   }
   function authorize(session, pull) { requireValue(isNumber(pull) && session.pull === pull && isId(session.author), 'unauthorized', 401); }
   return {
+    ...createCollaborationOperations({ read, save, readBytes, putPacket, readPacket, now }),
     session(token) {
       const session = read().sessions.find(x => x.hash === digest(token) && x.expiresAt > iso(now()));
       requireValue(session, 'unauthorized', 401);

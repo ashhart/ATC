@@ -33,7 +33,9 @@ atc-exchange request 42 test --id REQUEST_ID --head HEAD_SHA --base BASE_SHA --r
 atc-exchange offer 42 REQUEST_ID --capability cuda --public --required --independent --repo example/project --origin https://exchange.example.org
 ```
 
-Only the requester may change its offer. Every `offer` call replaces the four
+Only the requester may change its offer. Changing a required check also needs
+PR authorship or a freshly verified write/admin repository permission. Other
+contributors can publish optional help requests. Every `offer` call replaces the four
 settings: capability, public visibility, required check and independent contributor.
 Omitting a boolean flag clears it. Public discovery requires explicit `--public`
 and a currently public GitHub repository. Private offers remain in their PR.

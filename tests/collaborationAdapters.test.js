@@ -76,3 +76,17 @@ test('public help pagination retains every request and any capability means all 
   assert.equal(new Set([...first.items, ...last.items].map(x => x.id)).size, 51);
   assert.equal((await f.request('GET', '/help/cuda')).items.length, 26);
 });
+
+test('only the PR author or a verified maintainer can make a request count as a required check', async t => {
+  const f = await exchangeFixture(t);
+  await f.request('POST', '/sessions', { value: f.addProof(2) });
+  await f.request('POST', '/pulls/42/requests', { token: token(2), value: { id: key(1), head, base, kind: 'test', evidence: [] } });
+  const offer = required => f.request('POST', `/pulls/42/collaboration/requests/${key(1)}/offer`, { token: token(2),
+    value: { capability: 'cuda', public: true, required, independent: true } });
+  assert.equal((await offer(false)).outcome, 'offered');
+  await assert.rejects(offer(true), { code: 'forbidden' });
+  f.upstream.permission = 'write';
+  assert.equal((await offer(true)).outcome, 'offered');
+  f.upstream.permission = 'read';
+  await assert.rejects(offer(false), { code: 'forbidden' });
+});

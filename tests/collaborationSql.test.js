@@ -48,7 +48,7 @@ test('SQLite collaboration records and durable packet bytes persist, roll back a
 
 test('Worker collaboration routes enforce read-only, strict bodies and current authorization before every write', async t => {
   const f = fixture(t), gateway = { policy: async () => ({ version: 1, origin, retentionHours: 1 }),
-    verify: async () => 1, pull: async () => ({ head, base, state: 'open' }), publicRepository: async () => true };
+    verify: async () => 1, mayRequire: async () => true, pull: async () => ({ head, base, state: 'open' }), publicRepository: async () => true };
   const make = readOnly => createExchangeWebHandler({ store: f.store, github: gateway, origin, readOnly, now: f.now });
   const call = (handle, tail, body) => handle(new Request(`${origin}/api/exchange/v1/pulls/42/collaboration${tail}`, {
     method: body ? 'POST' : 'GET', headers: { authorization: `Bearer ${token(1)}`, ...(body ? { 'content-type': 'application/json' } : {}) },

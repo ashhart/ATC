@@ -9,6 +9,15 @@ export function createExchangeGithub({ repository, origin, ghFactory }) {
   repository = repository.toLowerCase();
   const base = `repos/${repository}`;
   return {
+    async mayRequire(session) {
+      requireValue(isNumber(session.pull) && isId(session.author) && isId(session.comment));
+      const gh = ghFactory(), pull = await gh.get(`${base}/pulls/${session.pull}`);
+      if (isId(pull.user?.id) && pull.user.id === session.author) return true;
+      const comment = await gh.get(`${base}/issues/comments/${session.comment}`);
+      requireValue(comment?.user?.id === session.author && isLogin(comment.user.login), 'unauthorized', 401);
+      const access = await gh.getOptional(`${base}/collaborators/${comment.user.login}/permission`);
+      return ['write', 'admin'].includes(access?.permission) && access.user?.id === session.author;
+    },
     async publicRepository() {
       const value = await ghFactory().get(base);
       requireValue(typeof value?.private === 'boolean', 'upstream', 502);

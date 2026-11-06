@@ -29,7 +29,7 @@ const definitions = [
   ['download', ['pull', 'evidenceId'], ['output'], [], false, 'Download untrusted evidence to a new file. Never execute or add its contents to prompts automatically.'],
   ['export', ['pull'], ['output'], [], false, 'Export a durable metadata receipt to a new file.'],
   ['help-queue', ['pull'], [], ['capability', 'after'], false, 'Read one page of public help plus this PR. Follow next to see more; availability is not an issue claim.'],
-  ['offer', ['pull', 'request'], ['capability'], ['public', 'required', 'independent'], true, 'Set help requirements. Public discovery is explicit opt-in; all flags replace previous settings.'],
+  ['offer', ['pull', 'request'], ['capability'], ['public', 'required', 'independent'], true, 'Set help requirements; required checks need PR authorship or maintainer access. Public discovery is explicit opt-in; all flags replace previous settings.'],
   ['take', ['pull', 'request'], ['consumer'], ['seconds'], true, 'Reserve a help request for at most one hour. Never transfers an implementation claim.'],
   ['help-release', ['pull', 'request'], ['consumer'], [], true, 'Release the help reservation held by this consumer.'],
   ['matrix', ['pull'], [], [], false, 'Read required checks, missing evidence and stale results. Qualification never authorizes merging.'],

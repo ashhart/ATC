@@ -65,6 +65,8 @@ export function createCollaborationRoutes({ store, github, now, readOnly }) {
       const input = await readWebJson(request), id = action[1];
       if (action[2] === 'offer') {
         requireValue(isOfferInput(input));
+        const wasRequired = store.collaboration().offers.find(x => x.id === id)?.required;
+        requireValue(!input.required && !wasRequired || await github.mayRequire(session), 'forbidden', 403);
         requireValue(!input.public || await github.publicRepository(), 'forbidden', 403);
         return reply(store.offer(session, id, input));
       }

@@ -8,7 +8,8 @@ export function createGithubFetch({ repository, fetcher = fetch, token } = {}) {
   async function read(route, optional = false) {
     requireValue(typeof route === 'string' && route.length <= 300 && !/[\r\n]/.test(route)
       && (route === base || route.startsWith(`${base}/`))
-      && /^(?:repos\/[^/]+\/[^/]+)(?:|\/contents\/\.github\/atc(?:-exchange)?\.json|\/pulls\/[1-9][0-9]{0,8}|\/issues\/comments\/[1-9][0-9]{0,15}|\/collaborators\/[A-Za-z0-9-]{1,39}\/permission)$/.test(route));
+      && (/^(?:|\/contents\/\.github\/atc(?:-exchange)?\.json|\/pulls\/[1-9][0-9]{0,8}|\/issues\/comments\/[1-9][0-9]{0,15}|\/collaborators\/[A-Za-z0-9-]{1,39}\/permission)$/.test(route.slice(base.length))
+        || /^(?:\/pulls\/[1-9][0-9]{0,8}\/(?:reviews|comments)|\/issues\/[1-9][0-9]{0,8}\/comments)\?per_page=100&page=[1-6]$/.test(route.slice(base.length))));
     const headers = { Accept: 'application/vnd.github+json', 'User-Agent': 'ATC-review-exchange' };
     if (token) headers.Authorization = `Bearer ${token}`;
     try {

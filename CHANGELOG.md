@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.1
+
+- Fix catch-up on the Cloudflare exchange by allowing its bounded GitHub review and discussion reads through the restricted transport.
+- Exercise the actual Worker GitHub transport in the catch-up and acknowledgement regression, including rejected paths and pagination bounds.
+
 ## 0.9.0
 
 - Repository help discovery with capability filters, explicit public visibility and expiring pickup reservations.

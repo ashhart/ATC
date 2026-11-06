@@ -66,6 +66,7 @@ export async function exchangeFixture(t, { readOnly = false } = {}) {
   const request = createExchangeTransport(origin, { fetcher });
   async function stop() { const done = once(server, 'close'); server.close(); server.closeAllConnections(); await done; }
   t.after(async () => { await stop(); const done = once(mock, 'close'); mock.close(); mock.closeAllConnections(); await done; fs.rmSync(folder, { recursive: true, force: true }); });
-  return { folder, comments, calls, upstream, addProof, request, fetcher, gateway, now: () => clock,
+  const githubFetcher = (url, options) => fetch(url.replace('https://api.github.com', `http://127.0.0.1:${mock.address().port}`), options);
+  return { folder, comments, calls, upstream, addProof, request, fetcher, githubFetcher, gateway, now: () => clock,
     advance: ms => { clock += ms; }, restart: async () => { await stop(); await start(); } };
 }

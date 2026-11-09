@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.2
+
+- Retain a confirmed worktree file plan when the final repository read is incomplete, so normal plan retries reuse its session.
+- Keep incomplete coverage not ready and recheck ownership, scope, expiry and the base before edits or publication.
+- Cover interrupted reads, earlier competing plans and later rejected conflicts without changing the exchange protocol.
+
 ## 0.9.1
 
 - Fix catch-up on the Cloudflare exchange by allowing its bounded GitHub review and discussion reads through the restricted transport.

@@ -7,6 +7,11 @@ their exact coverage, readiness and authorization boundaries. Workflow outputs
 carry a validated `ready` boolean and fixed `outcome`; a preview is never ready,
 and `guard` returning `noTicket` means the legacy unticketed workflow applies.
 
+After GitHub confirms a file plan, ATC retains its worktree ticket even if the
+final repository read is incomplete. That result stays not ready. Retry `plan`
+to refresh the same session, or run a fresh `guard` before editing. A retained
+ticket does not waive complete coverage, ownership, expiry, scope or base checks.
+
 Start with `atc board --repo owner/name` from any directory. The shorter `atc --repo owner/name` runs the same board. A local clone is needed for `overlap`, `who`, agent presence and the offline initializer; repository reads and typed coordination can use `--repo` without one. `atc help` and `atc --help` show usage. `atc --version` prints the CLI version without a GitHub request.
 
 Results have two forms. With `--json`, or whenever standard output is not a terminal, ATC prints validated JSON that contains numeric area references, snapshot-local contributor references, issue and pull request numbers, counts, timestamps, booleans, and fixed enums. The repository output is the fixed value `selected`. In a terminal, or with `--text`, ATC prints a readable view of the same result that adds issue and pull request titles, logins and file paths for the person running the command, after stripping control characters, escape sequences and bidi marks. Agents and scripts should always use `--json`. Do not infer success from an empty list or the process exit code alone.

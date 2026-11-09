@@ -52,14 +52,17 @@ export async function beginWork(command, rest, flags, context, { claim, fetcher 
   const posted = await postAndConfirm(context, issue, { verb: 'plan', session, base, selector, files });
   if (posted.outcome !== 'planned') return fail(['scopeTaken', 'planLimit', 'pending', 'uncertain'].includes(posted.outcome) ? posted.outcome : 'claimRequired',
     { session, base, files: files.length });
+  const confirmed = context.snapshot.state.plans.find(row => row.id === posted.comment && row.login === context.me && row.session === session);
+  if (!confirmed) return fail('pending', { session });
+  if (confirmed.base !== base || confirmed.selector !== selector) return fail('scopeChanged', { session });
+  writeWorkTicket(context.git, { version: 1, repository: context.repository.toLowerCase(), issue, session, plan: confirmed.id, base,
+    ref: flags.base ?? null, files, observedAt: new Date(context.now()).toISOString(), expiresAt: new Date(confirmed.expiresAt).toISOString() });
   const snapshot = takeSnapshot(context);
   if (snapshot.partial) return fail('incomplete', { complete: false, session });
   const plan = snapshot.state.plans.find(row => row.id === posted.comment && row.login === context.me && row.session === session);
   if (!plan) return fail('pending', { session });
   if (plan.selector !== planSelector(snapshot.config, flags.base ?? null)) return fail('scopeChanged', { session });
   if (workBase(context, flags.base ?? null) !== base) return fail('baseChanged', { session, base });
-  writeWorkTicket(context.git, { version: 1, repository: context.repository.toLowerCase(), issue, session, plan: plan.id, base,
-    ref: flags.base ?? null, files, observedAt: new Date(context.now()).toISOString(), expiresAt: new Date(plan.expiresAt).toISOString() });
   return workResult(command, { issue, session, plan: plan.id, base, files: files.length });
 }
 

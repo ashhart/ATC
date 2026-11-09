@@ -1,8 +1,9 @@
 import { sharedFiles } from '../core/pulls.js';
+import { attributeConflicts } from './conflictAttribution.js';
 
 const maxChecks = 10;
 
-export function checkConflicts({ trees, remote, base, overlaps, workingFiles, sourceFiles = new Map(), config, labels }) {
+export function checkConflicts({ trees, remote, base, comparison, overlaps, workingFiles, sourceFiles = new Map(), config, labels }) {
   const checked = overlaps.map(overlap => ({ ...overlap, conflict: 'unknown', conflictFiles: null }));
   if (!trees) return { overlaps: checked, worktrees: 0, worktreeOverlaps: [] };
   const local = workingFiles ? trees.snapshot() : null;
@@ -16,7 +17,7 @@ export function checkConflicts({ trees, remote, base, overlaps, workingFiles, so
     const other = head(overlap.pullRequest);
     if (!source || !other) continue;
     const mine = overlap.source === 'workingTree' ? workingFiles : sourceFiles.get(overlap.source);
-    const result = yours(trees.mergeConflicts(source, other), mine);
+    const result = attributeConflicts(trees, { commit: source, other, base: comparison, mine });
     overlap.conflict = result.conflict;
     overlap.conflictFiles = result.files ? result.files.size : null;
     labels?.conflicts.set(`${overlap.source}:${overlap.pullRequest}`, result.files ? [...result.files].sort() : []);
@@ -30,17 +31,10 @@ export function checkConflicts({ trees, remote, base, overlaps, workingFiles, so
     if (!files) return;
     const shared = sharedFiles(workingFiles, files, config);
     if (shared.sharedFiles === 0) return;
-    const result = local ? yours(trees.mergeConflicts(local.commit, theirs.commit), workingFiles) : { conflict: 'unknown', files: null };
+    const result = local ? attributeConflicts(trees, { commit: local.commit, other: theirs.commit, base: comparison, mine: workingFiles }) : { conflict: 'unknown', files: null };
     labels?.conflicts.set(`worktree:${index + 1}`, result.files ? [...result.files].sort() : []);
     labels?.shared.set(`worktree:${index + 1}`, [...workingFiles].filter(file => files.has(file)).sort());
     worktreeOverlaps.push({ worktree: index + 1, ...shared, conflict: result.conflict, conflictFiles: result.files ? result.files.size : null });
   });
   return { overlaps: checked, worktrees: worktrees.length, worktreeOverlaps };
-}
-
-function yours(result, mine) {
-  if (result.conflict !== 'conflicts') return result;
-  if (!(mine instanceof Set)) return { conflict: 'unknown', files: null };
-  const files = new Set([...result.files].filter(file => mine.has(file)));
-  return files.size > 0 ? { conflict: 'conflicts', files } : { conflict: 'clean', files };
 }

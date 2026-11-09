@@ -2,6 +2,7 @@ import { ensure } from '../core/failure.js';
 import { areaReference, readConfig } from '../core/config.js';
 import { isNumber, isRepository } from '../core/values.js';
 import { sharedFiles } from '../core/pulls.js';
+import { attributeConflicts, comparisonBase } from './conflictAttribution.js';
 import { createTrees } from './gitTrees.js';
 import { isFilePath } from './reader.js';
 import { readScopedPulls } from './scopedPullRead.js';
@@ -43,6 +44,7 @@ export function inspectScopedOverlap(context, flags) {
   limitations.push(...read.limitations);
   const trees = workingFiles ? createTrees(context.git) : null;
   const local = trees?.snapshot();
+  const comparison = comparisonBase(context, flags);
   const overlaps = [];
   if (workingFiles) for (const pull of read.files) {
     const shared = sharedFiles(workingFiles, pull.files, config);
@@ -50,7 +52,7 @@ export function inspectScopedOverlap(context, flags) {
     let result = { conflict: 'unknown', files: null };
     if (local && remote && hasTime(context.gh, 2000)) {
       const head = cachedHead(context.git, pull.head) || trees.fetchPull(remote, pull.number);
-      if (head === pull.head) result = ownConflicts(trees.mergeConflicts(local.commit, head), workingFiles);
+      if (head === pull.head) result = attributeConflicts(trees, { commit: local.commit, other: head, base: comparison, mine: workingFiles });
       else if (head) limitations.push('selectedPullChanged');
     }
     if (result.conflict === 'unknown') limitations.push('conflictChecksUnavailable');
@@ -67,7 +69,7 @@ export function inspectScopedOverlap(context, flags) {
     if (!files) { limitations.push('conflictChecksUnavailable'); return; }
     const shared = sharedFiles(workingFiles, files, config);
     if (shared.sharedFiles === 0) return;
-    const result = local ? ownConflicts(trees.mergeConflicts(local.commit, theirs.commit), workingFiles) : { conflict: 'unknown', files: null };
+    const result = local ? attributeConflicts(trees, { commit: local.commit, other: theirs.commit, base: comparison, mine: workingFiles }) : { conflict: 'unknown', files: null };
     if (result.conflict === 'unknown') limitations.push('conflictChecksUnavailable');
     worktreeOverlaps.push({ worktree: index + 1, sharedFiles: shared.sharedFiles, areas: numericAreas(shared.areas, config),
       conflict: result.conflict, conflictFiles: result.files?.size ?? null });
@@ -89,10 +91,4 @@ function cachedHead(git, head) {
   if (!isPullHead(head) || typeof git?.exec !== 'function') return null;
   const result = git.exec(['cat-file', '-t', head]);
   return result?.status === 0 && result.stdout === 'commit\n' ? head : null;
-}
-
-function ownConflicts(result, workingFiles) {
-  if (result.conflict !== 'conflicts') return result;
-  const files = result.files instanceof Set ? new Set([...result.files].filter(file => workingFiles.has(file))) : null;
-  return files ? { conflict: files.size > 0 ? 'conflicts' : 'clean', files } : { conflict: 'unknown', files: null };
 }

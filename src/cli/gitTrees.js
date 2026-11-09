@@ -73,6 +73,9 @@ export function createTrees(git) {
       const files = shaPattern.test(parts[0]) ? names(parts.slice(1).join('\0')) : null;
       return files && files.size > 0 ? { conflict: 'conflicts', files } : { conflict: 'unknown', files: null };
     },
+    mergeBaseOf(commit, base) {
+      return shaPattern.test(commit) && isRef(base) ? sha(['merge-base', commit, base]) : null;
+    },
     worktrees() {
       const top = run(['rev-parse', '--show-toplevel'])?.replace(/\r?\n$/, '');
       const text = run(['worktree', 'list', '--porcelain', '-z']);

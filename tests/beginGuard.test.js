@@ -171,6 +171,24 @@ test('publication guard detects a real PR merge conflict and refuses untestable 
   assert.equal(unknown.ready, false); assert.equal(unknown.outcome, 'incomplete'); assert.equal(unknown.complete, false);
 });
 
+test('publication guard refuses a pull request that renamed the file you deleted', async t => {
+  const f = fixture(t);
+  const origin = `${f.folder}-origin.git`;
+  t.after(() => fs.rmSync(origin, { recursive: true, force: true }));
+  f.command(['init', '-q', '--bare', origin]); f.command(['remote', 'add', 'origin', origin]);
+  f.git.remoteFor = () => 'origin';
+  const pull = f.fake.addPull({ author: 'bob', files: ['src/a.js', 'src/b.js'] });
+  f.command(['checkout', '-qb', 'other-agent', 'main']);
+  f.command(['mv', 'src/a.js', 'src/b.js']); f.command(['commit', '-qm', 'Rename']);
+  f.command(['push', '-q', 'origin', `HEAD:refs/pull/${pull.number}/head`]);
+  f.command(['checkout', '-q', 'main']);
+  assert.equal((await f.run(['begin', '1', 'src/a.js', '--base', 'HEAD'])).ready, true);
+  fs.rmSync(path.join(f.folder, 'src/a.js'));
+  assert.equal((await f.run(['guard'])).ready, true);
+  const result = await f.run(['guard', '--publish']);
+  assert.equal(result.ready, false); assert.equal(result.outcome, 'mergeConflicts');
+});
+
 test('pre-edit guard canonicalizes an absolute fixture path against its ticket worktree root', async t => {
   const f = fixture(t);
   assert.equal((await f.run(['begin', '1', 'src/a.js', '--base', 'HEAD'])).ready, true);

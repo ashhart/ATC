@@ -90,7 +90,7 @@ export function guardWork(rest, flags, context, ticket) {
   const conflicts = planConflicts(context.snapshot.state.plans, { login: context.me, session: ticket.session, files: ticket.files });
   if (conflicts.length) return fail('scopeTaken', { conflicts });
   if (flags.publish) {
-    const overlap = inspectOverlap(context, context.snapshot, { base: ticket.base });
+    const overlap = inspectOverlap(context, context.snapshot, { base: ticket.base, workingTreeOnly: true });
     const rows = [...overlap.overlaps, ...overlap.worktreeOverlaps];
     if (rows.some(row => row.conflict === 'conflicts')) return fail('mergeConflicts');
     if (!overlap.complete || rows.some(row => row.conflict === 'unknown')) return fail('incomplete', { complete: false });

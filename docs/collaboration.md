@@ -6,7 +6,7 @@ operations work through the CLI, MCP and HTTP API. Core issue claims, file plans
 and GitHub merge requirements keep their existing authority.
 
 Upgrade the exchange server before its clients, back up its external data directory
-or Durable Object storage, and use ATC 0.9.2 together. Version 0.9.1 fixes Worker
+or Durable Object storage, and use ATC 0.9.3 together. Version 0.9.1 fixes Worker
 catch-up reads of GitHub reviews and discussions, and resolves the current base
 branch tip rather than trusting an older base SHA in PR metadata. Old clients retain their
 exact version 1 and version 2 inbox formats. Older servers cannot read collaboration
@@ -191,3 +191,6 @@ pickup/result states and pagination. Public traffic has a separate 600-request-p
 the authenticated 120-request budget. Public pages coalesce refreshes for up to 15 seconds and retain their original
 observation time. No live agent is inferred from a help request. The website cannot accept work, upload packets or claim an issue.
 Use the authenticated CLI or MCP tools after checking the current commits.
+
+Version 0.9.3 scopes client publication guards to the ticket worktree and all peer
+PRs. It also preserves the existing exchange protocol and server data formats.

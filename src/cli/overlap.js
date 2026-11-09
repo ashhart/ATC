@@ -1,5 +1,6 @@
 import { ensure } from '../core/failure.js';
 import { overlapView } from '../core/view.js';
+import { comparisonBase } from './conflictAttribution.js';
 import { checkConflicts } from './conflicts.js';
 import { createTrees } from './gitTrees.js';
 import { readPullFiles } from './pullFileReads.js';
@@ -7,6 +8,8 @@ import { isFilePath } from './reader.js';
 import { writeTrafficCache } from './trafficCache.js';
 
 export function inspectOverlap(context, snapshot, flags) {
+  ensure(flags.workingTreeOnly === undefined || typeof flags.workingTreeOnly === 'boolean', 'Invalid publication scope.');
+  const workingTreeOnly = flags.workingTreeOnly === true;
   let workingTree = null;
   let base = null;
   const limitations = [...snapshot.limitations];
@@ -19,11 +22,13 @@ export function inspectOverlap(context, snapshot, flags) {
     if (flags.base) throw error;
     limitations.push('workingTreeUnavailable');
   }
-  const mine = snapshot.pulls.filter(pull => pull.author === context.me);
-  const others = snapshot.pulls.filter(pull => pull.author !== context.me).sort((first, second) => second.updatedAt - first.updatedAt);
+  const mine = workingTreeOnly ? [] : snapshot.pulls.filter(pull => pull.author === context.me);
+  const others = (workingTreeOnly ? [...snapshot.pulls] : snapshot.pulls.filter(pull => pull.author !== context.me))
+    .sort((first, second) => second.updatedAt - first.updatedAt);
+  const maximumOthers = workingTreeOnly ? 300 : 200;
   if (mine.length > 10) limitations.push('myPullRequestsLimit');
-  if (others.length > 200) limitations.push('otherPullRequestsLimit');
-  const read = readPullFiles(context, [...mine.slice(0, 10), ...others.slice(0, 200)], snapshot.pulls);
+  if (others.length > maximumOthers) limitations.push('otherPullRequestsLimit');
+  const read = readPullFiles(context, [...mine.slice(0, 10), ...others.slice(0, maximumOthers)], snapshot.pulls);
   if (read.timed) limitations.push('timeLimit');
   function withFiles(pulls) {
     return pulls.filter(pull => {
@@ -31,17 +36,19 @@ export function inspectOverlap(context, snapshot, flags) {
       limitations.push('pullFilesUnavailable');
       return false;
     }).map(pull => {
-      const result = read.files.get(pull.number);
-      if (result.partial) limitations.push('pullFilesLimit');
+      let result = read.files.get(pull.number);
+      if (workingTreeOnly && result.partial) result = context.reader.pullFiles(pull.number, 30);
+      if (result.timed) limitations.push('timeLimit');
+      if (result.partial && !result.timed) limitations.push('pullFilesLimit');
       if (result.invalid) limitations.push('invalidFiles');
       return { number: pull.number, files: new Set(result.files) };
     });
   }
   const myPulls = withFiles(mine.slice(0, 10));
-  const otherPulls = withFiles(others.slice(0, 200));
+  const otherPulls = withFiles(others.slice(0, maximumOthers));
   const view = overlapView({ workingTree, myPulls, otherPulls, limitations }, snapshot.config);
   const remote = workingTree ? safeRemote(context) : null;
-  const local = checkConflicts({ trees: workingTree ? createTrees(context.git) : null, remote, base: workingTree ? base : null,
+  const local = checkConflicts({ trees: workingTree ? createTrees(context.git) : null, remote, base: workingTree ? base : null, comparison: comparisonBase(context, flags),
     overlaps: view.overlaps, workingFiles: workingTree, sourceFiles: new Map(myPulls.map(pull => [pull.number, pull.files])),
     config: snapshot.config, labels: context.labels });
   if (context.labels) for (const overlap of view.overlaps) {
@@ -49,7 +56,7 @@ export function inspectOverlap(context, snapshot, flags) {
     const source = overlap.source === 'workingTree' ? workingTree : myPulls.find(pull => pull.number === overlap.source)?.files;
     context.labels.shared.set(`${overlap.source}:${overlap.pullRequest}`, [...(source || [])].filter(file => theirs.has(file)).sort());
   }
-  if (workingTree && read.complete && otherPulls.length === others.length) writeTrafficCache(context.git, snapshot.now, otherPulls);
+  if (!workingTreeOnly && workingTree && read.complete && otherPulls.length === others.length) writeTrafficCache(context.git, snapshot.now, otherPulls);
   return { ...view, ...local };
 }
 

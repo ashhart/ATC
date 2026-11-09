@@ -52,9 +52,10 @@ export function createReader(gh, repository) {
         && issue.assignees.length <= 100 && issue.assignees.every(user => isActorLogin(user?.login)), 'GitHub returned an invalid issue');
       return { number, state: issue.state, pull_request: Boolean(issue.pull_request), assignees: issue.assignees.map(user => ({ login: user.login.toLowerCase() })) };
     },
-    pullFiles(number) {
+    pullFiles(number, limit = 3) {
       ensure(isNumber(number), 'Invalid pull request number');
-      const { items, partial, timed } = pages(`${base}/pulls/${number}/files`, 3);
+      ensure(Number.isSafeInteger(limit) && limit >= 1 && limit <= 30, 'Invalid pull request budget.');
+      const { items, partial, timed } = pages(`${base}/pulls/${number}/files`, limit);
       if (timed) return { files: [], partial: true, invalid: false, timed: true };
       const files = [];
       let invalid = false;

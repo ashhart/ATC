@@ -1,6 +1,6 @@
 {
   "name": "atc-github",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "description": "Agent Traffic Control: see who is working on what in a GitHub repository, catch merge conflicts between agents before they happen, and coordinate issue work without a bot or server",
   "keywords": [
     "github",

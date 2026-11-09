@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.3
+
+- Check ticket publication against the current worktree and all peer PRs, including work under the same account.
+- Preserve ordinary portfolio overlap reports and fail closed on unknown heads or incomplete peer coverage.
+- Reuse the existing renamed-file conflict attribution fix and bound publication reads to 300 PRs and 3,000 files per peer.
+
 ## 0.9.2
 
 - Retain a confirmed worktree file plan when the final repository read is incomplete, so normal plan retries reuse its session.

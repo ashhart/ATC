@@ -146,3 +146,17 @@ for (const name of ['GIT_GRAFT_FILE', 'GIT_SHALLOW_FILE', 'GIT_REPLACE_REF_BASE'
     assert.notEqual(f.inspect().conflict, 'clean');
   });
 }
+
+for (const attribute of [false, true]) test(`a custom driver named text cannot qualify with ${attribute ? 'explicit' : 'unspecified'} merge attributes`, t => {
+  const f = inheritedFixture(t);
+  f.write(`local addition\n${f.baseline}`);
+  if (attribute) fs.writeFileSync(path.join(f.folder, '.gitattributes'), `${f.file} merge=text\n`);
+  customDefault(f, 'text');
+  const commit = f.trees.snapshot().commit;
+  const actual = f.trees.mergeConflicts(commit, f.pull.head.sha);
+  assert.equal(actual.conflict, 'conflicts');
+  assert.ok(fs.readFileSync(path.join(f.folder, '.git/fixture-default-invocations'), 'utf8').includes('called'));
+  const raw = f.git.exec(['show', `${actual.tree}:${f.file}`]);
+  assert.ok(raw.stdout.includes(`<<<<<<< ${commit}\n`));
+  assert.notEqual(f.inspect().conflict, 'clean');
+});

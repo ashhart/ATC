@@ -34,7 +34,8 @@ export function conflictSource(git) {
       if (!result || ![0, 1].includes(result.status) || (result.status === 1 && result.stdout !== '')
         || (result.status === 0 && result.stdout !== `${allowed}\n`)) return false;
     }
-    return true;
+    const shadow = git.exec(['config', '--name-only', '--get-regexp', '^merge\\.text\\.']);
+    return shadow?.status === 1 && shadow.stdout === '';
   }
   function history() {
     if (['GIT_GRAFT_FILE', 'GIT_SHALLOW_FILE', 'GIT_REPLACE_REF_BASE'].some(name => Object.hasOwn(process.env, name))) return false;

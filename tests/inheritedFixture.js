@@ -29,7 +29,7 @@ export function inheritedFixture(t, options = {}) {
     } };
 }
 
-export function customDefault(f) {
+export function customDefault(f, name = 'fixture') {
   const exec = f.git.exec.bind(f.git);
   f.git.exec = (args, env, ...rest) => exec(args, { ...env, GIT_AUTHOR_DATE: '2000-01-01T00:00:00Z', GIT_COMMITTER_DATE: '2000-01-01T00:00:00Z' }, ...rest);
   const commit = f.trees.snapshot().commit;
@@ -42,6 +42,6 @@ const result = spawnSync('git', ['merge-file', '--marker-size=' + size, '-L', fi
 process.exit(result.status ?? 129);
 `;
   fs.writeFileSync(path.join(f.folder, '.git/fixture-default-driver.cjs'), driver);
-  f.command(['config', 'merge.default', 'fixture']);
-  f.command(['config', 'merge.fixture.driver', 'node .git/fixture-default-driver.cjs %O %A %B %L']);
+  f.command(['config', 'merge.default', name]);
+  f.command(['config', `merge.${name}.driver`, 'node .git/fixture-default-driver.cjs %O %A %B %L']);
 }

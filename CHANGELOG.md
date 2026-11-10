@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.4
+
+- Allow repository work-claim limits up to 25 per contributor, retaining the default of three.
+- Preserve existing claims when the limit increases and refuse a new claim once the configured limit is reached.
+
 ## 0.9.3
 
 - Check ticket publication against the current worktree and all peer PRs, including work under the same account.

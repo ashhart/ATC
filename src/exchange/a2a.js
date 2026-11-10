@@ -4,7 +4,7 @@ import { readWebJson, jsonResponse } from './webIo.js';
 
 export function agentCard(origin) {
   return { protocolVersion: '0.3.0', name: 'Agent Traffic Control', description: 'Inspect existing cooperative help tasks and commit-specific receipts.',
-    url: `${origin}/api/exchange/v1/a2a`, preferredTransport: 'JSONRPC', version: '0.9.3',
+    url: `${origin}/api/exchange/v1/a2a`, preferredTransport: 'JSONRPC', version: '0.9.4',
     capabilities: { streaming: false, pushNotifications: false,
       extensions: [{ uri: 'https://github.com/ashhart/ATC/blob/main/docs/collaboration.md#a2a', required: true,
         description: 'Read-only inspection of existing ATC requests. Does not execute tasks or transfer claims.' }] },

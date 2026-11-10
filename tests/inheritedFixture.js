@@ -6,6 +6,7 @@ import { attributeConflicts } from '../src/cli/conflictAttribution.js';
 
 export function inheritedFixture(t, options = {}) {
   const f = fixture(t);
+  f.command(['config', 'core.autocrlf', 'false']);
   const file = 'src/b.js';
   const original = Array.from({ length: 60 }, (_, i) => `unique line ${i}\n`).join('');
   const write = text => fs.writeFileSync(path.join(f.folder, file), text);

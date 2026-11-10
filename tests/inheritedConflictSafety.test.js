@@ -17,6 +17,11 @@ for (const kind of ['repeated', 'marker', 'binary', 'crlf', 'noFinalNewline', 'm
     if (kind === 'crlf') text = text.replaceAll('\n', '\r\n');
     if (kind === 'noFinalNewline') text = text.slice(0, -1);
     f.write(text);
+    if (kind === 'crlf') {
+      const raw = f.git.exec(['show', `${f.trees.snapshot().tree}:${f.file}`]);
+      assert.equal(raw.status, 0);
+      assert.ok(raw.stdout.includes('\r\n'), 'the unsupported newline fixture must reach the committed blob');
+    }
     if (kind === 'mode') {
       f.command(['config', 'core.filemode', 'false']);
       f.command(['add', '.']); f.command(['update-index', '--chmod=+x', f.file]);

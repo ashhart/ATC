@@ -5,6 +5,7 @@ import path from 'node:path';
 import { isNumber } from '../core/values.js';
 import { isRef } from './git.js';
 import { isFilePath } from './reader.js';
+import { inheritedConflict } from './inheritedConflict.js';
 
 const shaPattern = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/;
 const pathPattern = /^[^\u0000-\u001f\u007f]{1,4096}$/;
@@ -97,11 +98,12 @@ export function createTrees(git) {
       if (response?.status !== 1 || typeof response.stdout !== 'string') return { conflict: 'unknown', files: null };
       const parts = response.stdout.split('\0');
       const files = shaPattern.test(parts[0]) ? names(parts.slice(1).join('\0')) : null;
-      return files && files.size > 0 ? { conflict: 'conflicts', files } : { conflict: 'unknown', files: null };
+      return files && files.size > 0 ? { conflict: 'conflicts', files, tree: parts[0] } : { conflict: 'unknown', files: null };
     },
     mergeBaseOf(commit, base) {
       return shaPattern.test(commit) && isRef(base) ? sha(['merge-base', commit, base]) : null;
     },
+    inheritedConflict: options => inheritedConflict(git, options),
     worktrees: () => inventory().entries.slice(0, 20),
     worktreeInventory: inventory
   };

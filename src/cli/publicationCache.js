@@ -8,7 +8,7 @@ import { inspectDirectory, readFile, createDirectory, createFile } from './safeF
 
 const hash = value => createHash('sha256').update(value).digest('hex');
 const isHash = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value) && !/[\r\n]/.test(value);
-const policyVersion = 2;
+const policyVersion = 3;
 
 export function publicationKey(repository, base, local, pull) {
   if (!isRepository(repository) || !isCommit(base) || !isCommit(local?.head) || !isCommit(local?.tree)

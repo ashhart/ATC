@@ -40,7 +40,8 @@ export function inspectPublication(context, base, workingFiles) {
     if (checks >= (cache ? 10 : 300)) { complete = false; continue; }
     checks++;
     const result = attributeConflicts(trees, { commit: local.commit, other: head, base: () => base, mine: workingFiles });
-    if (result.conflict === 'clean') clean.add(key);
+    if (result.conflict === 'clean' && result.cacheable !== false) clean.add(key);
+    else if (result.conflict === 'clean') continue;
     else if (result.conflict === 'conflicts') conflict = true;
     else complete = false;
   }

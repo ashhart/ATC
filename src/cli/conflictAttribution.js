@@ -6,12 +6,17 @@ export function attributeConflicts(trees, { commit, other, base, mine }) {
   if (!(mine instanceof Set) || !(result.files instanceof Set)) return unknown();
   const files = plainPaths(result.files, commit);
   const direct = new Set([...files].filter(file => mine.has(file)));
-  if (direct.size > 0) return { conflict: 'conflicts', files: direct };
+  if (direct.size > 0 && typeof trees.inheritedConflict !== 'function') return { conflict: 'conflicts', files: direct };
   const start = trees.mergeBaseOf(commit, base());
   const without = start && trees.mergeConflicts(start, other);
-  if (!without || without.conflict === 'unknown') return unknown();
+  if (!without || without.conflict === 'unknown') return direct.size > 0 ? { conflict: 'conflicts', files: direct } : unknown();
   const before = plainPaths(without.files, start);
   const added = new Set([...files].filter(file => !before.has(file)));
+  if (direct.size > 0) {
+    const unchanged = added.size === 0 && trees.inheritedConflict({ start, commit, other, actual: result, baseline: without, files: direct });
+    if (!unchanged) return { conflict: 'conflicts', files: direct };
+    return { conflict: 'clean', files: new Set(), cacheable: false };
+  }
   return added.size > 0 ? { conflict: 'conflicts', files: added } : { conflict: 'clean', files: new Set() };
 }
 

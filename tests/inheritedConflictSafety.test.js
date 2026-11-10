@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { inheritedFixture } from './inheritedFixture.js';
+import { inheritedFixture, customDefault } from './inheritedFixture.js';
 import { createTrees } from '../src/cli/gitTrees.js';
 import { attributeConflicts } from '../src/cli/conflictAttribution.js';
 import { inheritedConflict } from '../src/cli/inheritedConflict.js';
@@ -43,7 +43,7 @@ test('a real criss-cross history with two merge ancestors remains blocking', t =
   const commit = f.command(['commit-tree', localTree, '-p', first, '-m', 'Local edit']);
   assert.equal(f.command(['merge-base', '--all', first, second]).split('\n').length, 2);
   assert.equal(f.trees.mergeConflicts(commit, second).conflict, 'conflicts');
-  assert.notEqual(attributeConflicts(f.trees, { commit, other: second, base: () => first, mine: new Set([f.file]) }).conflict, 'clean');
+  assert.notEqual(attributeConflicts(f.trees, { commit, other: second, base: () => first, mine: new Set([f.file]), inherited: true }).conflict, 'clean');
 });
 
 for (const kind of ['multipleAncestors', 'missingBlob', 'oversizedBlob', 'failedAttributes', 'deadline']) {
@@ -63,7 +63,7 @@ for (const kind of ['multipleAncestors', 'missingBlob', 'oversizedBlob', 'failed
     } };
     const trees = createTrees(git);
     const commit = trees.snapshot().commit;
-    const result = attributeConflicts(trees, { commit, other: f.pull.head.sha, base: () => f.base, mine: new Set([f.file]) });
+    const result = attributeConflicts(trees, { commit, other: f.pull.head.sha, base: () => f.base, mine: new Set([f.file]), inherited: true });
     assert.equal(failed, true);
     assert.notEqual(result.conflict, 'clean');
   });
@@ -81,3 +81,63 @@ test('invalid proof inputs never become Git arguments', () => {
   }
   assert.equal(calls, 0);
 });
+
+test('unspecified merge attributes cannot qualify a custom default driver with ordinary markers', t => {
+  const f = inheritedFixture(t);
+  f.write(`local addition\n${f.baseline}`);
+  customDefault(f);
+  const commit = f.trees.snapshot().commit;
+  assert.equal(f.command(['check-attr', 'merge', '--', f.file]), `${f.file}: merge: unspecified`);
+  const actual = f.trees.mergeConflicts(commit, f.pull.head.sha);
+  assert.equal(actual.conflict, 'conflicts');
+  const raw = f.git.exec(['show', `${actual.tree}:${f.file}`]);
+  assert.equal(raw.status, 0);
+  assert.ok(raw.stdout.includes(`<<<<<<< ${commit}\n`));
+  assert.ok(raw.stdout.includes(`>>>>>>> ${f.pull.head.sha}\n`));
+  assert.notEqual(attributeConflicts(f.trees, { commit, other: f.pull.head.sha, base: () => f.base, mine: new Set([f.file]), inherited: true }).conflict, 'clean');
+});
+
+test('the explicit built-in text default still qualifies unchanged inherited conflict blocks', t => {
+  const f = inheritedFixture(t);
+  f.write(`local addition\n${f.baseline}`);
+  customDefault(f);
+  f.command(['config', 'merge.default', 'text']);
+  assert.equal(f.inspect().conflict, 'clean');
+});
+
+test('a real blob replacement cannot hide a local edit inside the inherited conflict', t => {
+  const f = inheritedFixture(t);
+  const harmless = `local addition\n${f.baseline}`;
+  f.write(harmless.replace('main conflict', 'local conflict'));
+  const commit = f.trees.snapshot().commit;
+  const inspect = () => attributeConflicts(f.trees, { commit, other: f.pull.head.sha, base: () => f.base, mine: new Set([f.file]), inherited: true });
+  assert.equal(inspect().conflict, 'conflicts');
+  const blob = f.command(['rev-parse', `${commit}:${f.file}`]);
+  const replacement = f.git.exec(['hash-object', '-w', '--stdin'], undefined, harmless);
+  assert.equal(replacement.status, 0);
+  f.command(['replace', blob, replacement.stdout.trim()]);
+  assert.ok(f.command(['--no-replace-objects', 'cat-file', 'blob', blob]).includes('local conflict'));
+  assert.equal(f.command(['cat-file', 'blob', blob]).includes('local conflict'), false);
+  assert.notEqual(inspect().conflict, 'clean');
+});
+
+for (const kind of ['graft', 'shallow']) test(`expanded inherited proof refuses a real local ${kind} file`, t => {
+  const f = inheritedFixture(t);
+  f.write(`local addition\n${f.baseline}`);
+  const file = kind === 'graft' ? '.git/info/grafts' : '.git/shallow';
+  fs.writeFileSync(path.join(f.folder, file), kind === 'graft' ? `${f.base} ${f.ancestor}\n` : `${f.ancestor}\n`);
+  if (kind === 'shallow') assert.equal(f.command(['rev-parse', '--is-shallow-repository']), 'true');
+  assert.notEqual(f.inspect().conflict, 'clean');
+});
+
+for (const name of ['GIT_GRAFT_FILE', 'GIT_SHALLOW_FILE', 'GIT_REPLACE_REF_BASE']) {
+  test(`expanded inherited proof refuses redirected ${name} history`, t => {
+    const f = inheritedFixture(t);
+    f.write(`local addition\n${f.baseline}`);
+    const prior = process.env[name];
+    t.after(() => { if (prior === undefined) delete process.env[name]; else process.env[name] = prior; });
+    process.env[name] = name === 'GIT_REPLACE_REF_BASE' ? 'refs/fixture-replacements/' : path.join(f.folder, '.git/fixture-history');
+    if (name !== 'GIT_REPLACE_REF_BASE') fs.writeFileSync(process.env[name], '');
+    assert.notEqual(f.inspect().conflict, 'clean');
+  });
+}

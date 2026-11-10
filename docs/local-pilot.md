@@ -85,6 +85,12 @@ markers and drivers, identical conflict blocks, unique source ranges and a
 validated diff showing every local edit outside those ranges. Uncertain or
 unsupported cases keep the conservative conflict result.
 
+This expanded proof is limited to the deadline-bound publication guard.
+Scoped and ordinary overlap diagnostics retain their conservative same-file
+conflict behavior. Custom default merge drivers, replacement refs, graft files,
+shallow repositories and redirected replacement/graft/shallow environments are
+unsupported by the expanded proof and keep blocking.
+
 Inherited clean results are recomputed on every invocation and never written to
 publication checkpoints. Ordinary clean merges still use bounded progress. The
 inspection budget remains ten new merge checks per cached pass; more than ten

@@ -1,12 +1,12 @@
 import { workBase } from './workBase.js';
 
-export function attributeConflicts(trees, { commit, other, base, mine }) {
+export function attributeConflicts(trees, { commit, other, base, mine, inherited = false }) {
   const result = trees.mergeConflicts(commit, other);
   if (result.conflict !== 'conflicts') return result;
   if (!(mine instanceof Set) || !(result.files instanceof Set)) return unknown();
   const files = plainPaths(result.files, commit);
   const direct = new Set([...files].filter(file => mine.has(file)));
-  if (direct.size > 0 && typeof trees.inheritedConflict !== 'function') return { conflict: 'conflicts', files: direct };
+  if (direct.size > 0 && (inherited !== true || typeof trees.inheritedConflict !== 'function')) return { conflict: 'conflicts', files: direct };
   const start = trees.mergeBaseOf(commit, base());
   const without = start && trees.mergeConflicts(start, other);
   if (!without || without.conflict === 'unknown') return direct.size > 0 ? { conflict: 'conflicts', files: direct } : unknown();

@@ -7,7 +7,7 @@ export function inheritedConflict(git, { start, commit, other, actual, baseline,
   if (![start, commit, other, actual?.tree, baseline?.tree].every(isCommit) || !(files instanceof Set)
     || files.size === 0 || files.size > 20 || ![...files].every(isFilePath)) return false;
   const source = conflictSource(git);
-  if (!source.config()) return false;
+  if (!source.config() || !source.history()) return false;
   const ancestor = source.ancestor(start, other);
   if (!ancestor || source.ancestor(commit, other) !== ancestor) return false;
   for (const file of files) {
@@ -33,5 +33,5 @@ export function inheritedConflict(git, { start, commit, other, actual, baseline,
       '--no-indent-heuristic', '--diff-algorithm=myers', '--inter-hunk-context=0', start, commit, '--', `:(literal)${file}`]);
     if (!mappedRanges(diff, before.lines, after.lines, ranges)) return false;
   }
-  return source.config();
+  return source.config() && source.history();
 }

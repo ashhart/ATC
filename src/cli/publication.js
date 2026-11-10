@@ -39,7 +39,7 @@ export function inspectPublication(context, base, workingFiles) {
     }
     if (checks >= (cache ? 10 : 300)) { complete = false; continue; }
     checks++;
-    const result = attributeConflicts(trees, { commit: local.commit, other: head, base: () => base, mine: workingFiles });
+    const result = attributeConflicts(trees, { commit: local.commit, other: head, base: () => base, mine: workingFiles, inherited: true });
     if (result.conflict === 'clean' && result.cacheable !== false) clean.add(key);
     else if (result.conflict === 'clean') continue;
     else if (result.conflict === 'conflicts') conflict = true;
@@ -56,7 +56,7 @@ export function inspectPublication(context, base, workingFiles) {
     if (!files) { complete = false; continue; }
     peers.push({ ...worktree, head: theirs.head, tree: theirs.tree });
     if (!potentialOverlap(workingFiles, files)) continue;
-    const result = attributeConflicts(trees, { commit: local.commit, other: theirs.commit, base: () => base, mine: workingFiles });
+    const result = attributeConflicts(trees, { commit: local.commit, other: theirs.commit, base: () => base, mine: workingFiles, inherited: true });
     if (result.conflict === 'conflicts') conflict = true;
     else if (result.conflict !== 'clean') complete = false;
   }

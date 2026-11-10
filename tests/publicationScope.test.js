@@ -49,8 +49,11 @@ test('publication checks the worktree while ordinary overlap retains unrelated p
   assert.equal((await f.run(['begin', '1', 'src/b.js', '--base', 'HEAD'])).ready, true); f.change();
   const overview = await f.run(['overlap', '--base', 'HEAD']);
   assert.ok(overview.overlaps.some(row => row.source !== 'workingTree' && row.conflict === 'conflicts'));
+  const cache = path.join(f.folder, '.git', 'atc', 'traffic.json');
+  const before = fs.readFileSync(cache, 'utf8');
   const guard = await f.run(['guard', '--publish']);
   assert.equal(guard.ready, true); assert.equal(guard.complete, true);
+  assert.equal(fs.readFileSync(cache, 'utf8'), before);
 });
 
 test('a same-account peer still blocks conflicting worktree publication', async t => {
@@ -58,6 +61,7 @@ test('a same-account peer still blocks conflicting worktree publication', async 
   assert.equal((await f.run(['begin', '1', 'src/b.js', '--base', 'HEAD'])).ready, true); f.change();
   const guard = await f.run(['guard', '--publish']);
   assert.equal(guard.ready, false); assert.equal(guard.outcome, 'mergeConflicts');
+  assert.equal(fs.existsSync(path.join(f.folder, '.git', 'atc', 'traffic.json')), false);
 });
 
 test('a foreign peer cannot exempt itself by referencing the ticket issue', async t => {

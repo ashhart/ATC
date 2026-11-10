@@ -26,13 +26,15 @@ ATC reads any repository without a config file, but it posts coordination commen
 | --- | --- | --- |
 | `areas` | `{}` | Up to 24 names, each mapped to 1 to 20 path prefixes |
 | `areaIds` | `{}` | Exactly the configured area keys, each assigned a distinct integer from 1 to 24 |
-| `maxClaimsPerUser` | `3` | Integer from 1 to 20 |
+| `maxClaimsPerUser` | `3` | Integer from 1 to 25 |
 | `maxPendingProposalsPerUser` | `5` | Integer from 1 to 20 |
 | `idleDays` | `7` | Integer from 1 to 90 |
 | `proposalDays` | `7` | Integer from 1 to 30 |
 | `presence` | local | `"git"` shares agent sessions through refs on the repository's remote |
 
 Unknown fields and invalid values fail with a fixed configuration error. GitHub config content is bounded to 64 KiB. There is also a fixed maximum of 10 pending proposals per issue and 10 workers per issue. Per-user limits are CLI admission checks; they do not rewrite authoritative per-issue replay when another issue is absent from coverage.
+
+Limits above 20 require ATC 0.9.4 or later. Upgrade contributors to the same pinned version before changing the repository configuration.
 
 An area name has 1 to 24 lowercase ASCII letters, digits, or single hyphens. It starts with a letter and ends with a letter or digit. Commands accept at most eight distinct configured areas.
 

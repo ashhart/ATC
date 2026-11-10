@@ -5,7 +5,7 @@ export { areaEntries, areaName, areaReference } from './areas.js';
 
 const prefixPattern = /^[A-Za-z0-9_.-][A-Za-z0-9_./-]{0,199}$/;
 const limits = {
-  maxClaimsPerUser: [3, 1, 20],
+  maxClaimsPerUser: [3, 1, 25],
   maxPendingProposalsPerUser: [5, 1, 20],
   idleDays: [7, 1, 90],
   proposalDays: [7, 1, 30]

@@ -11,7 +11,9 @@ import { claimPresence } from './claimPresence.js';
 import { shareResult } from './presenceShare.js';
 import { publishPresence } from './publicPresence.js';
 import { issueArg } from './args.js';
-import { inspectOverlap } from './overlap.js';
+import { inspectPublication } from './publication.js';
+import { publicationGit } from './publicationGit.js';
+import { hasTime } from './timeBudget.js';
 
 export async function beginWork(command, rest, flags, context, { claim, fetcher = fetch }) {
   const issue = issueArg(rest[0]);
@@ -90,10 +92,24 @@ export function guardWork(rest, flags, context, ticket) {
   const conflicts = planConflicts(context.snapshot.state.plans, { login: context.me, session: ticket.session, files: ticket.files });
   if (conflicts.length) return fail('scopeTaken', { conflicts });
   if (flags.publish) {
-    const overlap = inspectOverlap(context, context.snapshot, { base: ticket.base, workingTreeOnly: true });
-    const rows = [...overlap.overlaps, ...overlap.worktreeOverlaps];
-    if (rows.some(row => row.conflict === 'conflicts')) return fail('mergeConflicts');
-    if (!overlap.complete || rows.some(row => row.conflict === 'unknown')) return fail('incomplete', { complete: false });
+    const overlap = inspectPublication(context, ticket.base, changed);
+    if (overlap.conflict) return fail('mergeConflicts', { complete: overlap.complete });
+    if (!overlap.complete) return fail('incomplete', { complete: false });
+    try {
+      const scoped = { ...context, git: publicationGit(context) };
+      const after = scoped.git.changedFiles(ticket.base);
+      if (!(after instanceof Set) || after.size !== changed.size || [...after].some(file => !changed.has(file))) {
+        return fail('incomplete', { complete: false });
+      }
+      const currentBase = workBase(scoped, ticket.ref);
+      if (!hasTime(context.gh, 0)) return fail('incomplete', { complete: false });
+      if (currentBase !== ticket.base) return fail('baseChanged');
+    } catch {
+      return fail('incomplete', { complete: false });
+    }
+    const expired = Date.parse(ticket.expiresAt) <= context.now();
+    if (!hasTime(context.gh, 0)) return fail('incomplete', { complete: false });
+    if (expired) return fail('planExpired');
   }
   return workResult('guard', values);
 }

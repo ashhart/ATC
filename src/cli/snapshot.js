@@ -23,7 +23,8 @@ export function takeSnapshot(context) {
     history.issuesPartial && 'openIssuesLimit', !config.areasPinned && 'configurationUnpinned', (history.timed || fetchedPulls.timed) && 'timeLimit',
     fetchedPulls.partial && !fetchedPulls.timed && 'pullRequestsLimit', pulls.length !== fetchedPulls.items.length && 'invalidPulls'])]
     .filter(Boolean).sort();
-  return { config, pulls, state, partial: limitations.length > 0, limitations, now, events, closed, openIssues: history.issues };
+  return { config, pulls, state, partial: limitations.length > 0, limitations, now, events, closed, openIssues: history.issues,
+    pullMetadata: fetchedPulls.items };
 }
 
 function observeIssue(context, issue) {

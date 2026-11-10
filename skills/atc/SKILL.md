@@ -62,6 +62,16 @@ Use `--dry-run` to preview a write without posting. A preview is not a claim. `-
 - Do not edit a posted command to change an agreement; use the next typed command.
 - With a work ticket, run `atc guard <file> --json` before editing and `atc guard --publish --json` before publishing. Continue only on `ready: true`; refresh an expired or changed plan with `atc begin` or `atc plan <issue> <files...> --json` before expanding scope. A dry run never grants readiness. Plans last one hour and respect existing area splits; another session's overlapping plan returns `scopeTaken`, including sessions using the same GitHub account.
 
+Publication checks retain private clean checkpoints tied to the repository,
+local parent and tree, comparison base, PR number, head and base commits. With
+caching enabled, each normal guard call advances through at most ten new merge
+checks and ten missing-head fetches. Rerun the same guard after an incomplete
+bounded pass. A conflict may also have incomplete coverage, so inspect both
+`outcome` and `complete`. Only `ready:true` permits publication. Never edit or
+copy checkpoints to grant readiness. Missing commits, failed worktree discovery,
+changed inputs and unknown checks remain blocking. Full discovery retains the
+300-open-PR bound; a truncated repository list cannot be cleared by retries.
+
 ## Opening or updating your pull request
 
 1. Rerun `atc check <issue> --json` and `atc status --json` before resuming implementation or publishing more changes. If the claim expired or belongs to someone else, follow the current advice rather than relying on an earlier session's result; renew your own claim when due.

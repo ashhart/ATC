@@ -156,10 +156,12 @@ test('publication guard detects a real PR merge conflict and refuses untestable 
   f.command(['init', '-q', '--bare', origin]); f.command(['remote', 'add', 'origin', origin]);
   f.git.remoteFor = () => 'origin';
   const pull = f.fake.addPull({ author: 'bob', files: ['src/a.js'] });
+  pull.base = { sha: f.command(['rev-parse', 'HEAD']), repo: { full_name: f.fake.repository } };
   const ref = `refs/pull/${pull.number}/head`;
   f.command(['checkout', '-qb', 'other-agent', 'main']);
   fs.writeFileSync(path.join(f.folder, 'src/a.js'), 'export const value = 20;\n');
   f.command(['commit', '-qam', 'Other change']); f.command(['push', '-q', 'origin', `HEAD:${ref}`]);
+  pull.head = { sha: f.command(['rev-parse', 'HEAD']) };
   f.command(['checkout', '-q', 'main']);
   assert.equal((await f.run(['begin', '1', 'src/a.js', '--base', 'HEAD'])).ready, true);
   fs.writeFileSync(path.join(f.folder, 'src/a.js'), 'export const value = 30;\n');
@@ -167,6 +169,7 @@ test('publication guard detects a real PR merge conflict and refuses untestable 
   const conflict = await f.run(['guard', '--publish']);
   assert.equal(conflict.ready, false); assert.equal(conflict.outcome, 'mergeConflicts');
   f.command(['--git-dir', origin, 'update-ref', '-d', ref]);
+  pull.head = { sha: 'f'.repeat(40) };
   const unknown = await f.run(['guard', '--publish']);
   assert.equal(unknown.ready, false); assert.equal(unknown.outcome, 'incomplete'); assert.equal(unknown.complete, false);
 });
@@ -178,8 +181,10 @@ test('publication guard refuses a pull request that renamed the file you deleted
   f.command(['init', '-q', '--bare', origin]); f.command(['remote', 'add', 'origin', origin]);
   f.git.remoteFor = () => 'origin';
   const pull = f.fake.addPull({ author: 'bob', files: ['src/a.js', 'src/b.js'] });
+  pull.base = { sha: f.command(['rev-parse', 'HEAD']), repo: { full_name: f.fake.repository } };
   f.command(['checkout', '-qb', 'other-agent', 'main']);
   f.command(['mv', 'src/a.js', 'src/b.js']); f.command(['commit', '-qm', 'Rename']);
+  pull.head = { sha: f.command(['rev-parse', 'HEAD']) };
   f.command(['push', '-q', 'origin', `HEAD:refs/pull/${pull.number}/head`]);
   f.command(['checkout', '-q', 'main']);
   assert.equal((await f.run(['begin', '1', 'src/a.js', '--base', 'HEAD'])).ready, true);

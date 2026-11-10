@@ -136,6 +136,15 @@ atc release 42
 3. **Before the pull request.** `atc overlap` snapshots your changes without touching your index and runs `git merge-tree` against each overlapping pull request and worktree. It reports `conflicts`, `clean` or `unknown`, and lists the files.
 4. **After.** `atc land` ends the session and `atc release` frees the issue. Claims expire after seven days without activity.
 
+With a work ticket, run `atc guard --publish --json` before pushing. The guard
+discovers the complete open PR set and inspects exact Git commits, including PRs
+under the same account. Large scans save private clean checkpoints and advance
+through up to ten new merge checks and ten missing-head fetches per call. Rerun
+the same command when it reports incomplete. Continue only when `ready` is true.
+Changed local bytes, local commits, comparison bases or PR heads invalidate the
+corresponding checkpoints. Unknown heads, partial discovery and real conflicts
+still block publication. Selected `overlap --pulls` results do not waive the guard.
+
 ## Inside Claude Code, Codex, Cursor and other agents
 
 The Claude Code plugin puts ATC into the agent's own loop, so nobody has to remember to run it:

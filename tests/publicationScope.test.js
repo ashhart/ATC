@@ -1,47 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
-import os from 'node:os';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { fixture } from './publicationFixture.js';
 import { setup } from './helpers.js';
 import { createGh } from '../src/cli/gh.js';
-import { createGit } from '../src/cli/git.js';
 import { createReader } from '../src/cli/reader.js';
 import { inspectOverlap } from '../src/cli/overlap.js';
-import { parseCliArgs } from '../src/cli/args.js';
-import { runCli } from '../src/cli/actions.js';
-
-function fixture(t) {
-  const folder = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'atc-publication-scope-')));
-  const origin = folder + '-origin.git';
-  t.after(() => { fs.rmSync(folder, { recursive: true, force: true }); fs.rmSync(origin, { recursive: true, force: true }); });
-  const command = args => execFileSync('git', args, { cwd: folder, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-  command(['init', '-q', '-b', 'main']); command(['init', '-q', '--bare', origin]);
-  command(['config', 'user.name', 'Fixture']); command(['config', 'user.email', 'fixture@example.invalid']);
-  fs.mkdirSync(path.join(folder, 'src'));
-  for (const file of ['a.js', 'b.js']) fs.writeFileSync(path.join(folder, 'src', file), 'export const value = 1;\n');
-  command(['add', '.']); command(['commit', '-qm', 'Fixture']); command(['remote', 'add', 'origin', origin]);
-  const git = createGit((args, env, input) => spawnSync('git', args, { cwd: folder, encoding: 'utf8', input,
-    env: { ...process.env, GIT_OPTIONAL_LOCKS: '0', ...env } }));
-  git.remoteFor = () => 'origin';
-  const fake = setup(); fake.addIssue();
-  const run = args => runCli(parseCliArgs(args), { gh: createGh(fake.runGh), git, now: () => fake.clock.now,
-    sleep: async () => { fake.clock.now += 1000; }, cwd: folder, doctorCheck: () => ({ ready: true }) });
-  const peer = (author, files, value, body = '') => {
-    const pull = fake.addPull({ author, files, body });
-    command(['checkout', '-qb', 'peer-' + pull.number, 'main']);
-    for (const file of files) {
-      fs.mkdirSync(path.dirname(path.join(folder, file)), { recursive: true });
-      fs.writeFileSync(path.join(folder, file), `export const value = ${value};\n`);
-    }
-    command(['add', '.']); command(['commit', '-qm', 'Peer change']);
-    command(['push', '-q', 'origin', `HEAD:refs/pull/${pull.number}/head`]); command(['checkout', '-q', 'main']);
-    return pull;
-  };
-  const change = () => fs.writeFileSync(path.join(folder, 'src/b.js'), 'export const value = 40;\n');
-  return { folder, fake, run, peer, change };
-}
 
 test('publication checks the worktree while ordinary overlap retains unrelated portfolio conflicts', async t => {
   const f = fixture(t); f.fake.addIssue();

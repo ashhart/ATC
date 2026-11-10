@@ -45,11 +45,18 @@ export function createGit(run = runGit) {
       return folder;
     },
     run: call,
-    exec: (args, env, input) => run(args, env, input)
+    exec(args, env, input, limits) {
+      if (limits === undefined) return run(args, env, input);
+      const timeout = limits?.timeout;
+      ensure(limits && typeof limits === 'object' && !Array.isArray(limits) && Object.keys(limits).length === 1
+        && Object.hasOwn(limits, 'timeout') && Number.isSafeInteger(timeout) && timeout >= 1 && timeout <= 30000,
+        'Invalid git request limits.');
+      return run(args, env, input, { timeout });
+    }
   };
 }
 
-function runGit(args, env, input) {
-  return spawnSync('git', args, { encoding: 'utf8', timeout: 30000, maxBuffer: 32 * 1024 * 1024, input,
+function runGit(args, env, input, limits) {
+  return spawnSync('git', args, { encoding: 'utf8', timeout: limits?.timeout ?? 30000, maxBuffer: 32 * 1024 * 1024, input,
     env: { ...process.env, GIT_OPTIONAL_LOCKS: '0', ...env } });
 }

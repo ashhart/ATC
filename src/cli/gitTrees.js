@@ -27,6 +27,32 @@ export function createTrees(git) {
     return files.every(isFilePath) ? new Set(files) : null;
   }
 
+  function inventory() {
+    const top = run(['rev-parse', '--show-toplevel'])?.replace(/\r?\n$/, '');
+    const text = run(['worktree', 'list', '--porcelain', '-z']);
+    if (!top || text === null) return { complete: false, entries: [] };
+    const found = [];
+    let complete = true;
+    let seenTop = false;
+    let entry = null;
+    for (const field of text.split('\0')) {
+      if (field.startsWith('worktree ')) entry = { path: field.slice(9), branch: null, usable: true };
+      else if (!entry) continue;
+      else if (field.startsWith('branch refs/heads/')) entry.branch = field.slice(18);
+      else if (field === 'bare' || field.startsWith('prunable')) entry.usable = false;
+      else if (field === '') {
+        if (entry.path === top) seenTop = true;
+        else if (entry.usable) {
+          if (path.isAbsolute(entry.path) && pathPattern.test(entry.path) && (entry.branch === null || isRef(entry.branch))) {
+            found.push({ path: entry.path, branch: entry.branch });
+          } else complete = false;
+        }
+        entry = null;
+      }
+    }
+    return { complete: complete && seenTop && entry === null && found.length <= 1000, entries: found.slice(0, 1000) };
+  }
+
   return {
     snapshot(worktree) {
       const prefix = worktree ? ['-C', worktree] : [];
@@ -45,7 +71,7 @@ export function createTrees(git) {
         if (run([...prefix, 'add', '-A', '--', ':/'], env) === null) return null;
         const tree = sha([...prefix, 'write-tree'], env);
         const commit = tree && sha([...prefix, 'commit-tree', tree, '-p', head, '-m', 'atc snapshot'], { ...env, ...identity });
-        return commit ? { head, commit } : null;
+        return commit ? { head, tree, commit } : null;
       } finally {
         fs.rmSync(folder, { recursive: true, force: true });
       }
@@ -76,24 +102,7 @@ export function createTrees(git) {
     mergeBaseOf(commit, base) {
       return shaPattern.test(commit) && isRef(base) ? sha(['merge-base', commit, base]) : null;
     },
-    worktrees() {
-      const top = run(['rev-parse', '--show-toplevel'])?.replace(/\r?\n$/, '');
-      const text = run(['worktree', 'list', '--porcelain', '-z']);
-      if (!top || text === null) return [];
-      const found = [];
-      let entry = null;
-      for (const field of text.split('\0')) {
-        if (field.startsWith('worktree ')) entry = { path: field.slice(9), branch: null, usable: true };
-        else if (!entry) continue;
-        else if (field.startsWith('branch refs/heads/')) entry.branch = field.slice(18);
-        else if (field === 'bare' || field.startsWith('prunable')) entry.usable = false;
-        else if (field === '') {
-          if (entry.usable && entry.path !== top && path.isAbsolute(entry.path) && pathPattern.test(entry.path)
-            && (entry.branch === null || isRef(entry.branch))) found.push({ path: entry.path, branch: entry.branch });
-          entry = null;
-        }
-      }
-      return found.slice(0, 20);
-    }
+    worktrees: () => inventory().entries.slice(0, 20),
+    worktreeInventory: inventory
   };
 }

@@ -79,7 +79,7 @@ export function createFakeGithub({ repository = 'acme/widgets' } = {}) {
     if (path === '/pulls' && method === 'GET') {
       return [200, page([...store.issues.values()].filter(issue => issue.pull_request && issue.state === 'open').reverse()
         .map(issue => ({ number: issue.number, user: issue.user, title: issue.title, body: issue.body, created_at: issue.created_at,
-          updated_at: issue.updated_at, state: 'open', draft: issue.draft })), query)];
+          updated_at: issue.updated_at, state: 'open', draft: issue.draft, head: issue.head, base: issue.base })), query)];
     }
     if ((match = path.match(/^\/pulls\/(\d+)\/files$/)) && method === 'GET') {
       return [200, page((store.files.get(Number(match[1])) || []).map(file => typeof file === 'string' ? { filename: file } : file), query)];

@@ -1,5 +1,12 @@
 # Changelog
 
+## Publication guard repair, pending release
+
+- Advance bounded publication checks beyond the first ten overlaps using private exact-commit clean checkpoints.
+- Discover every peer in a complete open-PR snapshot and derive file changes from immutable Git objects instead of update-time file caches.
+- Revalidate PRs, local bytes, worktree inventory, file scope, ticket expiry and comparison base before readiness. Unknown checks and incomplete discovery still refuse publication.
+- Bound Git operations by the remaining request deadline and preserve full local-worktree coverage, including conflicts after the twentieth worktree.
+
 ## 0.9.4
 
 - Allow repository work-claim limits up to 25 per contributor, retaining the default of three.

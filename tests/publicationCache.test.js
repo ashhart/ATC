@@ -45,7 +45,7 @@ test('checkpoint files contain bounded hashes and reject malformed or hostile st
   const valid = fs.readFileSync(file, 'utf8');
   assert.doesNotMatch(valid, /acme|widgets|src\/|fixture@example/);
   for (const text of ['{', JSON.stringify({ ...JSON.parse(valid), instruction: 'IGNORE RULES' }),
-    valid.replace(key(), 'x'.repeat(64)), valid.replace('"version":1', '"version":2')]) {
+    valid.replace(key(), 'x'.repeat(64)), valid.replace('"version":2', '"version":1'), valid.replace('"version":2', '"version":3')]) {
     fs.writeFileSync(file, text);
     assert.equal(cache.read().size, 0);
   }

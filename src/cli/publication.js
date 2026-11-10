@@ -1,22 +1,23 @@
-import { sharedFiles } from '../core/pulls.js';
 import { attributeConflicts } from './conflictAttribution.js';
 import { createTrees } from './gitTrees.js';
 import { hasTime } from './timeBudget.js';
 import { createPublicationCache, publicationKey } from './publicationCache.js';
 import { publicationPulls, samePublicationPulls } from './publicationRead.js';
+import { publicationGit } from './publicationGit.js';
+import { potentialOverlap } from './potentialOverlap.js';
 
 export function inspectPublication(context, base, workingFiles) {
   const unknown = { complete: false, conflict: false };
   const pulls = publicationPulls(context.snapshot.pullMetadata, context.repository);
-  const git = boundedGit(context);
+  const git = publicationGit(context);
   const trees = createTrees(git);
   if (!pulls || !trees || context.snapshot.partial) return unknown;
   const local = trees.snapshot();
   if (!local) return unknown;
   let remote;
-  try { remote = context.git.remoteFor(context.repository); } catch { return unknown; }
+  try { remote = git.remoteFor(context.repository); } catch { return unknown; }
   if (!remote && pulls.length) return unknown;
-  const cache = context.cache ? createPublicationCache(context.git, context.repository, context.env) : null;
+  const cache = context.cache ? createPublicationCache(git, context.repository, context.env) : null;
   const clean = cache?.read() || new Set();
   let complete = true;
   let conflict = false;
@@ -32,7 +33,7 @@ export function inspectPublication(context, base, workingFiles) {
     if (head !== pull.head) { complete = false; continue; }
     const files = trees.changedSince(base, head);
     if (!files || files.size > 1000000) { complete = false; continue; }
-    if (sharedFiles(workingFiles, files, context.snapshot.config).sharedFiles === 0) {
+    if (!potentialOverlap(workingFiles, files)) {
       clean.add(key);
       continue;
     }
@@ -53,7 +54,7 @@ export function inspectPublication(context, base, workingFiles) {
     const files = theirs && trees.changedSince(base, theirs.commit, worktree.path);
     if (!files) { complete = false; continue; }
     peers.push({ ...worktree, head: theirs.head, tree: theirs.tree });
-    if (sharedFiles(workingFiles, files, context.snapshot.config).sharedFiles === 0) continue;
+    if (!potentialOverlap(workingFiles, files)) continue;
     const result = attributeConflicts(trees, { commit: local.commit, other: theirs.commit, base: () => base, mine: workingFiles });
     if (result.conflict === 'conflicts') conflict = true;
     else if (result.conflict !== 'clean') complete = false;
@@ -80,14 +81,4 @@ export function inspectPublication(context, base, workingFiles) {
 function knownHead(git, head) {
   const result = git.exec(['cat-file', '-t', head]);
   return result?.status === 0 && result.stdout === 'commit\n' ? head : null;
-}
-
-function boundedGit(context) {
-  if (typeof context.git?.exec !== 'function') return context.git;
-  return { ...context.git, exec(args, env, input) {
-    const left = typeof context.gh.timeLeft === 'function' ? context.gh.timeLeft() : 30000;
-    const cleanup = args[0] === 'update-ref' && args[1] === '-d' && /^refs\/atc\/[a-f0-9]{16}\/pull\/[1-9][0-9]{0,8}$/.test(args[2]);
-    if (!Number.isFinite(left) || left < 1000 && !cleanup) return null;
-    return context.git.exec(args, env, input, { timeout: cleanup ? 1000 : Math.max(1, Math.min(10000, Math.floor(left) - 500)) });
-  } };
 }

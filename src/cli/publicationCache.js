@@ -8,11 +8,12 @@ import { inspectDirectory, readFile, createDirectory, createFile } from './safeF
 
 const hash = value => createHash('sha256').update(value).digest('hex');
 const isHash = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value) && !/[\r\n]/.test(value);
+const policyVersion = 2;
 
 export function publicationKey(repository, base, local, pull) {
   if (!isRepository(repository) || !isCommit(base) || !isCommit(local?.head) || !isCommit(local?.tree)
     || !isNumber(pull?.number) || !isCommit(pull.head) || !isCommit(pull.base)) return null;
-  return hash(JSON.stringify([1, repository.toLowerCase(), base, local.head, local.tree, pull.number, pull.head, pull.base]));
+  return hash(JSON.stringify([policyVersion, repository.toLowerCase(), base, local.head, local.tree, pull.number, pull.head, pull.base]));
 }
 
 export function createPublicationCache(git, repository, env = {}) {
@@ -28,7 +29,7 @@ export function createPublicationCache(git, repository, env = {}) {
         if (!inspectDirectory(folder)) return new Set();
         if (process.platform !== 'win32' && (fs.lstatSync(file).mode & 0o077) !== 0) return new Set();
         const value = JSON.parse(readFile(file, 24000));
-        if (!value || Object.keys(value).length !== 3 || value.version !== 1 || value.repositoryHash !== repositoryHash
+        if (!value || Object.keys(value).length !== 3 || value.version !== policyVersion || value.repositoryHash !== repositoryHash
           || !Array.isArray(value.clean) || value.clean.length > 300 || !value.clean.every(isHash)
           || new Set(value.clean).size !== value.clean.length) return new Set();
         return new Set(value.clean);
@@ -41,7 +42,7 @@ export function createPublicationCache(git, repository, env = {}) {
       const temporary = `${file}.${randomBytes(8).toString('hex')}.tmp`;
       try {
         createDirectory(folder, []);
-        createFile(temporary, JSON.stringify({ version: 1, repositoryHash, clean }), []);
+        createFile(temporary, JSON.stringify({ version: policyVersion, repositoryHash, clean }), []);
         if (process.platform !== 'win32') fs.chmodSync(temporary, 0o600);
         fs.renameSync(temporary, file);
       } catch {} finally { try { fs.rmSync(temporary, { force: true }); } catch {} }

@@ -21,8 +21,13 @@ export function fixture(t) {
   fs.writeFileSync(path.join(folder, 'src/b.js'), original);
   command(['add', '.']); command(['commit', '-qm', 'Fixture']); command(['remote', 'add', 'origin', origin]);
   const base = command(['rev-parse', 'HEAD']);
-  const git = createGit((args, env, input, limits) => spawnSync('git', args, { cwd: folder, encoding: 'utf8', input, timeout: limits?.timeout ?? 30000,
-    env: { ...process.env, GIT_OPTIONAL_LOCKS: '0', ...env } }));
+  const steps = { afterGit: null };
+  const git = createGit((args, env, input, limits) => {
+    const result = spawnSync('git', args, { cwd: folder, encoding: 'utf8', input, timeout: limits?.timeout ?? 30000,
+      env: { ...process.env, GIT_OPTIONAL_LOCKS: '0', ...env } });
+    steps.afterGit?.(args, limits);
+    return result;
+  });
   git.remoteFor = () => 'origin';
   const fake = setup(); fake.addIssue();
   const add = fake.addPull;
@@ -48,5 +53,5 @@ export function fixture(t) {
   };
   const peer = (author, files, content, body = '') => update(fake.addPull({ author, files, body }), files, content);
   const change = (content = 'export const value = 40;\n') => fs.writeFileSync(path.join(folder, 'src/b.js'), content);
-  return { folder, fake, run, peer, change, update, original, command, git };
+  return { folder, fake, run, peer, change, update, original, command, git, steps };
 }

@@ -10,50 +10,55 @@ export function isRef(value) {
 }
 
 export function createGit(run = runGit) {
-  function call(args, env) {
-    const response = run(args, env);
+  function call(args, env, limits) {
+    const options = typeof limits === 'function' ? limits() : limits;
+    const response = options === undefined ? run(args, env) : run(args, env, undefined, checkedLimits(options));
     if (!response || response.status !== 0) throw new Failure('A git command failed. Run atc inside a clone of the repository, or pass --base.');
     ensure(typeof response.stdout === 'string', 'A git command returned unreadable output.');
     return response.stdout;
   }
   return {
-    remoteFor(repository) {
+    remoteFor(repository, limits) {
       ensure(isRepository(repository), 'Invalid repository');
       const wanted = repository.toLowerCase();
-      for (const line of call(['remote', '-v']).split('\n')) {
+      for (const line of call(['remote', '-v'], undefined, limits).split('\n')) {
         const [name, url] = line.split(/\s+/);
         const match = (url || '').toLowerCase().match(/^(?:https:\/\/github\.com\/|git@github\.com:|ssh:\/\/git@github\.com\/)(.+?)(?:\.git)?\/?$/);
         if (match && match[1] === wanted && isRef(name)) return name;
       }
       return null;
     },
-    mergeBase(ref) {
+    mergeBase(ref, limits) {
       ensure(isRef(ref), '--base must be a branch or ref name');
-      const sha = call(['merge-base', 'HEAD', ref]).trim();
+      const sha = call(['merge-base', 'HEAD', ref], undefined, limits).trim();
       ensure(/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(sha), 'Could not find where your branch starts. Pass --base.');
       return sha;
     },
-    changedFiles(base) {
+    changedFiles(base, limits) {
       ensure(typeof base === 'string' && [40, 64].includes(base.length) && /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(base), 'Invalid git base');
-      const changed = call(['diff', '--no-ext-diff', '--no-textconv', '--no-renames', '--name-only', '-z', base]).split('\0');
-      const added = call(['ls-files', '--others', '--exclude-standard', '-z']).split('\0');
+      const changed = call(['diff', '--no-ext-diff', '--no-textconv', '--no-renames', '--name-only', '-z', base], undefined, limits).split('\0');
+      const added = call(['ls-files', '--others', '--exclude-standard', '-z'], undefined, limits).split('\0');
       return new Set([...changed, ...added].filter(Boolean));
     },
-    commonDir() {
-      const folder = call(['rev-parse', '--path-format=absolute', '--git-common-dir']).replace(/\r?\n$/, '');
+    commonDir(limits) {
+      const folder = call(['rev-parse', '--path-format=absolute', '--git-common-dir'], undefined, limits).replace(/\r?\n$/, '');
       ensure(path.isAbsolute(folder) && /^[^\u0000-\u001f\u007f]{1,4096}$/.test(folder), 'Run atc inside a clone of the repository.');
       return folder;
     },
-    run: call,
+    run: (args, env) => call(args, env),
     exec(args, env, input, limits) {
       if (limits === undefined) return run(args, env, input);
-      const timeout = limits?.timeout;
-      ensure(limits && typeof limits === 'object' && !Array.isArray(limits) && Object.keys(limits).length === 1
-        && Object.hasOwn(limits, 'timeout') && Number.isSafeInteger(timeout) && timeout >= 1 && timeout <= 30000,
-        'Invalid git request limits.');
-      return run(args, env, input, { timeout });
+      return run(args, env, input, checkedLimits(limits));
     }
   };
+}
+
+function checkedLimits(limits) {
+  const timeout = limits?.timeout;
+  ensure(limits && typeof limits === 'object' && !Array.isArray(limits) && Object.keys(limits).length === 1
+    && Object.hasOwn(limits, 'timeout') && Number.isSafeInteger(timeout) && timeout >= 1 && timeout <= 30000,
+    'Invalid git request limits.');
+  return { timeout };
 }
 
 function runGit(args, env, input, limits) {

@@ -12,6 +12,8 @@ import { shareResult } from './presenceShare.js';
 import { publishPresence } from './publicPresence.js';
 import { issueArg } from './args.js';
 import { inspectPublication } from './publication.js';
+import { publicationGit } from './publicationGit.js';
+import { hasTime } from './timeBudget.js';
 
 export async function beginWork(command, rest, flags, context, { claim, fetcher = fetch }) {
   const issue = issueArg(rest[0]);
@@ -93,12 +95,21 @@ export function guardWork(rest, flags, context, ticket) {
     const overlap = inspectPublication(context, ticket.base, changed);
     if (overlap.conflict) return fail('mergeConflicts', { complete: overlap.complete });
     if (!overlap.complete) return fail('incomplete', { complete: false });
-    const after = context.git.changedFiles(ticket.base);
-    if (!(after instanceof Set) || after.size !== changed.size || [...after].some(file => !changed.has(file))) {
+    try {
+      const scoped = { ...context, git: publicationGit(context) };
+      const after = scoped.git.changedFiles(ticket.base);
+      if (!(after instanceof Set) || after.size !== changed.size || [...after].some(file => !changed.has(file))) {
+        return fail('incomplete', { complete: false });
+      }
+      const currentBase = workBase(scoped, ticket.ref);
+      if (!hasTime(context.gh, 0)) return fail('incomplete', { complete: false });
+      if (currentBase !== ticket.base) return fail('baseChanged');
+    } catch {
       return fail('incomplete', { complete: false });
     }
-    if (workBase(context, ticket.ref) !== ticket.base) return fail('baseChanged');
-    if (Date.parse(ticket.expiresAt) <= context.now()) return fail('planExpired');
+    const expired = Date.parse(ticket.expiresAt) <= context.now();
+    if (!hasTime(context.gh, 0)) return fail('incomplete', { complete: false });
+    if (expired) return fail('planExpired');
   }
   return workResult('guard', values);
 }

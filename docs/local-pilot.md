@@ -58,10 +58,20 @@ On a repository without `.github/atc.json`, confirm that `atc claim` returns `no
 
 Stop a confirmation read after a known post and verify `pending`, then inspect the issue before continuing. An ambiguous POST must return `posted: null` and `uncertain` without automatic retry. Never retry blindly: GitHub may already have accepted the first comment.
 
-## Release evidence still required
+## Release evidence follows changed behavior
 
 Record the tested revision, CLI and platform versions, fixed outcome enums, and pass or fail for each scenario. Keep private evidence outside the public project and do not paste account identities, credentials, or raw GitHub responses into reports.
 
-A release needs a completed live GitHub pilot, race and eventual-consistency observations, rate-limit and request-budget checks on a busy repository, and validation on each supported operating system. Verify local viewer behavior on fresh, stale, disconnected, and incomplete snapshots and test its loopback, origin, host, and feed-validation boundaries.
+Before release, record a reviewed impact map for the exact candidate. Include changed behavior, its direct and indirect dependencies, shipped configuration bounds, adapters and affected trust boundaries. Match live checks to that map. If isolation from another behavior cannot be established, qualify that behavior too. Tests and package checks on each supported operating system remain required for every release.
+
+Changes to core claim or proposal decisions, identity or authentication, shared-worker scope interpretation or arbitration, or GitHub comment delivery and confirmation require the authorized two-identity coordination pilot above. Record competing claims, agreement and scope outcomes, and race and eventual-consistency observations. Two consumers using one account do not meet the separate-identity requirement. Existing passing evidence may carry forward only when its exact source, configuration and dependency mapping support the affected behavior. Never count an unperformed scenario as passing evidence.
+
+A patch confined to publication inspection, Git conflict detection or private inspection checkpoints may instead qualify those changed behaviors when review establishes that the core behaviors above are unchanged. Use real GitHub PR metadata and immutable Git commits, more than ten overlapping PRs, normal claim/plan/guard commands and repeated bounded passes. Demonstrate progress to complete readiness for a clean case; changed PR heads, bases, local trees and peer worktrees invalidating prior checks; and conflict, unknown, partial discovery, changed scope and deadline failures refusing readiness. Record exact heads/bases, outcomes, request counts, time bounds and temporary-ref/worktree cleanup. Clearly distinguish controlled fault injection from failures observed on GitHub. Never edit tickets or checkpoints to obtain readiness, suppress a conflict, or present selected coverage as repository-wide clearance.
+
+ATC 0.9.5 uses this publication-patch validation scope. It changes publication discovery, bounded inspection progress and final revalidation. Its impact review must account for the claim-limit configuration and dependencies, rather than assuming the entire stack is identical to a historical trial. No qualifying separate-identity core pilot has been recorded for this release. That gap remains unperformed; publication qualification does not establish general live qualification of the unchanged core protocol.
+
+Every release needs live rate-limit and request-budget observations on a busy repository without deliberately exhausting a shared account. Verify affected hosted routes through the maintained client; a health endpoint alone does not establish discovery or collaboration availability. Preserve original observation times, honest incomplete results and the limits of concurrent-account rate measurements.
+
+Verify local viewer behavior on fresh, stale, disconnected, and incomplete snapshots and test its loopback, origin, host, and feed-validation boundaries. Unchanged viewer behavior may use exact-source-mapped passing evidence; changed behavior needs current checks. Keep missing live scenarios explicit in the release evidence and describe only the scope actually qualified.
 
 Run `npm run check` after the final source changes. Review any package or deployment artifact separately before publication. A local test pass is evidence for that checkout and environment, not a claim that other platforms or live GitHub have passed.

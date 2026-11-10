@@ -70,8 +70,30 @@ A patch confined to publication inspection, Git conflict detection or private in
 
 ATC 0.9.5 uses this publication-patch validation scope. It changes publication discovery, bounded inspection progress and final revalidation. Its impact review must account for the claim-limit configuration and dependencies, rather than assuming the entire stack is identical to a historical trial. No qualifying separate-identity core pilot has been recorded for this release. That gap remains unperformed; publication qualification does not establish general live qualification of the unchanged core protocol.
 
+ATC 0.9.6 uses the same affected-path qualification for its bounded inherited-conflict proof and checkpoint policy. Review the exact source and configuration mapping, exercise an inherited comparison alongside more than ten ordinary overlaps using normal commands, and retain refusals for unsupported history, drivers and changed conflicts. The separate-identity core pilot remains unperformed. Unchanged behavior may carry forward only through its reviewed source and dependency mapping.
+
 Every release needs live rate-limit and request-budget observations on a busy repository without deliberately exhausting a shared account. Verify affected hosted routes through the maintained client; a health endpoint alone does not establish discovery or collaboration availability. Preserve original observation times, honest incomplete results and the limits of concurrent-account rate measurements.
 
 Verify local viewer behavior on fresh, stale, disconnected, and incomplete snapshots and test its loopback, origin, host, and feed-validation boundaries. Unchanged viewer behavior may use exact-source-mapped passing evidence; changed behavior needs current checks. Keep missing live scenarios explicit in the release evidence and describe only the scope actually qualified.
 
 Run `npm run check` after the final source changes. Review any package or deployment artifact separately before publication. A local test pass is evidence for that checkout and environment, not a claim that other platforms or live GitHub have passed.
+
+## Inherited conflict checks
+
+A later publication inspection may prove that a conflict in a locally changed
+file is inherited unchanged from the comparison base. This proof requires one
+shared merge ancestor, regular text files with unchanged modes, ordinary merge
+markers and drivers, identical conflict blocks, unique source ranges and a
+validated diff showing every local edit outside those ranges. Uncertain or
+unsupported cases keep the conservative conflict result.
+
+This expanded proof is limited to the deadline-bound publication guard.
+Scoped and ordinary overlap diagnostics retain their conservative same-file
+conflict behavior. Custom default merge drivers, replacement refs, graft files,
+shallow repositories and redirected replacement/graft/shallow environments are
+unsupported by the expanded proof and keep blocking.
+
+Inherited clean results are recomputed on every invocation and never written to
+publication checkpoints. Ordinary clean merges still use bounded progress. The
+inspection budget remains ten new merge checks per cached pass; more than ten
+uncached inherited comparisons may remain incomplete and cannot grant readiness.

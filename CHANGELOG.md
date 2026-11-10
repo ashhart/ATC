@@ -1,6 +1,6 @@
 # Changelog
 
-## Publication guard repair, pending release
+## 0.9.5, pending release
 
 - Advance bounded publication checks beyond the first ten overlaps using private exact-commit clean checkpoints.
 - Discover every peer in a complete open-PR snapshot and derive file changes from immutable Git objects instead of update-time file caches.

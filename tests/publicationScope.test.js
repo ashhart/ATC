@@ -67,7 +67,7 @@ test('ticket publication covers more than two hundred peer PRs', async t => {
 test('ticket publication still denies an incomplete repository PR set', async t => {
   const f = fixture(t);
   assert.equal((await f.run(['begin', '1', 'src/b.js', '--base', 'HEAD'])).ready, true);
-  for (let i = 0; i < 301; i++) f.fake.addPull({ author: 'bob', files: [] });
+  for (let i = 0; i < 2501; i++) f.fake.addPull({ author: 'bob', files: [] });
   f.change();
   const guard = await f.run(['guard', '--publish']);
   assert.equal(guard.ready, false); assert.equal(guard.complete, false); assert.equal(guard.outcome, 'incomplete');

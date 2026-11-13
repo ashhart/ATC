@@ -1,3 +1,4 @@
+import { maximumOpenPulls } from '../core/pulls.js';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -23,7 +24,7 @@ export function createPullFileCache(repository, env = process.env) {
       } catch {
         return entries;
       }
-      if (value?.version !== 1 || !Array.isArray(value.pulls) || value.pulls.length > 300) return entries;
+      if (value?.version !== 1 || !Array.isArray(value.pulls) || value.pulls.length > maximumOpenPulls) return entries;
       for (const pull of value.pulls) {
         if (!isNumber(pull?.number) || !Number.isSafeInteger(pull.updatedAt) || !Array.isArray(pull.files) || pull.files.length > 600
           || !pull.files.every(isFilePath) || entries.has(pull.number)) return new Map();
@@ -32,7 +33,7 @@ export function createPullFileCache(repository, env = process.env) {
       return entries;
     },
     write(entries) {
-      const pulls = [...entries].slice(0, 300).map(([number, entry]) => ({ number, updatedAt: entry.updatedAt, files: entry.files }));
+      const pulls = [...entries].slice(0, maximumOpenPulls).map(([number, entry]) => ({ number, updatedAt: entry.updatedAt, files: entry.files }));
       const text = `${JSON.stringify({ version: 1, pulls })}\n`;
       if (Buffer.byteLength(text) > maxBytes) return;
       const temporary = `${file}.${randomBytes(6).toString('hex')}.tmp`;

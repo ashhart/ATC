@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.7, pending release
+
+- Read up to 2,500 open pull requests for claim coverage, with an overflow probe at the exact boundary.
+- Keep check, status, board, viewer, hook and publication validation within the same PR bound.
+- Preserve publication progress for all 2,500 PRs while retaining bounded file comparisons and deadline refusals.
+
 ## 0.9.5, pending release
 
 - Advance bounded publication checks beyond the first ten overlaps using private exact-commit clean checkpoints.

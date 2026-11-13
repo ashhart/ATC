@@ -1,3 +1,4 @@
+import { maximumOpenPulls } from '../core/pulls.js';
 import { ensure } from '../core/failure.js';
 import { isId, isNumber, readTimestamp } from '../core/values.js';
 
@@ -15,7 +16,7 @@ export function validateFeed(feed, now = Date.now()) {
   list(feed.flights, 1000).forEach(flight => {
     exact(flight, ['issue', 'phase', 'agents', 'areas', 'pullRequests', 'lastActivity']);
     check(isNumber(flight.issue) && phases.includes(flight.phase));
-    areas(flight.areas); numbers(flight.pullRequests, 300);
+    areas(flight.areas); numbers(flight.pullRequests, maximumOpenPulls);
     if (flight.lastActivity !== null) timestamp(flight.lastActivity);
     list(flight.agents, 5000).forEach(agent => {
       exact(agent, ['ref', 'state', 'lastSeen', 'expiresAt']);

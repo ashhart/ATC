@@ -1,3 +1,4 @@
+import { maximumOpenPulls } from '../core/pulls.js';
 import { areas, check, flightPhase, heartbeatTtl, isFreshAgent, list, numbers, refreshFeed, timestamp } from './schema.js';
 import { isId, isNumber } from '../core/values.js';
 
@@ -49,7 +50,7 @@ function readSession(session, now) {
 
 function readFlight(issue, sessions, now) {
   check(issue && isNumber(issue.issue));
-  numbers(issue.pullRequests, 300);
+  numbers(issue.pullRequests, maximumOpenPulls);
   const claims = list(issue.claims, 3000);
   const scope = new Set();
   let lastActivity = null;

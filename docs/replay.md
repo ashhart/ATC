@@ -30,7 +30,7 @@ Current closed issues have no claimable work, so their comments are outside the 
 
 ## Bounded reads
 
-ATC discovers up to 1,000 current open issues, 50 per request, together with their first 100 comments. Issues with more than 100 comments share a budget of 120 REST comment requests, including pagination probes, with at most 30 pages for one issue. A repository with 112 open issues and no long threads therefore needs three issue requests instead of one request per issue. Closed-issue history does not consume the comment budget. ATC does not use a rolling time window, because renewals and split agreements depend on earlier comments. Open pull request discovery reads up to 300 open pull requests. Exceeding a read limit makes coverage incomplete rather than establishing that no work overlaps.
+ATC discovers up to 1,000 current open issues, 50 per request, together with their first 100 comments. Issues with more than 100 comments share a budget of 120 REST comment requests, including pagination probes, with at most 30 pages for one issue. A repository with 112 open issues and no long threads therefore needs three issue requests instead of one request per issue. Closed-issue history does not consume the comment budget. ATC does not use a rolling time window, because renewals and split agreements depend on earlier comments. Open pull request discovery reads up to 2,500 open pull requests. An empty one-item probe after PR 2,500 confirms exact-boundary completeness. Exceeding a read limit makes coverage incomplete rather than establishing that no work overlaps.
 
 The board reads up to 1,000 open issues and compares files for up to 200 open pull requests, with up to 300 changed files per pull request. It reads changed files for 50 pull requests per GraphQL request. A pull request with more than 100 changed files, a renamed or copied file, or a file list that fails validation is read again through the REST pull request files endpoint, which also supplies former paths. Additional issues or pull requests make board coverage incomplete. An empty overlap list then means no overlap was found in the inspected data, not that all work is clear.
 
@@ -48,7 +48,7 @@ The `limitations` list contains fixed reason enums:
 | --- | --- |
 | `inconsistentComments` | The fetched comments disagree with GitHub’s advertised count; retry before acting |
 | `commentsLimit` | Issues with more than 100 comments exceed the shared REST read budget |
-| `pullRequestsLimit` | More than 300 open pull requests exist |
+| `pullRequestsLimit` | More than 2,500 open pull requests exist |
 | `openIssuesLimit` | More open issue entries exist than the board can inspect |
 | `boardPullRequestsLimit` | More than 200 open pull requests need board file comparisons |
 | `pullFilesLimit` | A pull request has more than 300 changed files |

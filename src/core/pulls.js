@@ -2,6 +2,7 @@ import { areasForPath } from './config.js';
 import { isActorLogin, isLogin, isNumber, readTimestamp } from './values.js';
 
 const referencePattern = /(?:^|[^A-Za-z0-9_&/#-])#([1-9][0-9]{0,8})(?![0-9A-Za-z_])/g;
+export const maximumOpenPulls = 2500;
 export const maximumPullIssueReferences = 6000;
 
 export function referencedIssues(body) {

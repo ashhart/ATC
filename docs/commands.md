@@ -14,7 +14,7 @@ ticket does not waive complete coverage, ownership, expiry, scope or base checks
 
 A ticket publication guard compares the current worktree against every peer PR,
 including PRs under the same GitHub account. Ordinary `overlap` keeps its portfolio
-view. Publication reads remain bounded to 300 open PRs and 3,000 files per peer;
+view. Publication reads remain bounded to 2,500 open PRs and 3,000 files per peer;
 missing heads or incomplete coverage stay not ready.
 
 Start with `atc board --repo owner/name` from any directory. The shorter `atc --repo owner/name` runs the same board. A local clone is needed for `overlap`, `who`, agent presence and the offline initializer; repository reads and typed coordination can use `--repo` without one. `atc help` and `atc --help` show usage. `atc --version` prints the CLI version without a GitHub request.

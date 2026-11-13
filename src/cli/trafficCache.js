@@ -1,3 +1,4 @@
+import { maximumOpenPulls } from '../core/pulls.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
@@ -10,7 +11,7 @@ const maxBytes = 8 * 1024 * 1024;
 export function writeTrafficCache(git, now, pulls) {
   const folder = cacheFolder(git);
   if (!folder || !Number.isSafeInteger(now)) return;
-  const rows = pulls.slice(0, 300).filter(pull => isNumber(pull.number) && pull.files instanceof Set && pull.files.size <= 600)
+  const rows = pulls.slice(0, maximumOpenPulls).filter(pull => isNumber(pull.number) && pull.files instanceof Set && pull.files.size <= 600)
     .map(pull => ({ number: pull.number, files: [...pull.files].filter(isFilePath).sort() }));
   const text = `${JSON.stringify({ version: 1, observedAt: now, pulls: rows })}\n`;
   if (Buffer.byteLength(text) > maxBytes) return;
@@ -39,7 +40,7 @@ export function readTrafficCache(git, now) {
     return null;
   }
   if (value?.version !== 1 || !Number.isSafeInteger(value.observedAt) || value.observedAt > now || value.observedAt <= now - maxAgeMs) return null;
-  if (!Array.isArray(value.pulls) || value.pulls.length > 300) return null;
+  if (!Array.isArray(value.pulls) || value.pulls.length > maximumOpenPulls) return null;
   const pulls = new Map();
   for (const pull of value.pulls) {
     if (!isNumber(pull?.number) || pulls.has(pull.number) || !Array.isArray(pull.files) || pull.files.length > 600) return null;

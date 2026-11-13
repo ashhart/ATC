@@ -65,7 +65,7 @@ test('edit hook stays silent outside a clone, without overlap, and for hostile o
 test('edit hook ignores failed, invalid and hostile CLI results', () => {
   const hostile = [null, { complete: 'yes', pullRequests: [1], worktrees: 0 }, { complete: true, pullRequests: ['#1; rm -rf /'], worktrees: 0 },
     { complete: true, pullRequests: [-4], worktrees: 0 }, { complete: true, pullRequests: [1.5], worktrees: 0 },
-    { complete: true, pullRequests: [1], worktrees: '1' }, { complete: true, pullRequests: new Array(301).fill(1), worktrees: 0 }];
+    { complete: true, pullRequests: [1], worktrees: '1' }, { complete: true, pullRequests: new Array(2501).fill(1), worktrees: 0 }];
   for (const result of hostile) assert.equal(postEditOutput(edit('a.js'), deps(result)), null);
   assert.equal(readWhoResult({ complete: true, pullRequests: [7], worktrees: 0 }).pullRequests[0], 7);
 });

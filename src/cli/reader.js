@@ -1,3 +1,4 @@
+import { maximumOpenPulls } from '../core/pulls.js';
 import { Failure, ensure } from '../core/failure.js';
 import { isActorLogin, isNumber, isRepository } from '../core/values.js';
 import { isRef } from './git.js';
@@ -38,7 +39,7 @@ export function createReader(gh, repository) {
       const fetched = pages(`${base}/issues/${number}/comments`, limit);
       return fetched;
     },
-    openPulls: () => pages(`${base}/pulls?state=open&sort=created&direction=asc`, 3),
+    openPulls: () => pages(`${base}/pulls?state=open&sort=created&direction=asc`, maximumOpenPulls / 100),
     closedSince(since) {
       const { items, partial } = pages(`${base}/issues?state=closed&since=${encodeURIComponent(since)}`, 5);
       ensure(items.every(issue => isNumber(issue?.number) && issue.state === 'closed'), 'GitHub returned an invalid issue');

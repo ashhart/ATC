@@ -54,7 +54,7 @@ test('long-running split claims retain their original scope after more than thir
 test('open pull discovery probes its boundary and refuses incomplete outside-work advice', async () => {
   const fake = setup();
   fake.addIssue();
-  for (let index = 0; index < 300; index++) fake.addPull({ author: 'bob' });
+  for (let index = 0; index < 2500; index++) fake.addPull({ author: 'bob' });
   assert.equal((await cli(fake, 'alice', ['check', '1'])).complete, true);
   fake.addPull({ author: 'bob', body: 'Fixes #1' });
   const check = await cli(fake, 'alice', ['check', '1']);

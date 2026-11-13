@@ -1,3 +1,4 @@
+import { maximumOpenPulls } from '../core/pulls.js';
 import { attributeConflicts } from './conflictAttribution.js';
 import { createTrees } from './gitTrees.js';
 import { hasTime } from './timeBudget.js';
@@ -37,7 +38,7 @@ export function inspectPublication(context, base, workingFiles) {
       clean.add(key);
       continue;
     }
-    if (checks >= (cache ? 10 : 300)) { complete = false; continue; }
+    if (checks >= (cache ? 10 : maximumOpenPulls)) { complete = false; continue; }
     checks++;
     const result = attributeConflicts(trees, { commit: local.commit, other: head, base: () => base, mine: workingFiles, inherited: true });
     if (result.conflict === 'clean' && result.cacheable !== false) clean.add(key);

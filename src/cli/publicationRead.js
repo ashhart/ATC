@@ -1,8 +1,9 @@
+import { maximumOpenPulls } from '../core/pulls.js';
 import { isNumber, isRecord, isRepository } from '../core/values.js';
 import { isCommit } from '../core/plans.js';
 
 export function publicationPulls(items, repository) {
-  if (!isRepository(repository) || !Array.isArray(items) || items.length > 300) return null;
+  if (!isRepository(repository) || !Array.isArray(items) || items.length > maximumOpenPulls) return null;
   const result = [];
   const seen = new Set();
   for (const item of items) {

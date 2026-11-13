@@ -1,7 +1,7 @@
 import { readConfig } from '../core/config.js';
 import { readEvents } from '../core/events.js';
 import { ensure } from '../core/failure.js';
-import { readPulls } from '../core/pulls.js';
+import { maximumOpenPulls, readPulls } from '../core/pulls.js';
 import { replay } from '../core/replay.js';
 import { trafficView } from '../core/traffic.js';
 import { isActorLogin, isNumber, isRepository, readTimestamp } from '../core/values.js';
@@ -16,13 +16,14 @@ export async function collectPublicBoard(repository, { read = readPublicResource
   const [file, opened, fetched] = await Promise.all([
     read(`${base}/contents/.github/atc.json`, { optional: true }),
     readPublicPages(read, `${base}/issues?state=open&sort=created&direction=asc`, 10),
-    readPublicPages(read, `${base}/pulls?state=open&sort=created&direction=asc`, 3)
+    readPublicPages(read, `${base}/pulls?state=open&sort=created&direction=asc`, maximumOpenPulls / 100, true)
   ]);
   const config = readConfig(readConfiguration(file));
   const limits = new Set();
   if (!config.areasPinned) limits.add('configurationUnpinned');
   if (opened.partial) limits.add('openIssuesLimit');
   if (fetched.partial) limits.add('pullRequestsLimit');
+  if (fetched.items.length > 200) limits.add('boardPullRequestsLimit');
   const openIssues = opened.items.filter(issue => !issue.pull_request).map(readIssue);
   ensure(new Set(openIssues.map(issue => issue.number)).size === openIssues.length, 'Public traffic unavailable.');
   const pulls = readPulls(fetched.items);
@@ -30,7 +31,7 @@ export async function collectPublicBoard(repository, { read = readPublicResource
   if (pulls.length !== fetched.items.length) limits.add('invalidPulls');
   const comments = [];
   const pullFiles = new Map();
-  const jobs = fetched.items.filter(pull => pulls.some(item => item.number === pull.number)).map(pull => async () => {
+  const jobs = fetched.items.filter(pull => pulls.some(item => item.number === pull.number)).slice(0, 200).map(pull => async () => {
     try {
       ensure(/^[a-f0-9]{40}$/.test(pull.head?.sha), 'Public traffic unavailable.');
       const text = await read(`https://patch-diff.githubusercontent.com/raw/${repository}/pull/${pull.number}.diff?atc_head=${pull.head.sha}`);

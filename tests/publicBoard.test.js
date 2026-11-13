@@ -53,3 +53,25 @@ test('diff paths and network payloads have strict bounds', async () => {
   await assert.rejects(readPublicResource('https://example.org', { maximum: 2, fetcher: async () => new Response('too long') }));
   assert.equal(await readPublicResource('https://example.org', { optional: true, fetcher: async () => new Response('', { status: 404 }) }), null);
 });
+
+test('public discovery probes 2500 PRs and bounds diff comparisons separately', async () => {
+  for (const count of [2500, 2501]) {
+    const f = fixture();
+    const pulls = Array.from({ length: count }, (_, index) => ({ ...f.pulls[0], number: index + 1, body: '' }));
+    let diffs = 0;
+    const read = url => {
+      if (url.includes('/pulls?')) {
+        const query = new URL(url).searchParams;
+        const size = Number(query.get('per_page')), page = Number(query.get('page'));
+        return Promise.resolve(JSON.stringify(pulls.slice((page - 1) * size, page * size)));
+      }
+      if (url.includes('.diff?')) diffs++;
+      return f.read(url);
+    };
+    const board = await collectPublicBoard('example/project', { read, now: () => now });
+    assert.equal(board.summary.openPullRequests, 2500);
+    assert.equal(board.limitations.includes('pullRequestsLimit'), count > 2500);
+    assert.ok(board.limitations.includes('boardPullRequestsLimit'));
+    assert.equal(diffs, 200);
+  }
+});

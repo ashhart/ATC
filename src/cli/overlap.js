@@ -1,3 +1,4 @@
+import { maximumOpenPulls } from '../core/pulls.js';
 import { ensure } from '../core/failure.js';
 import { overlapView } from '../core/view.js';
 import { comparisonBase } from './conflictAttribution.js';
@@ -25,7 +26,7 @@ export function inspectOverlap(context, snapshot, flags) {
   const mine = workingTreeOnly ? [] : snapshot.pulls.filter(pull => pull.author === context.me);
   const others = (workingTreeOnly ? [...snapshot.pulls] : snapshot.pulls.filter(pull => pull.author !== context.me))
     .sort((first, second) => second.updatedAt - first.updatedAt);
-  const maximumOthers = workingTreeOnly ? 300 : 200;
+  const maximumOthers = workingTreeOnly ? maximumOpenPulls : 200;
   if (mine.length > 10) limitations.push('myPullRequestsLimit');
   if (others.length > maximumOthers) limitations.push('otherPullRequestsLimit');
   const read = readPullFiles(context, [...mine.slice(0, 10), ...others.slice(0, maximumOthers)], snapshot.pulls);

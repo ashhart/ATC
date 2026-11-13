@@ -1,3 +1,4 @@
+import { maximumOpenPulls } from '../core/pulls.js';
 import { isNumberIn, isRecord, isTimestamp, readNumbers } from './hookValues.js';
 
 const conflictStates = ['clean', 'conflicts', 'unknown'];
@@ -5,7 +6,7 @@ const summaryFields = ['openIssues', 'openPullRequests', 'fileOverlaps', 'opport
 
 export function readWhoResult(value) {
   if (!isRecord(value) || typeof value.complete !== 'boolean') return null;
-  const pullRequests = readNumbers(value.pullRequests, 300, 1, 999999999);
+  const pullRequests = readNumbers(value.pullRequests, maximumOpenPulls, 1, 999999999);
   if (pullRequests === null || !isNumberIn(value.worktrees, 0, 1000)) return null;
   const agents = value.agents === undefined ? 0 : value.agents;
   if (!isNumberIn(agents, 0, 10000)) return null;
@@ -13,7 +14,7 @@ export function readWhoResult(value) {
 }
 
 export function readOverlapResult(value) {
-  if (!isRecord(value) || typeof value.complete !== 'boolean' || !Array.isArray(value.overlaps) || value.overlaps.length > 2210) return null;
+  if (!isRecord(value) || typeof value.complete !== 'boolean' || !Array.isArray(value.overlaps) || value.overlaps.length > maximumOpenPulls) return null;
   const worktreeRows = value.worktreeOverlaps === undefined ? [] : value.worktreeOverlaps;
   if (!Array.isArray(worktreeRows) || worktreeRows.length > 1000) return null;
   const pulls = value.overlaps.map(row => readRow(row, 'pullRequest', 999999999));

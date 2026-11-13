@@ -23,7 +23,7 @@ export async function readPublicResource(url, { fetcher = fetch, maximum = 4 * 1
   return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
 }
 
-export async function readPublicPages(read, url, maximum) {
+export async function readPublicPages(read, url, maximum, probe = false) {
   const items = [];
   for (let page = 1; page <= maximum; page += 1) {
     const batch = JSON.parse(await read(`${url}${url.includes('?') ? '&' : '?'}per_page=100&page=${page}`));
@@ -31,7 +31,10 @@ export async function readPublicPages(read, url, maximum) {
     items.push(...batch);
     if (batch.length < 100) return { items, partial: false };
   }
-  return { items, partial: true };
+  if (!probe) return { items, partial: true };
+  const extra = JSON.parse(await read(`${url}${url.includes('?') ? '&' : '?'}per_page=1&page=${maximum * 100 + 1}`));
+  ensure(Array.isArray(extra) && extra.length <= 1, 'Public traffic unavailable.');
+  return { items, partial: extra.length > 0 };
 }
 
 export function readPublicDiff(text) {

@@ -1,3 +1,4 @@
+import { maximumOpenPulls } from '../core/pulls.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash, randomBytes } from 'node:crypto';
@@ -28,16 +29,16 @@ export function createPublicationCache(git, repository, env = {}) {
       try {
         if (!inspectDirectory(folder)) return new Set();
         if (process.platform !== 'win32' && (fs.lstatSync(file).mode & 0o077) !== 0) return new Set();
-        const value = JSON.parse(readFile(file, 24000));
+        const value = JSON.parse(readFile(file, maximumOpenPulls * 68 + 256));
         if (!value || Object.keys(value).length !== 3 || value.version !== policyVersion || value.repositoryHash !== repositoryHash
-          || !Array.isArray(value.clean) || value.clean.length > 300 || !value.clean.every(isHash)
+          || !Array.isArray(value.clean) || value.clean.length > maximumOpenPulls || !value.clean.every(isHash)
           || new Set(value.clean).size !== value.clean.length) return new Set();
         return new Set(value.clean);
       } catch { return new Set(); }
     },
     write(entries) {
       if (!(entries instanceof Set)) return;
-      const clean = [...entries].slice(-300);
+      const clean = [...entries].slice(-maximumOpenPulls);
       if (!clean.every(isHash)) return;
       const temporary = `${file}.${randomBytes(8).toString('hex')}.tmp`;
       try {

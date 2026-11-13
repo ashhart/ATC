@@ -1,3 +1,4 @@
+import { maximumOpenPulls } from '../core/pulls.js';
 import { claim, limitations, proposal } from './outputRecords.js';
 import { areaList, booleanValue, count, enumValue, issueList, issueNumber, list, nullable, numberRange, record, timestamp } from './outputTypes.js';
 
@@ -15,11 +16,11 @@ export const statusOutput = record({ repository: enumValue('selected'), areas: a
 
 export const checkOutput = record({ issue: issueNumber, open: booleanValue, complete: booleanValue, limitations, coordinationEnabled: booleanValue,
   claimed: booleanValue, claimedByMe: booleanValue, claimants: count(10), reviewers: count(3000), pendingProposals: count(10),
-  assignedToOthers: count(100), otherPullRequests: issueList(300), myPullRequests: issueList(300), areaOverlaps: list(areaOverlap, 12000),
+  assignedToOthers: count(100), otherPullRequests: issueList(maximumOpenPulls), myPullRequests: issueList(maximumOpenPulls), areaOverlaps: list(areaOverlap, 12000),
   advice: enumValue('free', 'yours', 'proposeInstead', 'takenOutside', 'notOpen', 'incomplete') });
 
 export const overlapOutput = record({ complete: booleanValue, limitations, changedFiles: nullable(count(1000000)),
-  myPullRequests: issueList(10), overlaps: list(overlap, 2210), worktrees: count(20), worktreeOverlaps: list(worktreeOverlap, 20) });
+  myPullRequests: issueList(10), overlaps: list(overlap, maximumOpenPulls), worktrees: count(20), worktreeOverlaps: list(worktreeOverlap, 20) });
 
 export const whoOutput = record({ command: enumValue('who'), complete: booleanValue, limitations, observedAt: nullable(timestamp),
-  pullRequests: issueList(300), worktrees: count(20), agents: count(10000) });
+  pullRequests: issueList(maximumOpenPulls), worktrees: count(20), agents: count(10000) });

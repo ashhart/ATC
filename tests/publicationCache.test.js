@@ -62,3 +62,12 @@ test('checkpoint files contain bounded hashes and reject malformed or hostile st
   }
   assert.equal(createPublicationCache(f.git, f.fake.repository, { ATC_CACHE: '0' }), null);
 });
+
+test('publication progress retains all 2500 peer checks across command invocations', t => {
+  const f = fixture(t);
+  const entries = new Set(Array.from({ length: 2500 }, (_, index) => key('acme/widgets', sha('e'), local, { ...pull, number: index + 1 })));
+  createPublicationCache(f.git, f.fake.repository, {}).write(entries);
+  const saved = createPublicationCache(f.git, f.fake.repository, {}).read();
+  assert.equal(saved.size, 2500);
+  assert.ok([...entries].every(entry => saved.has(entry)));
+});
